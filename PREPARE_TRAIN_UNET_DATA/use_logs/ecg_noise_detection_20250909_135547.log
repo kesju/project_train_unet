@@ -1,0 +1,50 @@
+2025-09-09 13:55:47,608 [INFO] Starting ECG noise detection script. Log file: use_logs/ecg_noise_detection_20250909_135547.log
+2025-09-09 13:55:47,616 [INFO] Configuration: {
+  "FS": 200,
+  "SEGMENT_LENGTH": 1024,
+  "OVERLAP": 0.5
+}
+2025-09-09 13:55:47,619 [INFO] Filtravimo parametrai: {'type': 'lowpass', 'method': 'butterworth', 'order': 5, 'sampling_rate': 200, 'lowcut': 0.5, 'highcut': 90}
+2025-09-09 13:55:47,627 [INFO] Loading U-Net model from ecg_denoising_model.keras
+2025-09-09 13:55:51,999 [DEBUG] Model loaded successfully
+2025-09-09 13:55:52,000 [INFO] Verifying model input shape
+2025-09-09 13:55:52,003 [INFO] Loading ECG data from ecg_record.npy
+2025-09-09 13:55:52,014 [DEBUG] ECG data loaded, shape: (127999,)
+2025-09-09 13:55:52,059 [DEBUG] Bandpass filter applied, filtered signal length: 127999
+2025-09-09 13:55:52,280 [INFO] Starting ECG denoising pipeline
+2025-09-09 13:55:52,284 [DEBUG] Configuration: fs=200, segment_length=1024, overlap=0.5, threshold=0.08
+2025-09-09 13:55:52,284 [DEBUG] ECG data shape: (127999,)
+2025-09-09 13:55:52,284 [INFO] Preprocessing ECG signal
+2025-09-09 13:55:52,287 [DEBUG] Normalizing signal
+2025-09-09 13:55:52,294 [DEBUG] Signal normalized, mean: -0.0000, std: 1.0000
+2025-09-09 13:55:52,296 [DEBUG] Segmented into 248 segments, step size: 512
+2025-09-09 13:55:52,296 [DEBUG] Segments reshaped for model input, shape: (248, 1024, 1)
+2025-09-09 13:55:52,296 [INFO] Predicting denoised segments
+2025-09-09 13:55:58,267 [DEBUG] Prediction completed, denoised segments shape: (248, 1024, 1)
+2025-09-09 13:55:58,268 [INFO] Reconstructing denoised signal
+2025-09-09 13:55:58,287 [DEBUG] Denoised signal reconstructed, length: 127999
+2025-09-09 13:55:58,288 [INFO] Detecting noisy fragments
+2025-09-09 13:55:58,304 [DEBUG] Residual computed, mean: 0.0576, std: 0.0776
+2025-09-09 13:55:58,311 [DEBUG] Noisy segment detected at index 39936, mean residual: 0.0855
+2025-09-09 13:55:58,312 [DEBUG] Noisy segment detected at index 40448, mean residual: 0.0877
+2025-09-09 13:55:58,314 [DEBUG] Noisy segment detected at index 47616, mean residual: 0.0879
+2025-09-09 13:55:58,315 [DEBUG] Noisy segment detected at index 48128, mean residual: 0.1255
+2025-09-09 13:55:58,315 [DEBUG] Noisy segment detected at index 48640, mean residual: 0.1228
+2025-09-09 13:55:58,315 [DEBUG] Noisy segment detected at index 49152, mean residual: 0.1062
+2025-09-09 13:55:58,316 [DEBUG] Noisy segment detected at index 49664, mean residual: 0.0874
+2025-09-09 13:55:58,316 [DEBUG] Noisy segment detected at index 50688, mean residual: 0.0817
+2025-09-09 13:55:58,317 [DEBUG] Noisy segment detected at index 51200, mean residual: 0.0948
+2025-09-09 13:55:58,318 [DEBUG] Noisy segment detected at index 51712, mean residual: 0.1084
+2025-09-09 13:55:58,319 [DEBUG] Noisy segment detected at index 52224, mean residual: 0.1081
+2025-09-09 13:55:58,319 [DEBUG] Noisy segment detected at index 52736, mean residual: 0.0932
+2025-09-09 13:55:58,328 [DEBUG] Noisy segment detected at index 96768, mean residual: 0.0833
+2025-09-09 13:55:58,334 [DEBUG] Found 13 noisy segments
+2025-09-09 13:55:58,335 [DEBUG] Created 13 initial intervals
+2025-09-09 13:55:58,336 [DEBUG] Merged into 3 intervals
+2025-09-09 13:55:58,337 [DEBUG] Noisy intervals detected: [[39936, 41471], [47616, 53759], [96768, 97791]]
+2025-09-09 13:55:58,342 [DEBUG] Noisy intervals detected secs: [(199.68, 207.355), (238.08, 268.795), (483.84, 488.955)]
+2025-09-09 13:55:58,343 [INFO] Noise detection completed
+2025-09-09 13:55:58,349 [DEBUG] Denoised signal reconstructed, length: 127999
+2025-09-09 13:55:58,355 [DEBUG] Noisy intervals detected: [[39936, 41471], [47616, 53759], [96768, 97791]]
+2025-09-09 13:55:58,358 [DEBUG] Noisy intervals detected secs: [(199.68, 207.355), (238.08, 268.795), (483.84, 488.955)]
+2025-09-09 13:55:58,359 [INFO] Noise detection completed

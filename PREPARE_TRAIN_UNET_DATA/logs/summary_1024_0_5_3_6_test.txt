@@ -1,0 +1,37 @@
+
+ĮRAŠŲ KOKYBĖS ĮVERTINIMAS NUSTATANT TRIUKŠMŲ FRAGMENTŲ KIEKĮ ĮRAŠUOSE
+Surandamos išskirtys (outliers), rspragos (rdropouts) ir judesiai (motions - unet tipo triukšmai)
+
+PARAMETRAI:
+Filtravimo parametrai: {'type': 'lowpass', 'method': 'butterworth', 'order': 5, 'sampling_rate': 200, 'lowcut': 0.5, 'highcut': 90}
+CONFIG={'FS': 200, 'SEGMENT_LENGTH': 1024, 'OVERLAP': 0.5} | THRESHOLD=0.080
+Duomenų aplankas: /home/kestutis/DI/2025_ZIVEO/DUOMENYS_UPD | Parametrų aplankas: /home/kestutis/DI/2025_ZIVEO/DUOMENYS_UPD/PARAMETRAI
+Model: resunet_ecg_1024_0_5_3_6.keras | Noise log: noise_log_1024_0_5_3_6_test.[txt|xlsx]
+Rezultatų aplankas: /home/kestutis/DI/2025_ZIVEO/DUOMENYS_UPD/REZULTATAI
+
+VISŲ ĮRAŠŲ REZULTATAI:
+Visų analizuotų įrašų skaičius: 1085
+Vidutinis triukšmo padengimas įrašuose: 7.4%
+Vidutinis triukšmo padengimas 'per quality':
+quality 0: 5.6%
+quality 1: 20.1%
+quality 2: 31.9%
+
+ANOTUOTŲ ĮRAŠŲ REZULTATAI:
+Anotuotų įrašų skaičius: 43
+Vidutinis anotuotų triukšmų padengimas: 3.2%
+Vidutinis aptiktų triukšmų padengimas anotuotuose įrašuose: 4.6%
+
+SUTRUMPINIMAI LENTELĖSE:
+fn    - filename (įrašo pavadinimas)
+qlt   - quality (0,1,2 iš Excel, įrašo kokybė)
+tag   - tag (NA arba 1111, 3333, 9999 iš Excel)
+out   - outliers (išskirtys)
+out%  - outliers padengimo dalis %
+rdr   - rdropouts (rspragos)
+rdr%  - rdropouts padengimo dalis %
+mot   - motions (U-Net)
+mot%  - motions (U-Net) padengimo dalis %
+total%  - visų aptiktų triukšmų padengimo dalis % (out+rdr+mov)
+anot   - anotuoti triukšmai (iš JSON)
+anot%  - anotuotų triukšmų (iš JSON) padengimo dalis %

@@ -1,0 +1,37 @@
+2025-10-13 17:41:24,529 [INFO] Starting ECG noise detection script. Log file: use_logs/ecg_noise_detection_20251013_174124.log
+2025-10-13 17:41:24,535 [INFO] Configuration: {
+  "FS": 200,
+  "SEGMENT_LENGTH": 1024,
+  "OVERLAP": 0.5
+}
+2025-10-13 17:41:24,537 [INFO] Preparing to load U-Net model from /home/kesju/DI/2025_ZIVEO/S-ITP-25-9/MODEL_UNET/resunet_ecg_1024_0_5_3_7.keras
+2025-10-13 17:41:25,991 [INFO] U-Net model ready: resunet_ecg_1024_0_5_3_7.keras, expected_input_shape=(1024, 1)
+2025-10-13 17:41:25,993 [INFO] Loading U-Net model from /home/kesju/DI/2025_ZIVEO/S-ITP-25-9/MODEL_UNET/resunet_ecg_1024_0_5_3_7.keras
+2025-10-13 17:41:25,997 [INFO] Loading ECG data from ecg_record.npy
+2025-10-13 17:41:26,015 [DEBUG] ECG data loaded, shape: (127999,)
+2025-10-13 17:41:26,026 [DEBUG] Filter applied, filtered signal length: 127999
+2025-10-13 17:41:26,126 [INFO] Starting ECG denoising pipeline
+2025-10-13 17:41:26,128 [DEBUG] Configuration: fs=200, segment_length=1024, overlap=0.5, threshold=0.08
+2025-10-13 17:41:26,128 [DEBUG] ECG data shape: (127999,)
+2025-10-13 17:41:26,128 [INFO] Preprocessing ECG signal
+2025-10-13 17:41:26,130 [DEBUG] Normalizing signal
+2025-10-13 17:41:26,133 [DEBUG] Signal normalized, mean: -0.0000, std: 1.0000
+2025-10-13 17:41:26,134 [DEBUG] Segmented into 248 segments, step size: 512
+2025-10-13 17:41:26,134 [DEBUG] Segments reshaped for model input, shape: (248, 1024, 1)
+2025-10-13 17:41:26,134 [INFO] Predicting denoised segments
+2025-10-13 17:41:31,561 [DEBUG] Prediction completed, denoised segments shape: (248, 1024, 1)
+2025-10-13 17:41:31,562 [INFO] Reconstructing denoised signal
+2025-10-13 17:41:31,567 [DEBUG] Denoised signal reconstructed, length: 127999
+2025-10-13 17:41:31,567 [INFO] Detecting noisy fragments
+2025-10-13 17:41:31,571 [DEBUG] Residual computed, mean: 0.0508, std: 0.0799
+2025-10-13 17:41:31,573 [DEBUG] Noisy segment detected at index 79872, mean residual: 0.0815
+2025-10-13 17:41:31,574 [DEBUG] Found 1 noisy segments
+2025-10-13 17:41:31,574 [DEBUG] Created 1 initial intervals
+2025-10-13 17:41:31,574 [DEBUG] Merged into 1 intervals
+2025-10-13 17:41:31,574 [DEBUG] Noisy intervals detected: [[79872, 80895]]
+2025-10-13 17:41:31,575 [DEBUG] Noisy intervals detected secs: [(399.36, 404.475)]
+2025-10-13 17:41:31,575 [INFO] Noise detection completed
+2025-10-13 17:41:31,576 [DEBUG] Denoised signal reconstructed, length: 127999
+2025-10-13 17:41:31,576 [DEBUG] Noisy intervals detected: [[79872, 80895]]
+2025-10-13 17:41:31,576 [DEBUG] Noisy intervals detected secs: [(399.36, 404.475)]
+2025-10-13 17:41:31,577 [INFO] Noise detection completed

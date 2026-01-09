@@ -1,0 +1,66 @@
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# /home/kesju/DI/2025_ZIVEO/DUOMENYS_UPD/use_ecg_denoising_with_quality_improved.ipynb 
+
+
+# === Išoriniai moduliai (lygiagretus aplankas) =================================
+# BASE_PATH = Path().resolve().parent / "TRIUKSMU_DETEKTAVIMAS"
+# sys.path.append(str(BASE_PATH))
+
+# from zive_util_ml import get_ecg_signal  # noqa: E402
+# from use_ecg_denoising_util import (  # noqa: E402
+#     bandpass_filter,
+#     find_outliers_rdropouts,
+#     merge_lists_of_tuples,
+#     run_ecg_denoising_pipeline,
+# )
+
+from zive_util_ml import get_ecg_signal  # noqa: E402
+from use_ecg_denoising_util import (  # noqa: E402
+    bandpass_filter,
+    find_outliers_rdropouts,
+    merge_lists_of_tuples,
+    run_ecg_denoising_pipeline,
+)
+
+# /home/kesju/DI/2025_ZIVEO/DUOMENYS_UPD/use_ecg_denoising_unet_with_graph_improved.ipynb
+# Prikabiname zive_util_ml, use_ecg_denoising_util, kurie yra lygiagrečiame aplanke TRIUKSMU_DETEKTAVIMAS
+# Assumes you're running the notebook in DUOMENYS_UPD
+# base_path = Path().resolve().parent / 'TRIUKSMU_DETEKTAVIMAS'
+# sys.path.append(str(base_path))
+
+from zive_util_ml import get_ecg_signal, get_ecg_noise_indices_annotated
+from zive_util_ml import divide_signal_into_fragments, plot_signal_write_plot_R_P
+from use_ecg_denoising_util import run_ecg_denoising_pipeline
+from use_ecg_denoising_util import bandpass_filter
+
+
+# /home/kesju/DI/2025_ZIVEO/DUOMENYS_UPD/use_ecg_denoising_unet_extended_with_graph.ipynb
+# === Išoriniai moduliai (lygiagretus aplankas) =================================
+# BASE_PATH = Path().resolve().parent / "TRIUKSMU_DETEKTAVIMAS"
+# sys.path.append(str(BASE_PATH))
+
+from zive_util_ml import get_ecg_signal, get_ecg_noise_indices_annotated
+from zive_util_ml import divide_signal_into_fragments, plot_signal_write_plot_R_P
+from use_ecg_denoising_util import find_outliers_rdropouts
+
+
+# /home/kesju/DI/2025_ZIVEO/DUOMENYS_UPD/0_testing_preprocessing_signal_and_selective_graphs_V8_modified_with_unet.ipynb
+
+# === Išoriniai moduliai (lygiagretus aplankas) =================================
+# BASE_PATH = Path().resolve().parent / "ANALIZE"
+# sys.path.append(str(BASE_PATH))
+
+from zive_gaps_processing_V8 import remove_episodes
+from zive_gaps_processing_V8 import zive_read_file_1ch, get_ecg_signal, convert_seconds_to_hms, parse_gaps
+from zive_gaps_processing_V8 import plot_signal_write_plot_R_P, divide_signal_into_fragments, map_across_signals_forward
+from zive_gaps_processing_V8 import map_indices_across_signals_reverse, map_indices_across_signals_forward
+from zive_gaps_processing_V8 import map_rpeaks_across_signals_reverse, map_rpeaks_across_signals_forward
+from zive_gaps_processing_V8 import filter_mappings, filter_indices_by_signal_length
+from zive_gaps_processing_V8 import find_fragments_with_distortion_indices, post_processing, find_fragments_with_distortions
+from zive_gaps_processing_V8 import find_ecg_outliers, find_ecg_oscillations, count_zero_crossings, find_ecg_rdropouts
+from zive_gaps_processing_V8 import adjust_noisy_intervals
+from zive_gaps_processing_V8 import update_indices, get_mark_indices
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# /home/kesju/DI/2025_ZIVEO/TRIUKSMU_DETEKTAVIMAS/zive_util_ml.py

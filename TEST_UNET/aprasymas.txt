@@ -1,0 +1,13 @@
+TEST_UNET skriptai skirti įvertinti UNET modelio, sukurto su TRAIN_UNET, kokybę.
+
+Testavimui naudojami Zive ekg įrašai iš DATA_ORIG/ecg_zive_npy ir sąrašas visi_zive_irasai.xlsx
+
+UNET modelio parametrai įrašyti į aplanką MODEL_UNET, jie perrašomi iš aplanko TRAIN_UNET/results po UNET apmokymo,
+naudojant TRAIN_UNET skriptus.
+
+Pagrindinis Kokybei vertinti skriptas yra use_ecg_denoising_with_quality_2.ipynb, kuris:
+- Užkrauna modelį ir įrašų sąrašą iš Excel (ignoruoja tag == 9999).
+- Filtruoja signalą, randa outliers/rdropouts, U-Net triukšmus.
+- Skaičiuoja metrikas ir išsaugo .txt + .xlsx + summary.txt.
+
+U-net triukšmai detektuojami, prieš tai detektavus ir išvalius išskirtis ir rspragas (outliers/rdropouts). 
