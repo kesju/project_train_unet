@@ -1,0 +1,11 @@
+# requires-python = ">=3.9"
+numpy>=1.26,<2.0
+matplotlib>=3.8
+scipy>=1.11,<1.14
+pyyaml>=6
+neurokit2; python_version >= "3.11"
+keras>=3,<4
+tensorflow>=2.17,<2.19
+scikit-fda>=0.10.1
+dask[dataframe]==2025.10.0
+distributed==2025.10.0
