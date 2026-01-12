@@ -1,9 +1,0 @@
-2025-10-13 14:27:33,207 - INFO - Starting ECG denoising test
-2025-10-13 14:27:33,693 - INFO - Loaded model from /home/kesju/DI/2025_ZIVEO/S-ITP-25-9/UNET_MODEL/resunet_ecg_1024_0_5_3_7.keras
-2025-10-13 14:27:33,729 - INFO - Predicting with model
-2025-10-13 14:27:33,773 - DEBUG - Adding noise to signal with shape (128000,)
-2025-10-13 14:27:38,580 - INFO - Mean MSE: 0.012586
-2025-10-13 14:27:38,580 - INFO - Mean SNR: 19.39 dB
-2025-10-13 14:27:38,580 - INFO - Mean Corr: 0.994
-2025-10-13 14:27:38,878 - INFO - Detected 52 noisy segments out of 249
-2025-10-13 14:27:50,676 - INFO - Saved 20 most extreme noisy segment plots to visualisations/denoising_plots
