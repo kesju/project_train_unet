@@ -591,21 +591,21 @@ def find_outliers_rdropouts(ecg_signal_start):
     main_window_size = sliding_window_size*5
     main_window_size_secs = main_window_size/fs
 
-    print(f"main_window_size: {main_window_size} ({main_window_size_secs:.1f} secs), sliding_window_size: {sliding_window_size} ({sliding_window_size_secs:.1f} secs)")
+    # print(f"main_window_size: {main_window_size} ({main_window_size_secs:.1f} secs), sliding_window_size: {sliding_window_size} ({sliding_window_size_secs:.1f} secs)")
     # Notice:
     # sliding_window_size_secs must be less (at least 2 times) than main_window_size
     # main_window_size must be less than  t_gap_max_secs, extra_interval_secs, t_start_gap_max_secs, t_end_gap_max_secs
 
-    print("\nCheck if the conditions are met:")
+    # print("\nCheck if the conditions are met:")
     if 2*sliding_window_size_secs < main_window_size_secs:
-        print("OK. 2*sliding_window_size is less than main_window_size")
+        # print("OK. 2*sliding_window_size is less than main_window_size")
         flag_sliding_window_size_OK = True
     else:
         print("Not OK. 2*sliding_window_size is not less than main_window_size")
         flag_sliding_window_size_OK = False
     
     if all(main_window_size_secs < value for value in [t_gap_max_secs, extra_interval_secs, t_start_gap_max_secs, t_end_gap_max_secs]):
-        print("OK. main_window_size is less than all specified values: t_gap_max, extra_interval, t_start_gap_max, t_end_gap_max")
+        # print("OK. main_window_size is less than all specified values: t_gap_max, extra_interval, t_start_gap_max, t_end_gap_max")
         flag_main_window_size_OK = True
     else:
         print("Not OK. main_window_size is not less than all specified values: t_gap_max, extra_interval, t_start_gap_max, t_end_gap_max")

@@ -1,13 +1,39 @@
 TEST_UNET skriptai skirti įvertinti UNET modelio, sukurto su TRAIN_UNET, kokybę.
 
-Testavimui naudojami Zive ekg įrašai iš DATA_ORIG/ecg_zive_npy ir sąrašas visi_zive_irasai.xlsx
+Testavimui naudojami Zive ekg įrašai iš DATA_ORIG/ecg_zive_npy ir sąrašas visi_zive_irasai.xlsx Norint atlikti
+testavimą su atrinktais įrašais, reikia tam pasinaudojus visi_zive_irasai.xlsx pasidaryti kitą sąrašą. 
 
 UNET modelio parametrai įrašyti į aplanką MODEL_UNET, jie perrašomi iš aplanko TRAIN_UNET/results po UNET apmokymo,
 naudojant TRAIN_UNET skriptus.
 
-Pagrindinis kokybei vertinti skriptas yra use_ecg_denoising_with_quality_2.ipynb, kuris:
+I. Skriptas use_ecg_denoising_with_quality_2.ipynb.
+
+Tai pagrindinis kokybei vertinti skriptas, kuris:
 - Užkrauna modelį ir įrašų sąrašą iš Excel (ignoruoja tag == 9999).
 - Filtruoja signalą, randa outliers/rdropouts, U-Net triukšmus.
 - Skaičiuoja metrikas ir išsaugo .txt + .xlsx + summary.txt aplanke results.
 
 U-net triukšmai detektuojami, prieš tai detektavus ir išvalius išskirtis ir rspragas (outliers/rdropouts). 
+
+Rezultatai išvedami į ekraną, sumariniai rezultatai išsaugomi aplanke 'results'.
+
+
+II. Skriptas use_ecg_denoising_unet_extended_with_graph.ipynb.
+
+Skriptas UNET modelio kokybės įvertinimui vizualiai. Skripto eigos protokolas patalpinamas aplanke use_logs.
+
+Čia yra Python skriptas, skirtas EKG triukšmo aptikimui naudojant iš anksto apmokytą U-Net modelį.
+# Skriptas naudoja TensorFlow ir Keras bibliotekas, kad įkeltų modelį ir atliktų EKG signalų apdorojimą.
+# Prieš tai dar surandamos išskirtys (outliers) ir rspragos (rdropouts), kurie yra pašalinami iš EKG signalo.
+# Išvedamas grafikas su aptiktais U-Net triukšmais ir išsaugomas kaip paveikslėlis.  išskirtys (outliers)
+# ir rspragos (rdropouts) nevaizduojami, nes jie jau buvo pašalinti iš signalo.
+
+# https://grok.com/chat/68e9c626-abf9-4fc3-9102-d82468902b6f
+
+
+
+
+
+
+
+
