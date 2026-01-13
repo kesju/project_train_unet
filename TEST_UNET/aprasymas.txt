@@ -17,6 +17,9 @@ U-net triukšmai detektuojami, prieš tai detektavus ir išvalius išskirtis ir 
 
 Rezultatai išvedami į ekraną, sumariniai rezultatai išsaugomi aplanke 'results'.
 
+Naudoja use_logs, visualisations
+
+
 
 II. Skriptas use_ecg_denoising_unet_extended_with_graph.ipynb.
 
@@ -33,7 +36,11 @@ Skriptas UNET modelio kokybės įvertinimui vizualiai. Skripto eigos protokolas 
 
 
 
+III. TEST_UNET/test_ecg_denoising_unet6.py, test_ecg_denoising_unet6.sh
+
+Naudoja logs, visualisations
 
 
 
 
+IV. TEST_UNET/use_ecg_denoising_util.py, use_ecg_denoising_util.sh

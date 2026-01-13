@@ -58,8 +58,8 @@
 #   --debug
 
 python test_ecg_denoising_unet6.py \
-  --model_path "$HOME/DI/2025_ZIVEO/S-ITP-25-9/MODEL_UNET/resunet_ecg_1024_0_5_3_7.keras" \
-  --clean_dir "$HOME/DI/2025_ZIVEO/S-ITP-25-9/DATA/clean_ecg_for_test" \
+  --model_path "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET/resunet_ecg_1024_0_5_3_7.keras" \
+  --clean_dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/TEST_UNET/clean_ecg_for_test" \
   --synthetic_noise \
   --gaussian_std_ratio 0.1 \
   --baseline_freq 0.33 --baseline_amp 0.2 \

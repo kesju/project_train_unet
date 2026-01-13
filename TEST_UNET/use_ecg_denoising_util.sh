@@ -2,7 +2,7 @@
 
 
 python use_ecg_denoising_util.py \
-  --dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_ORIG/ecg_npy_all" \
+  --dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_ORIG/ecg_zive_npy" \
   --filename "1005_10.npy"
 
 # 24. 1005_10.npy | outliers:3 rdropouts:0 kiti triukšmai:2 | triukšmų dalis: 15.16%
