@@ -16,22 +16,27 @@ Tai pagrindinis kokybei vertinti skriptas, kuris:
   pagal quality (0 - švarus įrašas, 1 - vidutiniškai švarus, 2 - daug triukšmų)). Įrašų kokybė quality nustatyta
   subjektyviai, peržiūrint ir įvertinant įrašų kokybę vizualiai. 
 
-Rezultatai išvedami į ekraną, sumariniai rezultatai išsaugomi aplanke 'results'.
+Rezultatai išvedami į stdout (default - terminalą), sumariniai rezultatai išsaugomi failuose aplanke 'results'.
 
-Naudoja use_logs.
+Visi log pranešimai eina stdout (default - terminalas).
 
 
 
 II. Skriptas use_ecg_denoising_unet_extended_with_graph.ipynb.
 
-Skriptas UNET modelio kokybės įvertinimui vizualiai. Skripto eigos protokolas patalpinamas aplanke use_logs.
+Skriptas UNET modelio kokybės vizualiam įvertinimui. 
 
 Čia yra Python skriptas, skirtas EKG triukšmo aptikimui naudojant iš anksto apmokytą U-Net modelį.
 Skriptas naudoja TensorFlow ir Keras bibliotekas, kad įkeltų modelį ir atliktų EKG signalų apdorojimą.
 Prieš tai dar surandamos išskirtys (outliers) ir rspragos (rdropouts), kurie yra pašalinami iš EKG signalo.
-Išvedamas grafikas su signalu 'denoised_ecg' su aptiktais U-Net triukšmais (pateikiami raudoname fone) ir
+Išvedamas grafikas su signalu 'denoised_signal' su aptiktais U-Net triukšmais (pateikiami raudoname fone) ir
 išsaugomas kaip paveikslėlis.  išskirtys (outliers) ir rspragos (rdropouts) nevaizduojami,
 nes jie jau buvo pašalinti iš signalo.
+
+Grafika išvedama arba į ekraną, arba į failus, kurie talpinami aplanke: plot_save_dir = "plottings" (galima pakeisti)
+Grafika išvedama į failus, jei flag_plot_save = True.
+
+Log pranešimams naudoja aplankąe: use_logs.
 
 
 
@@ -42,10 +47,13 @@ Testavimui pridedamas generuojamas triukšmas, kurio charakteristikas galima kei
 Detektuojami segmentuose triukšmai, išvedami  kiekvienam segmentui ir vidurkiniai rodikliai
 MSE, SNR (dB), Corr. Taip pat išvedami labiausiai užtriukšmintų segmentų (clean, noisy, denoised) grafikai. 
 
-Naudoja logs, visualisations/denoising_plots
+Log pranešimams naudoja aplanką: logs, vizualizacijai: aplanką visualisations/denoising_plots
  
+
 
 IV. TEST_UNET/use_ecg_denoising_util.py, use_ecg_denoising_util.sh
 
 Modulis use_ecg_denoising_util.py naudojamas kituose skriptuose išskirčių ir rspragų detectavimui.
 Bash failas use_ecg_denoising_util.sh skirtas modulio testavimui, siekiant įsitikinti, kad viskas veikia.
+
+Log pranešimų nenaudoja.
