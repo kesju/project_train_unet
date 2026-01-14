@@ -636,16 +636,16 @@ def find_outliers_rdropouts(ecg_signal_start):
 
             # Koreguojame outliers_indices priderindami prie signalo ecg_signal_start ilgio
             outliers_indices = filter_indices_by_signal_length(len(ecg_signal_start), outliers_indices)
-            print(f"\nIšskirtys: {outliers_indices}")
+            # print(f"\nIšskirtys: {outliers_indices}")
             
             # Post processing of outliers indices
             outliers_indices = post_processing(len(ecg_signal_start), fs, outliers_indices, 
                             t_gap_max_secs, extra_interval_secs, t_start_gap_max_secs, t_end_gap_max_secs)
-            print(f"\nIšskirtys po apjungimo: {outliers_indices}")
+            # print(f"\nIšskirtys po apjungimo: {outliers_indices}")
             
             # Adjusting of outliers_indices to soft stitching
             outliers_indices_adjusted = adjust_noisy_intervals(ecg_signal_start, outliers_indices, main_window_size, sliding_window_size)
-            print(f"\nIšskirtys po korekcijos 'minkštam' sujungimui : {outliers_indices_adjusted}")
+            # print(f"\nIšskirtys po korekcijos 'minkštam' sujungimui : {outliers_indices_adjusted}")
 
             # print("\nConvert ecg_signal_start to ecg_signal_no_outliers")
             ecg_signal, no_outliers_indices_orig, no_outliers_indices = remove_episodes(ecg_signal_start, outliers_indices_adjusted)
@@ -869,9 +869,9 @@ def test_outliers_rdropouts_detecting(dir, filename):
         raise ValueError("The ECG signal is empty.")
     
     len_ecg_signal_orig_secs = len(ecg_signal_orig)/fs
-    print(f"\nlen(ecg_signal_orig): {len(ecg_signal_orig)} ({len_ecg_signal_orig_secs:.1f} secs)")
+    # print(f"\nlen(ecg_signal_orig): {len(ecg_signal_orig)} ({len_ecg_signal_orig_secs:.1f} secs)")
     hours, minutes, seconds = convert_seconds_to_hms(len_ecg_signal_orig_secs)
-    print(f"Hours: {hours:.1f}, Minutes: {minutes:.1f}, Seconds: {seconds:.1f}")
+    # print(f"Hours: {hours:.1f}, Minutes: {minutes:.1f}, Seconds: {seconds:.1f}")
 
 
             # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  FILTRUOJAME SIGNALĄ
@@ -884,11 +884,12 @@ def test_outliers_rdropouts_detecting(dir, filename):
     ecg_signal_start = nk.signal_filter(signal=ecg_signal_orig, sampling_rate=200, lowcut=0.5, highcut=None, method='butterworth', order=5)
 
     len_ecg_signal_flt_secs = len(ecg_signal_start)/fs
-    print(f"\nlen(ecg_signal_start): {len(ecg_signal_start)} ({len_ecg_signal_flt_secs:.1f} secs)")
+    # print(f"\nlen(ecg_signal_start): {len(ecg_signal_start)} ({len_ecg_signal_flt_secs:.1f} secs)")
     # print(ecg_signal_start[:10], ecg_signal_start[-10:])
     
     ecg_signal, outliers_indices_adjusted, rdropouts_indices_adjusted = find_outliers_rdropouts(ecg_signal_start)
-    print("\nfilePath:", filePath)
+    print("\nTesting of detecting of outliers and rdropouts starts...")
+    print("filePath:", filePath)
     print(f"len(ecg_signal_start): {len(ecg_signal_start)} ({len(ecg_signal_start)/fs:.1f} secs)")
     print(f"Outliers indices (adjusted): {outliers_indices_adjusted}")
     print(f"R-Dropouts indices (adjusted): {rdropouts_indices_adjusted}")
@@ -903,8 +904,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     test_outliers_rdropouts_detecting(args.dir, args.filename)
-    print("\n")
-    print(args.dir, args.filename)
+    # print("\n")
+    # print(args.dir, args.filename)
     print("Testing completed.")
     
 # python use_denoising_util.py --dir /home/kesju/DI/ZIVEO_2025/DUOMENYS_UPD/records_npy_all/ --filename 1001_4.npy

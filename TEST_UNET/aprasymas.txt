@@ -12,13 +12,13 @@ Tai pagrindinis kokybei vertinti skriptas, kuris:
 - Užkrauna modelį ir įrašų sąrašą iš Excel (ignoruoja įrašus su tag == 9999).
 - Filtruoja signalą, detektuoja ir išvalo išskirtis ir rspragas (outliers/rdropouts)
 - Detektuoja U-Net triukšmus, detektuojant skaičiuoja metrikas ir išsaugo formatu .txt, .xlsx, summary.txt aplanke results.
-- 
-
-U-net triukšmai detektuojami, prieš tai detektavus ir išvalius išskirtis ir rspragas (outliers/rdropouts). 
+- Pateikiamos metrikos kiekvienam įrašui, sumarinės visiems įrašams, o taip pat sumarinės įrašams, padalinant juos
+  pagal quality (0 - švarus įrašas, 1 - vidutiniškai švarus, 2 - daug triukšmų)). Įrašų kokybė quality nustatyta
+  subjektyviai, peržiūrint ir įvertinant įrašų kokybę vizualiai. 
 
 Rezultatai išvedami į ekraną, sumariniai rezultatai išsaugomi aplanke 'results'.
 
-Naudoja use_logs, visualisations
+Naudoja use_logs.
 
 
 
@@ -27,23 +27,25 @@ II. Skriptas use_ecg_denoising_unet_extended_with_graph.ipynb.
 Skriptas UNET modelio kokybės įvertinimui vizualiai. Skripto eigos protokolas patalpinamas aplanke use_logs.
 
 Čia yra Python skriptas, skirtas EKG triukšmo aptikimui naudojant iš anksto apmokytą U-Net modelį.
-# Skriptas naudoja TensorFlow ir Keras bibliotekas, kad įkeltų modelį ir atliktų EKG signalų apdorojimą.
-# Prieš tai dar surandamos išskirtys (outliers) ir rspragos (rdropouts), kurie yra pašalinami iš EKG signalo.
-# Išvedamas grafikas su aptiktais U-Net triukšmais ir išsaugomas kaip paveikslėlis.  išskirtys (outliers)
-# ir rspragos (rdropouts) nevaizduojami, nes jie jau buvo pašalinti iš signalo.
-
-# https://grok.com/chat/68e9c626-abf9-4fc3-9102-d82468902b6f
-
+Skriptas naudoja TensorFlow ir Keras bibliotekas, kad įkeltų modelį ir atliktų EKG signalų apdorojimą.
+Prieš tai dar surandamos išskirtys (outliers) ir rspragos (rdropouts), kurie yra pašalinami iš EKG signalo.
+Išvedamas grafikas su signalu 'denoised_ecg' su aptiktais U-Net triukšmais (pateikiami raudoname fone) ir
+išsaugomas kaip paveikslėlis.  išskirtys (outliers) ir rspragos (rdropouts) nevaizduojami,
+nes jie jau buvo pašalinti iš signalo.
 
 
 
 III. TEST_UNET/test_ecg_denoising_unet6.py, test_ecg_denoising_unet6.sh
 
-Naudoja logs, visualisations
+Skriptas UNET modelio testavimui su švariais ecg įrašais iš aplanko clean_ecg_for_test.
+Testavimui pridedamas generuojamas triukšmas, kurio charakteristikas galima keisti.
+Detektuojami segmentuose triukšmai, išvedami  kiekvienam segmentui ir vidurkiniai rodikliai
+MSE, SNR (dB), Corr. Taip pat išvedami labiausiai užtriukšmintų segmentų (clean, noisy, denoised) grafikai. 
 
-
-
+Naudoja logs, visualisations/denoising_plots
+ 
 
 IV. TEST_UNET/use_ecg_denoising_util.py, use_ecg_denoising_util.sh
 
-Modulis, naudojamas kituose skriptuose, use_ecg_denoising_util.sh skirtas modulio testavimui.
+Modulis use_ecg_denoising_util.py naudojamas kituose skriptuose išskirčių ir rspragų detectavimui.
+Bash failas use_ecg_denoising_util.sh skirtas modulio testavimui, siekiant įsitikinti, kad viskas veikia.
