@@ -1,0 +1,21 @@
+TRAIN_UNET skriptai skirti UNET modelio mokymui ir validavimui, panaudojant atrinktus ir parengtus ekg įrašus 
+aplanke PREPARE_TRAIN_UNET_DATA ir patalpintus aplanke DATA_FOR_TRAINING.
+
+Pagrindinis scriptas: train_ecg_denoising_unet7.py, konfiguruojamas ir paleidžiamas
+su batch failu train_ecg_denoising_unet7.sh
+
+Triukšmo ir segmentavimo parametrai nurodomi pačiame skripte: train_ecg_denoising_unet7.py
+
+Įrašai, prieš apmokant modelį, atsitiktiniu būdu padalijami į dalį mokymui ir dalį validavimui.
+
+Apmokyto UNET modelio parametrai įrašomi į aplanką results, tolesniam naudojimui (pvz. testavimui) jie perrašomi
+iš aplanko TRAIN_UNET/results į aplanką MODEL_UNET.
+
+
+Visualize clean, noisy, and denoised signals in separate subplots with metrics.
+
+Log pranešimai įrašomi į failą aplanke: logs. 
+
+logger.debug("...") → goes to file only.
+logger.info("...") → goes to file and terminal.
+logger.error("...") → goes to both.
