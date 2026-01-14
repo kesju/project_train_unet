@@ -1,7 +1,7 @@
 TEST_UNET skriptai skirti įvertinti UNET modelio, sukurto su TRAIN_UNET, kokybę.
 
-Testavimui naudojami Zive ekg įrašai iš DATA_ORIG/ecg_zive_npy ir sąrašas visi_zive_irasai.xlsx Norint atlikti
-testavimą su atrinktais įrašais, reikia tam pasinaudojus visi_zive_irasai.xlsx pasidaryti kitą sąrašą. 
+Testavimui naudojami Zive ekg įrašai iš DATA_ORIG/ecg_zive_npy ir jame esantis sąrašas 'visi_zive_irasai.xlsx'. Norint atlikti
+testavimą su atrinktais įrašais, reikia tam pasinaudojus 'visi_zive_irasai.xlsx',  pasidaryti kitą sąrašą. 
 
 UNET modelio parametrai įrašyti į aplanką MODEL_UNET, jie perrašomi iš aplanko TRAIN_UNET/results po UNET apmokymo,
 naudojant TRAIN_UNET skriptus.
@@ -9,9 +9,10 @@ naudojant TRAIN_UNET skriptus.
 I. Skriptas use_ecg_denoising_with_quality_2.ipynb.
 
 Tai pagrindinis kokybei vertinti skriptas, kuris:
-- Užkrauna modelį ir įrašų sąrašą iš Excel (ignoruoja tag == 9999).
-- Filtruoja signalą, randa outliers/rdropouts, U-Net triukšmus.
-- Skaičiuoja metrikas ir išsaugo .txt + .xlsx + summary.txt aplanke results.
+- Užkrauna modelį ir įrašų sąrašą iš Excel (ignoruoja įrašus su tag == 9999).
+- Filtruoja signalą, detektuoja ir išvalo išskirtis ir rspragas (outliers/rdropouts)
+- Detektuoja U-Net triukšmus, detektuojant skaičiuoja metrikas ir išsaugo formatu .txt, .xlsx, summary.txt aplanke results.
+- 
 
 U-net triukšmai detektuojami, prieš tai detektavus ir išvalius išskirtis ir rspragas (outliers/rdropouts). 
 
@@ -44,3 +45,5 @@ Naudoja logs, visualisations
 
 
 IV. TEST_UNET/use_ecg_denoising_util.py, use_ecg_denoising_util.sh
+
+Modulis, naudojamas kituose skriptuose, use_ecg_denoising_util.sh skirtas modulio testavimui.

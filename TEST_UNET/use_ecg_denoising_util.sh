@@ -1,5 +1,6 @@
 # chmod +x use_ecg_denoising_util.sh
 
+# Skirtas modulio use_ecg_denoising_util.py testavimui
 
 python use_ecg_denoising_util.py \
   --dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_ORIG/ecg_zive_npy" \
