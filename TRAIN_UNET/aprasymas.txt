@@ -23,22 +23,24 @@ Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_6.keras:
 7 - pridėjau, kad būtų aišku, kad mokyta su train_ecg_denoising_unet7.py 
 
 
+Log pranešimai valdomu užduodant batch faile train_ecg_denoising_unet7.sh log_level.
+Galimos reikšmės:: 'DEBUG', 'INFO', 'WARNING', 'ERROR'.
 Log pranešimai įrašomi į failą aplanke logs ir išvedami į terminalą: 
 
 - logger.debug("...") → goes to file only.
 - logger.info("...") → goes to file and terminal.
 - logger.error("...") → goes to both.
 
-
 Atsitiktinai atrinkti segmentai yra vizualizuojami (clean, noisy, and denoised signals in separate subplots with metrics),
-failai su atvaizdais padtalpinami aplanke vis_dir, kurio pavadinimas nurodomas batch faile train_ecg_denoising_unet7.sh. 
+failai su atvaizdais patalpinami aplanke, kurio pavadinimas nurodomas batch faile train_ecg_denoising_unet7.sh,
+parametras vis_dir. 
 
 Naudojant įrašus iš testavimo dalies, apskaičiuojamos  ir išvedamos vidutinės metrikos.
 Pvz.
 --- Average Metrics over Test Set ---
-2026-01-15 13:08:31,153 [INFO] MSE:  0.426196 ± 0.010068
-2026-01-15 13:08:31,154 [INFO] SNR:  3.71 ± 0.10 dB
-2026-01-15 13:08:31,154 [INFO] Corr: 0.916 ± 0.009
+2026-01-15 13:08:31,153 [INFO] MSE:  0.426196 ± 0.010068 (geras 0.01 - 0.1)
+2026-01-15 13:08:31,154 [INFO] SNR:  3.71 ± 0.10 dB (geras 10-20 dB)
+2026-01-15 13:08:31,154 [INFO] Corr: 0.916 ± 0.009 (Corr >0.9 yra puikus, 0.7–0.9 yra geras, <0.7 - signalo formą atkuria prastai)
 2026-01-15 13:08:31,154 [INFO] train_and_test_model execution time: 00:00:29.631
 
 Metrikos interpretacija:
