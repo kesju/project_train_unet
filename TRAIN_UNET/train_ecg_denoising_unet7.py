@@ -1,7 +1,7 @@
 # https://grok.com/chat/fb2ec9python --version
 # 9d-c93d-4727-b08a-f9be0f9f6414
 
-# train_ecg_denoising_unet7.py skiriasią nuo train_ecg_denoising_unet6.py tuo, kad:
+# train_ecg_denoising_unet7.py skiriasi nuo train_ecg_denoising_unet6.py tuo, kad:
 #  1) A function to sample random noise parameters per segment
 # (2) A modified apply_noise that takes those params
 # (3) Integration into your generator (training only)
@@ -33,7 +33,7 @@
 # # 10. Handle exceptions and edge cases gracefully, logging errors and warnings.
 # # 11. Ensure reproducibility by setting random seeds for NumPy and TensorFlow.
 
-import os
+import os, sys
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,8 +51,11 @@ from sklearn.model_selection import train_test_split
 import time
 import re
 
-from train_unet_util import FilterParams, filter_ecg
+# === Išoriniai moduliai (lygiagretus aplankas) =================================
+PARALLEL_PATH = Path().resolve().parent / "TEST_UNET"
+sys.path.append(str(PARALLEL_PATH))
 
+from filter_util import FilterParams, filter_ecg
 
 # Suppress TensorFlow debug messages
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
