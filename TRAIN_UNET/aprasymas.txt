@@ -6,16 +6,24 @@ su batch failu train_ecg_denoising_unet7.sh
 
 Triukšmo ir segmentavimo parametrai nurodomi pačiame skripte: train_ecg_denoising_unet7.py
 
-Įrašai, prieš apmokant modelį, atsitiktiniu būdu padalijami į dalį mokymui ir dalį validavimui.
+Įrašai, prieš apmokant modelį, atsitiktiniu būdu padalijami į dalį mokymui ir dalį validavimui,
+proporcija nustatoma su parametru train_split batch faile train_ecg_denoising_unet7.sh.
 
 Apmokyto UNET modelio parametrai įrašomi į aplanką results, tolesniam naudojimui (pvz. testavimui) jie perrašomi
 iš aplanko TRAIN_UNET/results į aplanką MODEL_UNET.
 
+Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_6.keras:
+1024 - 'SEGMENT_LENGTH'
+0_5 - 'OVERLAP'
+3 - papildymas, leidžiantis susigaudyti su kokiais duomenimis buvo mokymas. 3 reiškia, kad naudojama mokymo imtis po 3-io
+    papildymo duomenimis (žr. 3-as etapas - duomenys mokymui). Jei 0, reiškia, kad mokyta iš ecg_selected_for_test
+7 - pridėjau, kad būtų aišku, kad mokyta su train_ecg_denoising_unet7.py 
+
 
 Visualize clean, noisy, and denoised signals in separate subplots with metrics.
 
-Log pranešimai įrašomi į failą aplanke: logs. 
+Log pranešimai įrašomi į failą aplanke logs ir išvedami į terminalą: 
 
-logger.debug("...") → goes to file only.
-logger.info("...") → goes to file and terminal.
-logger.error("...") → goes to both.
+- logger.debug("...") → goes to file only.
+- logger.info("...") → goes to file and terminal.
+- logger.error("...") → goes to both.

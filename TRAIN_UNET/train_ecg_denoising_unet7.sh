@@ -1,27 +1,27 @@
 # chmod +x train_ecg_denoising_unet7.sh
 
 # Navigate to the root of the project ZIVE_2025/TRIUKSMU_DETEKTAVIMAS
-# Pastaba: Triukšmui naudojami parametrai, kurie yra CONFIG
+# Pastaba: Triukšmui naudojami parametrai, kurie skripte priskirti CONFIG
 
 # Čia standardiniai parametrai, kurie buvo naudojami treniruojant modelį.
-# python train_ecg_denoising_unet6.py\
+# python train_ecg_denoising_unet7.py\
 #   --ecg_records_dir "$HOME/DI/2025_ZIVEO/DUOMENYS_UPD/train_test_ecg_mixed"\
-#   --model_output "$HOME/DI/2025_ZIVEO/DUOMENYS_UPD/PARAMETRAI/resunet_ecg_1024_0_5_3_7.keras"\
-#   --vis_dir "$HOME/DI/2025_ZIVEO/visualisations"\
+#   --model_output "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/TRAIN_UNET/results/resunet_ecg_1024_0_5_3_7.keras"\
+#   --vis_dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/TRAIN_UNET/visualisations"\
 #   --train_split 0.8\
 
 # Čia  parametrai testavimui
 python train_ecg_denoising_unet7.py\
-  --ecg_records_dir "$HOME/DI/2025_ZIVEO/S-ITP-25-9/DATA/ZIVE_DATA/ecg_selected_for_test"\
-  --model_output "$HOME/DI/2025_ZIVEO/S-ITP-25-9/MODEL_UNET/resunet_ecg_1024_0_5_0_7.keras"\
-  --vis_dir "$HOME/DI/2025_ZIVEO/S-ITP-25-9/TRAIN_UNET/visualisations"\
+  --ecg_records_dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/TRAIN_UNET/ecg_selected_for_test"\
+  --model_output "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/TRAIN_UNET/results/resunet_ecg_1024_0_5_3_7.keras"\
+  --vis_dir "$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/TRAIN_UNET/visualisations"\
   --train_split 0.8\
   --log_level WARNING\
 
 # INFO messages going to file and console
 # DEBUG messages going to file only
 
-# log_dir = 'TRIUKSMU_DETEKTAVIMAS/logs'
+# log_dir = 'logs'
 
 # resunet_ecg_1024_0_5_3_6.keras:
 # 1024 - 'SEGMENT_LENGTH'
