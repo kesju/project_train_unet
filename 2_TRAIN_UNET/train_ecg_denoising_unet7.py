@@ -52,7 +52,7 @@ import time
 import re
 
 # === Išoriniai moduliai (lygiagretus aplankas) =================================
-PARALLEL_PATH = Path().resolve().parent / "4_TEST_UNET"
+PARALLEL_PATH = Path().resolve().parent / "SUPL_FUNCTIONS"
 sys.path.append(str(PARALLEL_PATH))
 
 from filter_util import FilterParams, filter_ecg

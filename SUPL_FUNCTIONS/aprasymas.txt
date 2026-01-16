@@ -1,0 +1,23 @@
+SUPL_FUNCTIONS
+
+use_ecg_denoising_util.py, use_ecg_denoising_util.sh
+
+Modulis use_ecg_denoising_util.py naudojamas kituose skriptuose išskirčių ir rspragų detectavimui.
+Bash failas use_ecg_denoising_util.sh skirtas modulio testavimui, siekiant įsitikinti, kad viskas veikia.
+
+Log pranešimų nenaudoja.
+
+unet_model_util.py
+Šis modulis teikia funkcijas unet modelio nuskaitymui ir validavimui.
+
+
+zive_util_ml.py
+Teikia funkcijas darbui su Zive signalu.
+
+
+project_util.py
+Teikia funkcijas projekto modulių ir duomenų aplankų navigacijai.
+
+
+filter_util.py
+Skirtas signalo filtravimui
