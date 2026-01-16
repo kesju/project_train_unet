@@ -1,0 +1,20 @@
+1_PREPARE_TRAIN_UNET_DATA
+
+Duomenys ir skriptai skirti UNET modelio mokymui skirto duomenų atrinkimui
+ir triukšmų intervalų rankiniam pažymėjimui.
+
+Atrenkami ir tvarkomi duomenys iš 1_PREPARE_TRAIN_UNET_DATA/ecg_zive_npy_for_preparing,
+kurie yra nukopijuoti iš DATA_ORIG/ecg_zive_npy. Jame taip pat yra ekselinės lentelės
+'visi_zive_irasai.xlsx' kopija visi_zive_irasai_atrankai.xlsx, kurioje dedamos žymės,
+kurie įrašai yra atrinkti ir kokiam tikslui:
+
+Pažymėti tag = 1111 , kurie tinka mokymui (pradinis x)
+Pažymėti tag = 3333,  kurie nepretenduoja į mokymą, bet gali tikti triukšmų testavimui (pradinis xx)
+Pažymėti tag = 5555, ypatingi, 'keisti' atvejai (pradinis xxx)
+Pažymėti mark = NC - atrinkti siuntimui į Neural Cloud
+Pažymėti tag = 9999, kurie niekam netinka (pradinis xxxx)
+
+Įrašai atrenkami įvertinus juos vizualiai, taip pat atsižvelgiant į lentelėje esančius duomenis apie 
+įraše esančias ekstrasistoles bei įrašo kokybės įvertinimą.
+
+Vizuali peržiūra atliekama su skriptu ....
