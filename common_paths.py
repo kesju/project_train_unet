@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-SUBPROJECT_NAMES = ("PREPARE_TRAIN_UNET_DATA", "TEST_UNET", "TRAIN_UNET")
+SUBPROJECT_NAMES = ("1_PREPARE_TRAIN_UNET_DATA", "4_TEST_UNET", "2_TRAIN_UNET")
 
 
 def _find_repo_root() -> Path:
@@ -48,7 +48,7 @@ def _infer_subproject(repo_root: Path) -> str:
       1) SUBPROJECT env var, if set (must be one of SUBPROJECT_NAMES).
       2) Infer from script dir (.py) or cwd (.ipynb):
          if the start path is inside repo_root/<subproject>/..., pick that subproject.
-      3) Fallback to TRAIN_UNET.
+      3) Fallback to 2_TRAIN_UNET.
     """
     v = os.environ.get("SUBPROJECT")
     if v:
@@ -71,7 +71,7 @@ def _infer_subproject(repo_root: Path) -> str:
         except Exception:
             pass
 
-    return "TRAIN_UNET"
+    return "2_TRAIN_UNET"
 
 
 @dataclass(frozen=True)

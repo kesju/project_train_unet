@@ -1,5 +1,5 @@
-TRAIN_UNET skriptai skirti UNET modelio mokymui ir validavimui, panaudojant atrinktus ir parengtus ekg įrašus 
-aplanke PREPARE_TRAIN_UNET_DATA ir patalpintus aplanke DATA_FOR_TRAINING.
+2_TRAIN_UNET skriptai skirti UNET modelio mokymui ir validavimui, panaudojant atrinktus ir parengtus ekg įrašus 
+aplanke 1_PREPARE_TRAIN_UNET_DATA ir patalpintus aplanke DATA_FOR_TRAINING.
 
 Pagrindinis scriptas: train_ecg_denoising_unet7.py, konfiguruojamas ir paleidžiamas
 su batch failu train_ecg_denoising_unet7.sh
@@ -13,7 +13,7 @@ Apmokant modelį, naudojamas Basic Split (Train / Test).
 proporcija nustatoma su parametru train_split batch faile train_ecg_denoising_unet7.sh.
 
 Apmokyto UNET modelio parametrai įrašomi į aplanką results, tolesniam naudojimui (pvz. testavimui) jie perrašomi
-iš aplanko TRAIN_UNET/results į aplanką MODEL_UNET.
+iš aplanko 2_TRAIN_UNET/results į aplanką MODEL_UNET.
 
 Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_6.keras:
 1024 - 'SEGMENT_LENGTH'

@@ -65,8 +65,8 @@ np.random.seed(42)
 tf.random.set_seed(42)
 
 # Create log directory
-PROJECT_DIR = Path(__file__).resolve().parent   # .../TRAIN_UNET
-log_dir = PROJECT_DIR / "logs"
+PROJECT_SUBDIR = Path(__file__).resolve().parent   # .../2_TRAIN_UNET
+log_dir = PROJECT_SUBDIR / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 
 # Create log file with timestamp
