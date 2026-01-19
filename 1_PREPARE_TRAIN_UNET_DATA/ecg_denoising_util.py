@@ -47,30 +47,6 @@ def get_ecg_signal(args_fileName):
    
   return ecg_signal
 
-def ecg_filter(ecg_signal, fp):
-    """
-    # signal_filter(signal, sampling_rate=1000, lowcut=None, highcut=None, method='butterworth', order=2, window_size='default', powerline=50, show=False)
-    # Filter a signal using different methods such as “butterworth”, “fir”, “savgol” or “powerline” filters.
-    # Apply a lowpass (if “highcut” frequency is provided), highpass (if “lowcut” frequency is provided)
-    # or bandpass (if both are provided) filter to the signal.
-   
-    Parameters with example values:
-    fp = {  'type': 'lowpass' or 'bandpass',
-            'method':'butterworth',
-            'order':5,
-            'sampling_rate':200,
-            'lowcut':0.5,
-            'highcut':90 }
-    """
-    
-    if fp['type'] == 'lowpass':
-        # Apply lowpass filter to ecg signal.
-        ecg_signal_flt = nk.signal_filter(signal=ecg_signal, sampling_rate=fp['sampling_rate'], lowcut=fp['lowcut'], method=fp['method'], order=fp['order'])
-    else:
-        # Apply bandpass filter to ecg signal.
-        ecg_signal_flt = nk.signal_filter(signal=ecg_signal, sampling_rate=fp['sampling_rate'], lowcut=fp['lowcut'], method=fp['method'], order=fp['order'])
-    return ecg_signal_flt
-
 
 def get_ecg_noise_indices_annotated(json_path):
     
