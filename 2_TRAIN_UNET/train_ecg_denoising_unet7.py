@@ -55,7 +55,10 @@ import re
 PARALLEL_PATH = Path().resolve().parent / "SUPL_FUNCTIONS"
 sys.path.append(str(PARALLEL_PATH))
 
-from filter_util import FilterParams, filter_ecg
+# bandpass_filter
+def bandpass_filter(signal, fs=200, lowcut=0.5, highcut=90., method="butterworth", order=5):
+    filtered = nk.signal_filter(signal, fs, lowcut, highcut, method, order)
+    return np.asarray(filtered, dtype=float)
 
 # Suppress TensorFlow debug messages
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -106,8 +109,6 @@ CONFIG = {
         'motion_duration_max': 100
     }
 }
-
-FILTER = FilterParams(enabled=True, type="highpass", lowcut=0.5, highcut=None, order=5)
 
 def print_dict(d, indent=0):
     for key, value in d.items():
@@ -342,8 +343,7 @@ def count_segments(clean_ecgs, noise_indices_list, segment_length=1024, overlap=
     """Count total number of valid segments across all ECG signals."""
     total_segments = 0
     for ecg, noise_indices in zip(clean_ecgs, noise_indices_list):
-        ecg = filter_ecg(ecg, fs=CONFIG['FS'], method=FILTER.method, type=FILTER.type,
-                        lowcut=FILTER.lowcut, highcut=FILTER.highcut, order=FILTER.order)       
+        ecg = bandpass_filter(ecg)       
         segments = segment_signal(ecg, segment_length, overlap, noise_indices, target_fs=CONFIG['FS'])
         total_segments += len(segments)
         logger.debug(f"ECG signal length: {len(ecg)}, segments: {len(segments)}")
@@ -356,8 +356,7 @@ def create_tf_dataset(clean_ecgs, noise_indices_list, batch_size=32, repeat=True
     logger.info("Creating TensorFlow dataset")
     def generator():
         for ecg, noise_indices in zip(clean_ecgs, noise_indices_list):
-            ecg = filter_ecg(ecg, fs=CONFIG['FS'], method=FILTER.method, type=FILTER.type,
-                        lowcut=FILTER.lowcut, highcut=FILTER.highcut, order=FILTER.order)       
+            ecg = bandpass_filter(ecg)       
             clean_segments = segment_signal(ecg, CONFIG['SEGMENT_LENGTH'], CONFIG['OVERLAP'], noise_indices, target_fs=CONFIG['FS'])
             for seg in clean_segments:
                 seg = normalize(seg)

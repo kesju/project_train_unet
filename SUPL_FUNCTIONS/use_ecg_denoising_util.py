@@ -62,7 +62,7 @@ def ecg_filter(ecg_signal, fp):
             'order':5,
             'sampling_rate':200,
             'lowcut':0.5,
-            'highcut':90 }
+            'highcut':90. }
     """
     
     if fp['type'] == 'lowpass':

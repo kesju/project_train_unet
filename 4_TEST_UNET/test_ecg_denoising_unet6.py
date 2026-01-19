@@ -111,8 +111,8 @@ DEFAULT_CONFIG = {
 def normalize(signal):
     return (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
 
-# highpass filter
-def highpass_filter(signal, fs=200, lowcut=0.5, highcut=None, method="butterworth", order=5):
+# bandpass_filter
+def bandpass_filter(signal, fs=200, lowcut=0.5, highcut=90., method="butterworth", order=5):
     filtered = nk.signal_filter(signal, fs, lowcut, highcut, method, order)
     return np.asarray(filtered, dtype=float)
 
@@ -210,14 +210,14 @@ def prepare_dataset_generator(clean_ecgs, noisy_ecgs=None, apply_filter=True, sy
     for idx, clean in enumerate(clean_ecgs):
         # print("\nclean:", clean[:10])
         
-        clean_filt = highpass_filter(clean) if apply_filter else clean
+        clean_filt = bandpass_filter(clean) if apply_filter else clean
         # print("\nclean_filt:", clean_filt[:10])
         print("\nsynthetic_noise:", synthetic_noise)
         
         if synthetic_noise:
             noisy_filt = add_ecg_noise(clean_filt, fs=fs, **kwargs) # prideda triukšmą prie normalizuoto signalo
         else:
-            noisy_filt = highpass_filter(noisy_ecgs[idx]) if noisy_ecgs else clean_filt
+            noisy_filt = bandpass_filter(noisy_ecgs[idx]) if noisy_ecgs else clean_filt
 
         clean_segs = segment_signal(clean_filt, segment_length, overlap)
         noisy_segs = segment_signal(noisy_filt, segment_length, overlap)
