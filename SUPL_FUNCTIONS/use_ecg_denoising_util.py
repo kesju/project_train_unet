@@ -4,50 +4,7 @@ import neurokit2 as nk
 import json, os, h5py
 from typing import Tuple, List
 
-def zive_read_file_1ch(filename):
-    with open(filename, 'rb') as f:  # Use 'rb' to read binary file
-        a = np.fromfile(f, dtype=np.dtype('>i4'))  # Read file content as big-endian 4-byte integers
-    
-    ADCmax = 0x800000
-    Vref = 2.5
-    b = (a - ADCmax / 2) * 2 * Vref / ADCmax / 3.5 * 1000  # Corrected the calculation by adding multiplication symbol
-    ecg_signal = b - np.mean(b)
-    
-    return ecg_signal
-  
-def get_ecg_signal(args_fileName):
-  # Extract the file extension
-  file_extension = os.path.splitext(args_fileName)[1]
-
-  # Check if the extension is .h5py
-  if file_extension.lower() == '.h5':
-        # print("The file has a .h5 extension.")
-        with h5py.File(args_fileName, 'r') as f:
-          ecg_signal = f['dataset'][:]
-          
-  # Check if the extension is three digits (excluding the dot)
-  elif len(file_extension) == 4 and file_extension[1:].isdigit():
-        # print("The file has a three-digit extension.")
-        ecg_signal = zive_read_file_1ch(args_fileName)
-        
-  elif file_extension.lower() == '.npy':
-        # print("The file has a .npy extension.")
-        ecg_signal = np.load(args_fileName, mmap_mode='r')
-        
-  # If neither condition is true
-  else:
-        ecg_signal = np.array([])
-        print("The file does not have a .h5py extension or a three-digit extension or .npy extension.")
-   
-  return ecg_signal
-
-
-def convert_seconds_to_hms(total_seconds):
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-    return hours, minutes, seconds
-
+from ecg_denoising_util import filter_indices_by_signal_length
 
 def ecg_filter(ecg_signal, fp):
     """
@@ -74,37 +31,6 @@ def ecg_filter(ecg_signal, fp):
     return ecg_signal_flt
 
 
-
-
-
-def filter_indices_by_signal_length(signal_length, indices):
-    """
-    Filters out any ranges that exceed the current signal length, ensuring that indices are within
-    the valid range (0 to signal_length - 1).
-    
-    Args:
-    signal_length (int): The current length of the signal.
-    indices (list of tuples): A list of tuples representing start and end indices of ranges.
-    
-    Returns:
-    list of tuples: A filtered list of ranges that do not exceed the signal length.
-    """
-    max_valid_index = signal_length - 1  # Since signal indices are 0-based
-    
-    def clip_range(start, end):
-        """
-        Clips the range to ensure both start and end are within the valid index range.
-        """
-        if start > max_valid_index:
-            return None  # Skip range if start exceeds signal length
-        return (start, min(end, max_valid_index))  # Clip end if it exceeds
-    
-    # Filter and clip indices using the helper function
-    filtered_indices = [clip_range(start, end) for start, end in indices if clip_range(start, end) is not None]
-    
-    # Return None if filtered indices are empty
-    # return filtered_indices if filtered_indices else None
-    return filtered_indices
 
 
 def find_ecg_outliers(signal, ekg_min, ekg_max, length_fragment):
@@ -881,6 +807,8 @@ def run_ecg_denoising_pipeline(ecg_data, model, CONFIG, threshold):
 # start0
 #  +++++++++++++++++++++++++++++++++++++   TESTAVIMUI ++++++++++++++++++++++++++++++++++++++++++++++++
 
+from ecg_denoising_util import get_ecg_signal, convert_seconds_to_hms
+
 def test_outliers_rdropouts_detecting(dir, filename):
         
          # ĮVAIRŪS PARAMETRAI SKAIČIAVIMUI
@@ -937,5 +865,5 @@ if __name__ == "__main__":
     # print(args.dir, args.filename)
     print("Testing completed.")
     
-# python use_denoising_util.py --dir /home/kesju/DI/ZIVEO_2025/DUOMENYS_UPD/records_npy_all/ --filename 1001_4.npy
-# python use_denoising_util.py --dir /home/kesju/DI/ZIVEO_2025/DUOMENYS_UPD/records_npy_all/ --filename 1031_18.npy
+# python use_ecg_denoising_util.py --dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_ORIG/ecg_zive_npy/ --filename 1001_4.npy
+# python use_ecg_denoising_util.py --dir /home/kesju/DI/2025_ZIVEO/DUOMENYS_UPD/records_npy_all/ --filename 1031_18.npy
