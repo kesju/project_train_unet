@@ -50,4 +50,13 @@ MSE, SNR (dB), Corr. Taip pat išvedami labiausiai užtriukšmintų segmentų (c
 Log pranešimams naudoja aplanką: logs, vizualizacijai: aplanką visualisations/denoising_plots
  
 
+IV. 4_TEST_UNET/count_record_flags.ipynb
+# Skriptas 'flags' reikšmių skaičiavimui įrašų json failuose.
+# Skaičiuojama visiems įrašams nurodytiems įrašų saraše tipo EXCEL_NAME = "visi_zive_irasai.xlsx",
+# išskyrus įrašus, kuriems  df[df["tag"] != "9999"]
 
+# Ieškoma 'flags' reikšmių:
+#   "PSEUDO_ANNOTATED",
+#   "FOR_EXTERNAL_ANNOTATING",
+#   "EXTERNALLY_ANNOTATED",
+#   "FULLY_ANNOTATED_PROFESSIONALLY"
