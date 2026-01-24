@@ -474,7 +474,6 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
     if not df_records.empty:
         df_records["flags"] = df_records["flags"].apply(lambda x: "|".join(x) if isinstance(x, list) else "")
         df_records["rpeak_ann_counts"] = df_records["rpeak_ann_counts"].apply(lambda d: json.dumps(d, ensure_ascii=False) if isinstance(d, dict) else "{}")
-        df_records["json_keys"] = df_records["json_keys"].apply(lambda x: "|".join(x) if isinstance(x, list) else "")
         # do not include JSON path column; instead include a boolean flag if JSON parsed fine
         df_records["json_ok"] = df_records["json_ok"].astype(bool)
 
