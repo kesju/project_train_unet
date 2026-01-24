@@ -162,15 +162,12 @@ class RecordSummary:
     flags: List[str]
 
     rpeaks_count: int
-    rpeaks_first: Optional[int]
-    rpeaks_last: Optional[int]
     rpeak_ann_counts: Dict[str, int]
 
     json_ok: bool
 
-    noises_count: int
-    noises_samples: int
-    noises_fraction: Optional[float]
+    annotated_noises_count: int
+    annotated_noises_fraction: Optional[float]
 
     has_comment: bool
     json_keys: List[str]
@@ -317,7 +314,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                     flags_totals[fl] = flags_totals.get(fl, 0) + 1
 
                 rpeaks = meta.get("rpeaks") if isinstance(meta, dict) else None
-                rpk_cnt, rpk_first, rpk_last, rpk_ann = _summarize_rpeaks(rpeaks)
+                rpk_cnt, _rpk_first, _rpk_last, rpk_ann = _summarize_rpeaks(rpeaks)
 
                 ann_counts = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
                 ann_counts_clean: Dict[str, int] = {}
@@ -354,13 +351,10 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                     flags_count=len(flags_list),
                     flags=flags_list,
                     rpeaks_count=int(rpk_cnt),
-                    rpeaks_first=rpk_first,
-                    rpeaks_last=rpk_last,
                     rpeak_ann_counts=ann_counts_clean,
                     json_ok=json_ok,
-                    noises_count=int(nz_cnt),
-                    noises_samples=int(nz_samples),
-                    noises_fraction=float(noises_fraction) if noises_fraction is not None else None,
+                    annotated_noises_count=int(nz_cnt),
+                    annotated_noises_fraction=float(noises_fraction) if noises_fraction is not None else None,
                     has_comment=bool(meta.get("comment")) if isinstance(meta, dict) else False,
                     json_keys=sorted(list(meta.keys())) if isinstance(meta, dict) else [],
                 )
@@ -482,13 +476,10 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             "flags_count",
             "flags",
             "rpeaks_count",
-            "rpeaks_first",
-            "rpeaks_last",
             "rpeak_ann_counts",
             "json_ok",
-            "noises_count",
-            "noises_samples",
-            "noises_fraction",
+            "annotated_noises_count",
+            "annotated_noises_fraction",
             "has_comment",
             "json_keys",
         ]
