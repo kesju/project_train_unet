@@ -170,7 +170,7 @@ class RecordSummary:
     annotated_noises_fraction: Optional[float]
 
     has_comment: bool
-    json_keys: List[str]
+    json_keys_correct: bool
 
 
 @dataclass
@@ -339,6 +339,20 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                 duration_s = (samples / fs) if (fs is not None and fs > 0 and samples > 0) else None
                 noises_fraction = (nz_samples / samples) if (samples > 0) else None
 
+                allowed_keys = {
+                    "channelCount",
+                    "comment",
+                    "flags",
+                    "noises",
+                    "noises_annotated",
+                    "recordingId",
+                    "rpeakAnnotationCounts",
+                    "rpeaks",
+                    "userId",
+                }
+                meta_keys = set(meta.keys()) if isinstance(meta, dict) else set()
+                json_keys_correct = meta_keys.issubset(allowed_keys) if meta_keys else False
+
                 rec = RecordSummary(
                     sequence_id=seq,
                     recording_id=rid,
@@ -356,7 +370,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                     annotated_noises_count=int(nz_cnt),
                     annotated_noises_fraction=float(noises_fraction) if noises_fraction is not None else None,
                     has_comment=bool(meta.get("comment")) if isinstance(meta, dict) else False,
-                    json_keys=sorted(list(meta.keys())) if isinstance(meta, dict) else [],
+                    json_keys_correct=json_keys_correct,
                 )
                 record_rows.append(rec)
 
@@ -414,12 +428,11 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
 
         all_keys = {}
         for r in record_rows:
-            for k in r.json_keys:
-                all_keys[k] = all_keys.get(k, 0) + 1
+            all_keys[r.json_keys_correct] = all_keys.get(r.json_keys_correct, 0) + 1
         if all_keys:
-            print("=== JSON keys coverage across records ===")
-            for k, v in sorted(all_keys.items(), key=lambda kv: (-kv[1], kv[0])):
-                print(f"{k:24s} : {v}/{len(record_rows)}")
+            print("=== JSON key whitelist compliance ===")
+            for k, v in sorted(all_keys.items(), key=lambda kv: (-v, str(k))):
+                print(f"json_keys_correct={k}: {v}/{len(record_rows)}")
 
         return record_rows, seq_rows, fs
 
@@ -481,7 +494,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             "annotated_noises_count",
             "annotated_noises_fraction",
             "has_comment",
-            "json_keys",
+            "json_keys_correct",
         ]
         df_records = df_records[record_cols]
         
