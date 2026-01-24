@@ -151,7 +151,6 @@ class RecordSummary:
     sequence_id: str
     recording_id: str
     # json_path: str
-    bin_path: str
     channel_count: Optional[int]
     user_id: Optional[str]
 
@@ -347,7 +346,6 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                     sequence_id=seq,
                     recording_id=rid,
                     # json_path=str(json_member),
-                    bin_path=str(bin_member),
                     channel_count=int(channel_count) if isinstance(channel_count, int) else None,
                     user_id=str(user_id) if isinstance(user_id, str) else None,
                     bin_bytes=int(bsz),
@@ -476,7 +474,6 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
         record_cols = [
             "sequence_id",
             "recording_id",
-            "bin_path",
             "channel_count",
             "user_id",
             "bin_bytes",
@@ -497,8 +494,8 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
         ]
         df_records = df_records[record_cols]
         
-    print("\ndf_records preview:")
-    print(df_records.head().to_string())
+    # print("\ndf_records preview:")
+    # print(df_records.head().to_string())
     
     if not df_sequences.empty:
         df_sequences["flags_totals"] = df_sequences["flags_totals"].apply(lambda d: json.dumps(d, ensure_ascii=False) if isinstance(d, dict) else "{}")
