@@ -162,7 +162,10 @@ class RecordSummary:
     flags: List[str]
 
     rpeaks_count: int
-    rpeak_ann_counts: Dict[str, int]
+    ann_n_count: int
+    ann_s_count: int
+    ann_v_count: int
+    ann_u_count: int
 
     json_ok: bool
 
@@ -196,7 +199,10 @@ class SequenceSummary:
     noises_fraction_of_records: Optional[float]
 
     flags_totals: Dict[str, int]
-    rpeak_ann_totals: Dict[str, int]
+    ann_n_total: int
+    ann_s_total: int
+    ann_v_total: int
+    ann_u_total: int
 
 
 # -----------------------------
@@ -290,7 +296,10 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             noises_intervals_total = 0
             noises_samples_total = 0
             flags_totals: Dict[str, int] = {}
-            rpeak_ann_totals: Dict[str, int] = {}
+            ann_n_total = 0
+            ann_s_total = 0
+            ann_v_total = 0
+            ann_u_total = 0
 
             for rid, json_member, bin_member in pairs:
                 try:
@@ -327,8 +336,15 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                 else:
                     ann_counts_clean = rpk_ann
 
-                for k, v in ann_counts_clean.items():
-                    rpeak_ann_totals[k] = rpeak_ann_totals.get(k, 0) + int(v)
+                ann_n = int(ann_counts_clean.get("N", 0))
+                ann_s = int(ann_counts_clean.get("S", 0))
+                ann_v = int(ann_counts_clean.get("V", 0))
+                ann_u = int(ann_counts_clean.get("U", 0))
+
+                ann_n_total += ann_n
+                ann_s_total += ann_s
+                ann_v_total += ann_v
+                ann_u_total += ann_u
 
                 noises = meta.get("noises") if isinstance(meta, dict) else None
                 nz_cnt, nz_samples = _sum_noise_samples(noises)
@@ -365,7 +381,10 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                     flags_count=len(flags_list),
                     flags=flags_list,
                     rpeaks_count=int(rpk_cnt),
-                    rpeak_ann_counts=ann_counts_clean,
+                    ann_n_count=ann_n,
+                    ann_s_count=ann_s,
+                    ann_v_count=ann_v,
+                    ann_u_count=ann_u,
                     json_ok=json_ok,
                     annotated_noises_count=int(nz_cnt),
                     annotated_noises_fraction=float(noises_fraction) if noises_fraction is not None else None,
@@ -400,7 +419,10 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                 noises_samples_total=int(noises_samples_total),
                 noises_fraction_of_records=float(noises_fraction_of_records) if noises_fraction_of_records is not None else None,
                 flags_totals=dict(sorted(flags_totals.items(), key=lambda kv: (-kv[1], kv[0]))),
-                rpeak_ann_totals=dict(sorted(rpeak_ann_totals.items(), key=lambda kv: (-kv[1], kv[0]))),
+                ann_n_total=int(ann_n_total),
+                ann_s_total=int(ann_s_total),
+                ann_v_total=int(ann_v_total),
+                ann_u_total=int(ann_u_total),
             ))
 
         print(f"\nSource: {source_label}")
@@ -421,9 +443,13 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             if s.flags_totals:
                 top_flags = list(s.flags_totals.items())[:8]
                 print("Top flags (count of records containing flag): " + ", ".join([f"{k}={v}" for k, v in top_flags]))
-            if s.rpeak_ann_totals:
-                top_ann = list(s.rpeak_ann_totals.items())[:8]
-                print("Top R-peak annotations (total count): " + ", ".join([f"{k}={v}" for k, v in top_ann]))
+            ann_summary_parts = []
+            if any([s.ann_n_total, s.ann_s_total, s.ann_v_total, s.ann_u_total]):
+                ann_summary_parts.append(f"N={s.ann_n_total}")
+                ann_summary_parts.append(f"S={s.ann_s_total}")
+                ann_summary_parts.append(f"V={s.ann_v_total}")
+                ann_summary_parts.append(f"U={s.ann_u_total}")
+                print("Annotation totals (N/S/V/U): " + ", ".join(ann_summary_parts))
             print()
 
         all_keys = {}
@@ -473,7 +499,6 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
 
     if not df_records.empty:
         df_records["flags"] = df_records["flags"].apply(lambda x: "|".join(x) if isinstance(x, list) else "")
-        df_records["rpeak_ann_counts"] = df_records["rpeak_ann_counts"].apply(lambda d: json.dumps(d, ensure_ascii=False) if isinstance(d, dict) else "{}")
         # do not include JSON path column; instead include a boolean flag if JSON parsed fine
         df_records["json_ok"] = df_records["json_ok"].astype(bool)
 
@@ -488,7 +513,10 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             "flags_count",
             "flags",
             "rpeaks_count",
-            "rpeak_ann_counts",
+            "ann_n_count",
+            "ann_s_count",
+            "ann_v_count",
+            "ann_u_count",
             "json_ok",
             "annotated_noises_count",
             "annotated_noises_fraction",
@@ -502,7 +530,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
     
     if not df_sequences.empty:
         df_sequences["flags_totals"] = df_sequences["flags_totals"].apply(lambda d: json.dumps(d, ensure_ascii=False) if isinstance(d, dict) else "{}")
-        df_sequences["rpeak_ann_totals"] = df_sequences["rpeak_ann_totals"].apply(lambda d: json.dumps(d, ensure_ascii=False) if isinstance(d, dict) else "{}")
+        # annotation totals are stored as integers already; keep columns as-is
 
     df_records.to_csv(out_dir / "records.csv", index=False)
     df_sequences.to_csv(out_dir / "sequences.csv", index=False)
