@@ -7,7 +7,8 @@ Expected layout (3 sequences in your dataset):
     gaps.json                     # {"gaps": [[start,end], ...]} indices in merged sequence
     merged-sequence.bin           # int16 ECG samples with gaps inserted (gap samples are included)
     recordings/
-        <recording_id>.bin        # int16 ECG samples for that record (no gaps)
+        <recording_id>.bin | <recording_id>.<xxx> | <recording_id>.npy
+                                  # signal data (bin/xxx: 4 bytes per sample; npy: numpy array)
         <recording_id>.json       # metadata: flags, rpeaks, noises, etc.
 
 What the script does:
@@ -32,6 +33,7 @@ Notes
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import sys
@@ -40,6 +42,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 
 
@@ -147,18 +150,20 @@ def summarize_record(
     sequence_id: str,
     recording_id: str,
     json_ref: JsonLikeRef,
-    bin_ref: JsonLikeRef,
+    data_ref: JsonLikeRef,
+    data_ext: str,
     *,
     load_json_fn: Callable[[JsonLikeRef], Any],
     file_size_fn: Callable[[JsonLikeRef], int],
+    sample_count_fn: Callable[[JsonLikeRef, str], int],
     fs: int,
 ) -> Tuple[RecordSummary, Dict[str, Any]]:
     """
     Compute per-record statistics and return both RecordSummary and its dict form.
 
     This helper is designed to be reusable from other scripts: provide your own
-    load_json_fn and file_size_fn depending on whether data lives in a ZIP or
-    filesystem.
+    load_json_fn / file_size_fn / sample_count_fn depending on whether data lives
+    in a ZIP or filesystem and what the data extension is.
     """
     try:
         meta = load_json_fn(json_ref)
@@ -168,11 +173,8 @@ def summarize_record(
         meta = {}
         json_ok = False
 
-    bsz = file_size_fn(bin_ref)
-    if not _is_int16_sized(bsz):
-        samples = 0
-    else:
-        samples = _samples_from_int16_bytes(bsz)
+    bsz = file_size_fn(data_ref)
+    samples = sample_count_fn(data_ref, data_ext)
 
     channel_count = meta.get("channelCount") if isinstance(meta, dict) else None
     user_id = meta.get("userId") if isinstance(meta, dict) else None
@@ -198,7 +200,7 @@ def summarize_record(
     ann_v = int(ann_counts_clean.get("V", 0))
     ann_u = int(ann_counts_clean.get("U", 0))
 
-    noises = meta.get("noises") if isinstance(meta, dict) else None
+    noises = meta.get("noises_annotated") if isinstance(meta, dict) else None
     nz_cnt, nz_samples = _sum_noise_samples(noises)
 
     duration_s = (samples / fs) if (fs is not None and fs > 0 and samples > 0) else None
@@ -325,25 +327,38 @@ def discover_sequences_dir(root: Path) -> List[str]:
 
 def list_recording_pairs(zf: zipfile.ZipFile, seq: str) -> List[Tuple[str, str, str]]:
     """
-    Returns list of (recording_id, json_member, bin_member)
+    Returns list of (recording_id, json_member, data_member, data_ext)
     """
     prefix = f"{seq}/recordings/"
     names = [n for n in zf.namelist() if n.startswith(prefix)]
     jsons = {Path(n).stem: n for n in names if n.endswith(".json")}
-    bins = {Path(n).stem: n for n in names if n.endswith(".bin")}
-    ids = sorted(set(jsons) & set(bins))
-    return [(rid, jsons[rid], bins[rid]) for rid in ids]
+    data_candidates: Dict[str, Tuple[str, str]] = {}
+    for n in names:
+        if n.endswith(".json"):
+            continue
+        stem = Path(n).stem
+        suf = Path(n).suffix.lower()
+        if suf in {".bin", ".npy"} or (len(suf) == 4 and suf[1:].isdigit()):
+            data_candidates[stem] = (n, suf)
+    ids = sorted(set(jsons) & set(data_candidates))
+    return [(rid, jsons[rid], data_candidates[rid][0], data_candidates[rid][1]) for rid in ids]
 
 
-def list_recording_pairs_dir(root: Path, seq: str) -> List[Tuple[str, Path, Path]]:
-    """(recording_id, json_path, bin_path) for extracted data."""
+def list_recording_pairs_dir(root: Path, seq: str) -> List[Tuple[str, Path, Path, str]]:
+    """(recording_id, json_path, data_path, data_ext) for extracted data."""
     rec_dir = root / seq / "recordings"
     if not rec_dir.is_dir():
         return []
     jsons = {p.stem: p for p in rec_dir.glob("*.json")}
-    bins = {p.stem: p for p in rec_dir.glob("*.bin")}
-    ids = sorted(set(jsons) & set(bins))
-    return [(rid, jsons[rid], bins[rid]) for rid in ids]
+    data_candidates: Dict[str, Tuple[Path, str]] = {}
+    for p in rec_dir.iterdir():
+        if p.suffix == ".json":
+            continue
+        suf = p.suffix.lower()
+        if suf in {".bin", ".npy"} or (len(suf) == 4 and suf[1:].isdigit()):
+            data_candidates[p.stem] = (p, suf)
+    ids = sorted(set(jsons) & set(data_candidates))
+    return [(rid, jsons[rid], data_candidates[rid][0], data_candidates[rid][1]) for rid in ids]
 
 
 def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
@@ -362,6 +377,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
         list_pairs_fn: Callable[[str], List[Tuple[str, JsonLikeRef, JsonLikeRef]]],
         load_json_fn: Callable[[JsonLikeRef], Any],
         file_size_fn: Callable[[JsonLikeRef], int],
+        load_array_fn: Callable[[JsonLikeRef], Any],
         merged_size_fn: Callable[[str], int],
         gaps_loader_fn: Callable[[str], Any],
         source_label: str,
@@ -371,6 +387,14 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
 
         record_rows: List[RecordSummary] = []
         seq_rows: List[SequenceSummary] = []
+
+        def sample_count_fn(data_ref: JsonLikeRef, data_ext: str) -> int:
+            ext = data_ext.lower()
+            if ext == ".npy":
+                arr = load_array_fn(data_ref)
+                return int(getattr(arr, "size", 0))
+            # .bin or any three-digit extension -> 4 bytes per sample
+            return int(file_size_fn(data_ref) // 4)
 
         for seq in sequences:
             pairs = list_pairs_fn(seq)
@@ -402,14 +426,16 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             ann_v_total = 0
             ann_u_total = 0
 
-            for rid, json_member, bin_member in pairs:
+            for rid, json_member, data_member, data_ext in pairs:
                 rec, rec_dict = summarize_record(
                     sequence_id=seq,
                     recording_id=rid,
                     json_ref=json_member,
-                    bin_ref=bin_member,
+                    data_ref=data_member,
+                    data_ext=data_ext,
                     load_json_fn=load_json_fn,
                     file_size_fn=file_size_fn,
+                    sample_count_fn=sample_count_fn,
                     fs=fs if fs is not None else 0,
                 )
 
@@ -502,6 +528,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             list_pairs_fn=lambda seq: list_recording_pairs_dir(input_path, seq),
             load_json_fn=_safe_json_load_path,
             file_size_fn=lambda p: Path(p).stat().st_size,
+            load_array_fn=lambda p: np.load(p, mmap_mode="r", allow_pickle=False),
             merged_size_fn=lambda seq: (input_path / seq / "merged-sequence.bin").stat().st_size,
             gaps_loader_fn=lambda seq: _safe_json_load_path(input_path / seq / "gaps.json"),
             source_label=str(input_path),
@@ -514,6 +541,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
                 list_pairs_fn=lambda seq: list_recording_pairs(zf, seq),
                 load_json_fn=lambda member: _safe_json_load(zf, str(member)),
                 file_size_fn=lambda member: zf.getinfo(str(member)).file_size,
+                load_array_fn=lambda member: np.load(io.BytesIO(zf.read(str(member))), allow_pickle=False),
                 merged_size_fn=lambda seq: zf.getinfo(f"{seq}/merged-sequence.bin").file_size,
                 gaps_loader_fn=lambda seq: _safe_json_load(zf, f"{seq}/gaps.json"),
                 source_label=str(input_path),
