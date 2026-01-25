@@ -94,9 +94,45 @@ def main() -> int:
     df = pd.DataFrame(records)
     out_path = args.out or (data_dir / "records_summary.csv")
     df.to_csv(out_path, index=False)
-    print(f"Saved {len(df)} records to {out_path}")
+    print(f"\nSaved {len(df)} records to {out_path}")
+    print(f"Data directory: {data_dir}")
+    print("Summary statistics:")
+    
+    # print(df.head())
+    
+
+    # 1) Add row number (nr)
+    df = df.copy()
+    df.insert(0, "nr", range(1, len(df) + 1))
+
+    # 2) Select only the columns you want (skip any missing ones safely)
+    cols = [
+        "nr", "recording_id", "user_id", "samples", "duration_s",
+        "rpeaks_count", "ann_n_count", "ann_s_count", "ann_v_count", "ann_u_count",
+        "annotated_noises_count", "annotated_noises_fraction",
+    ]
+    cols = [c for c in cols if c in df.columns]
+
+    # 3) Print as table: one record per row, header once
+    # print(df.loc[:, cols].to_string(index=False))
+
+    print(
+        df.loc[:, cols].to_string(
+            index=False,
+            formatters={
+                "duration_s": lambda x: f"{x:.2f}" if pd.notna(x) else "",
+                "annotated_noises_fraction": lambda x: f"{x:.4f}" if pd.notna(x) else "",
+            }
+        )
+    )
+    
+    
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+# python3 analyze_records.py user-65955b5f50e02b125d4998ad/659ec124870b3d1d1630be39/recordings --fs 200 --out records_summary.csv
+# python3 analyze_records.py 659ebcdd870b3d1d6e30bb61 --fs 200 --out records_summary.csv
+# python3 analyze_records.py /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_FOR_TRAINING --fs 200 --out records_summary.csv
