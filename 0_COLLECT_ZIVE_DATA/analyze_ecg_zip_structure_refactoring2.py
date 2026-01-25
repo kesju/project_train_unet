@@ -143,6 +143,107 @@ def _summarize_rpeaks(rpeaks: Any) -> Tuple[int, Optional[int], Optional[int], D
     return len(idxs), idxs[0], idxs[-1], ann
 
 
+def summarize_record(
+    sequence_id: str,
+    recording_id: str,
+    json_ref: JsonLikeRef,
+    bin_ref: JsonLikeRef,
+    *,
+    load_json_fn: Callable[[JsonLikeRef], Any],
+    file_size_fn: Callable[[JsonLikeRef], int],
+    fs: int,
+) -> Tuple[RecordSummary, Dict[str, Any]]:
+    """
+    Compute per-record statistics and return both RecordSummary and its dict form.
+
+    This helper is designed to be reusable from other scripts: provide your own
+    load_json_fn and file_size_fn depending on whether data lives in a ZIP or
+    filesystem.
+    """
+    try:
+        meta = load_json_fn(json_ref)
+        json_ok = True
+    except Exception as exc:
+        print(f"WARN: failed to load JSON for {sequence_id}/{recording_id}: {exc}")
+        meta = {}
+        json_ok = False
+
+    bsz = file_size_fn(bin_ref)
+    if not _is_int16_sized(bsz):
+        samples = 0
+    else:
+        samples = _samples_from_int16_bytes(bsz)
+
+    channel_count = meta.get("channelCount") if isinstance(meta, dict) else None
+    user_id = meta.get("userId") if isinstance(meta, dict) else None
+
+    flags_list = _flatten_flags(meta.get("flags") if isinstance(meta, dict) else None)
+
+    rpeaks = meta.get("rpeaks") if isinstance(meta, dict) else None
+    rpk_cnt, _rpk_first, _rpk_last, rpk_ann = _summarize_rpeaks(rpeaks)
+
+    ann_counts = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
+    ann_counts_clean: Dict[str, int] = {}
+    if isinstance(ann_counts, dict):
+        for k, v in ann_counts.items():
+            if k == "__info":
+                continue
+            if isinstance(v, int):
+                ann_counts_clean[str(k)] = v
+    else:
+        ann_counts_clean = rpk_ann
+
+    ann_n = int(ann_counts_clean.get("N", 0))
+    ann_s = int(ann_counts_clean.get("S", 0))
+    ann_v = int(ann_counts_clean.get("V", 0))
+    ann_u = int(ann_counts_clean.get("U", 0))
+
+    noises = meta.get("noises") if isinstance(meta, dict) else None
+    nz_cnt, nz_samples = _sum_noise_samples(noises)
+
+    duration_s = (samples / fs) if (fs is not None and fs > 0 and samples > 0) else None
+    noises_fraction = (nz_samples / samples) if (samples > 0) else None
+
+    allowed_keys = {
+        "channelCount",
+        "comment",
+        "flags",
+        "noises",
+        "noises_annotated",
+        "recordingId",
+        "rpeakAnnotationCounts",
+        "rpeaks",
+        "userId",
+    }
+    meta_keys = set(meta.keys()) if isinstance(meta, dict) else set()
+    json_keys_correct = meta_keys.issubset(allowed_keys) if meta_keys else False
+
+    rec = RecordSummary(
+        sequence_id=sequence_id,
+        recording_id=recording_id,
+        channel_count=int(channel_count) if isinstance(channel_count, int) else None,
+        user_id=str(user_id) if isinstance(user_id, str) else None,
+        bin_bytes=int(bsz),
+        samples=int(samples),
+        duration_s=float(duration_s) if duration_s is not None else None,
+        flags_count=len(flags_list),
+        flags=flags_list,
+        rpeaks_count=int(rpk_cnt),
+        ann_n_count=ann_n,
+        ann_s_count=ann_s,
+        ann_v_count=ann_v,
+        ann_u_count=ann_u,
+        json_ok=json_ok,
+        annotated_noises_count=int(nz_cnt),
+        annotated_noises_fraction=float(noises_fraction) if noises_fraction is not None else None,
+        has_comment=bool(meta.get("comment")) if isinstance(meta, dict) else False,
+        json_keys_correct=json_keys_correct,
+    )
+    rec_dict = asdict(rec)
+    rec_dict["_annotated_noises_samples"] = nz_samples  # helper key for higher-level aggregation
+    return rec, rec_dict
+
+
 # -----------------------------
 # Data models
 # -----------------------------
@@ -302,99 +403,31 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             ann_u_total = 0
 
             for rid, json_member, bin_member in pairs:
-                try:
-                    meta = load_json_fn(json_member)
-                    json_ok = True
-                except Exception as exc:  # keep processing even if a single record json is bad
-                    print(f"WARN: failed to load JSON for {seq}/{rid}: {exc}")
-                    meta = {}
-                    json_ok = False
-                bsz = file_size_fn(bin_member)
-                if not _is_int16_sized(bsz):
-                    samples = 0
-                else:
-                    samples = _samples_from_int16_bytes(bsz)
-
-                channel_count = meta.get("channelCount") if isinstance(meta, dict) else None
-                user_id = meta.get("userId") if isinstance(meta, dict) else None
-
-                flags_list = _flatten_flags(meta.get("flags") if isinstance(meta, dict) else None)
-                for fl in flags_list:
-                    flags_totals[fl] = flags_totals.get(fl, 0) + 1
-
-                rpeaks = meta.get("rpeaks") if isinstance(meta, dict) else None
-                rpk_cnt, _rpk_first, _rpk_last, rpk_ann = _summarize_rpeaks(rpeaks)
-
-                ann_counts = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
-                ann_counts_clean: Dict[str, int] = {}
-                if isinstance(ann_counts, dict):
-                    for k, v in ann_counts.items():
-                        if k == "__info":
-                            continue
-                        if isinstance(v, int):
-                            ann_counts_clean[str(k)] = v
-                else:
-                    ann_counts_clean = rpk_ann
-
-                ann_n = int(ann_counts_clean.get("N", 0))
-                ann_s = int(ann_counts_clean.get("S", 0))
-                ann_v = int(ann_counts_clean.get("V", 0))
-                ann_u = int(ann_counts_clean.get("U", 0))
-
-                ann_n_total += ann_n
-                ann_s_total += ann_s
-                ann_v_total += ann_v
-                ann_u_total += ann_u
-
-                noises = meta.get("noises") if isinstance(meta, dict) else None
-                nz_cnt, nz_samples = _sum_noise_samples(noises)
-
-                noises_intervals_total += nz_cnt
-                noises_samples_total += nz_samples
-
-                duration_s = (samples / fs) if (fs is not None and fs > 0 and samples > 0) else None
-                noises_fraction = (nz_samples / samples) if (samples > 0) else None
-
-                allowed_keys = {
-                    "channelCount",
-                    "comment",
-                    "flags",
-                    "noises",
-                    "noises_annotated",
-                    "recordingId",
-                    "rpeakAnnotationCounts",
-                    "rpeaks",
-                    "userId",
-                }
-                meta_keys = set(meta.keys()) if isinstance(meta, dict) else set()
-                json_keys_correct = meta_keys.issubset(allowed_keys) if meta_keys else False
-
-                rec = RecordSummary(
+                rec, rec_dict = summarize_record(
                     sequence_id=seq,
                     recording_id=rid,
-                    # json_path=str(json_member),
-                    channel_count=int(channel_count) if isinstance(channel_count, int) else None,
-                    user_id=str(user_id) if isinstance(user_id, str) else None,
-                    bin_bytes=int(bsz),
-                    samples=int(samples),
-                    duration_s=float(duration_s) if duration_s is not None else None,
-                    flags_count=len(flags_list),
-                    flags=flags_list,
-                    rpeaks_count=int(rpk_cnt),
-                    ann_n_count=ann_n,
-                    ann_s_count=ann_s,
-                    ann_v_count=ann_v,
-                    ann_u_count=ann_u,
-                    json_ok=json_ok,
-                    annotated_noises_count=int(nz_cnt),
-                    annotated_noises_fraction=float(noises_fraction) if noises_fraction is not None else None,
-                    has_comment=bool(meta.get("comment")) if isinstance(meta, dict) else False,
-                    json_keys_correct=json_keys_correct,
+                    json_ref=json_member,
+                    bin_ref=bin_member,
+                    load_json_fn=load_json_fn,
+                    file_size_fn=file_size_fn,
+                    fs=fs if fs is not None else 0,
                 )
+
                 record_rows.append(rec)
 
-                records_bytes_sum += int(bsz)
-                records_samples_sum += int(samples)
+                for fl in rec.flags:
+                    flags_totals[fl] = flags_totals.get(fl, 0) + 1
+
+                ann_n_total += rec.ann_n_count
+                ann_s_total += rec.ann_s_count
+                ann_v_total += rec.ann_v_count
+                ann_u_total += rec.ann_u_count
+
+                noises_intervals_total += rec.annotated_noises_count
+                noises_samples_total += int(rec_dict.get("_annotated_noises_samples", 0))
+
+                records_bytes_sum += int(rec.bin_bytes)
+                records_samples_sum += int(rec.samples)
 
             merged_duration_s = (merged_samples / fs) if (fs is not None and fs > 0) else None
             records_duration_s = (records_samples_sum / fs) if (fs is not None and fs > 0) else None
