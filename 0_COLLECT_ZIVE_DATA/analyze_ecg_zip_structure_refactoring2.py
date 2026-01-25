@@ -490,7 +490,7 @@ def analyze(input_path: Path, out_dir: Path, fs: Optional[int]) -> None:
             all_keys[r.json_keys_correct] = all_keys.get(r.json_keys_correct, 0) + 1
         if all_keys:
             print("=== JSON key whitelist compliance ===")
-            for k, v in sorted(all_keys.items(), key=lambda kv: (-v, str(k))):
+            for k, v in sorted(all_keys.items(), key=lambda kv: (-kv[1], str(kv[0]))):
                 print(f"json_keys_correct={k}: {v}/{len(record_rows)}")
 
         return record_rows, seq_rows, fs
