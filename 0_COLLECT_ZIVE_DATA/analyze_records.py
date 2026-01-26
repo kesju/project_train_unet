@@ -22,9 +22,9 @@ JsonLikeRef = Union[str, Path]
 # -----------------------------
 @dataclass
 class RecordSummary:
-    sequence_id: str
-    recording_id: str
-    # json_path: str
+    sequenceId: str
+    recordingId: Optional[str]
+    file_name: str
     channel_count: Optional[int]
     user_id: Optional[str]
 
@@ -112,8 +112,9 @@ def _safe_json_load_path(path: Path) -> Any:
 
 
 def summarize_record(
-    sequence_id: str,
-    recording_id: str,
+    sequenceId: str,
+    # recordingId: str,
+    file_name: str,
     json_ref: JsonLikeRef,
     data_ref: JsonLikeRef,
     data_ext: str,
@@ -134,16 +135,16 @@ def summarize_record(
         meta = load_json_fn(json_ref)
         json_ok = True
     except Exception as exc:
-        print(f"WARN: failed to load JSON for {sequence_id}/{recording_id}: {exc}")
+        print(f"WARN: failed to load JSON for {sequenceId}/{file_name}: {exc}")
         meta = {}
         json_ok = False
 
     bsz = file_size_fn(data_ref)
     samples = sample_count_fn(data_ref, data_ext)
-
+    # print("meta:", meta)
     channel_count = meta.get("channelCount") if isinstance(meta, dict) else None
     user_id = meta.get("userId") if isinstance(meta, dict) else None
-
+    recordingId = meta.get("recordingId") if isinstance(meta, dict) else None
     flags_list = _flatten_flags(meta.get("flags") if isinstance(meta, dict) else None)
 
     rpeaks = meta.get("rpeaks") if isinstance(meta, dict) else None
@@ -189,8 +190,9 @@ def summarize_record(
     json_keys_correct = meta_keys.issubset(allowed_keys) if meta_keys else False
 
     rec = RecordSummary(
-        sequence_id=sequence_id,
-        recording_id=recording_id,
+        sequenceId=sequenceId,
+        recordingId=recordingId,
+        file_name=Path(data_ref).name,
         channel_count=int(channel_count) if isinstance(channel_count, int) else None,
         user_id=str(user_id) if isinstance(user_id, str) else None,
         bin_bytes=int(bsz),
@@ -280,8 +282,9 @@ def main() -> int:
         seq_id = infer_sequence_id(jp)
         rec_id = jp.stem
         rec, rec_dict = summarize_record(
-            sequence_id=seq_id,
-            recording_id=rec_id,
+            sequenceId=seq_id,
+            # recordingId=rec_id,
+            file_name=match[0].name,
             json_ref=jp,
             data_ref=data_path,
             data_ext=data_ext,
@@ -294,14 +297,6 @@ def main() -> int:
         print(rec_dict)
 
     df = pd.DataFrame(records)
-    out_path = args.out or (data_dir / "records_summary.csv")
-    df.to_csv(out_path, index=False)
-    print(f"\nSaved {len(df)} records to {out_path}")
-    print(f"Data directory: {data_dir}")
-    print("Summary statistics:")
-    
-    # print(df.head())
-    
 
     # 1) Add row number (nr)
     df = df.copy()
@@ -309,17 +304,23 @@ def main() -> int:
 
     # 2) Select only the columns you want (skip any missing ones safely)
     cols = [
-        "nr", "recording_id", "user_id", "samples", "duration_s",
+        "nr", "file_name", "recordingId", "user_id", "samples", "duration_s",
         "rpeaks_count", "ann_n_count", "ann_s_count", "ann_v_count", "ann_u_count",
-        "annotated_noises_count", "annotated_noises_fraction",
+        "annotated_noises_count", "annotated_noises_fraction", "noises_count", "noises_fraction",
     ]
     cols = [c for c in cols if c in df.columns]
 
     # 3) Print as table: one record per row, header once
-    # print(df.loc[:, cols].to_string(index=False))
+    df_sel = df.loc[:, cols]
+    
+    out_path = args.out or (data_dir / "records_summary.csv")
+    df.to_csv(out_path, index=False)
+    print(f"\nSaved {len(df)} records to {out_path}")
+    print(f"Data directory: {data_dir}")
+    print("Summary statistics:")
 
     print(
-        df.loc[:, cols].to_string(
+        df_sel.to_string(
             index=False,
             float_format=None,
             formatters={
@@ -328,7 +329,6 @@ def main() -> int:
             }
         )
     )
-    
     
     return 0
 
