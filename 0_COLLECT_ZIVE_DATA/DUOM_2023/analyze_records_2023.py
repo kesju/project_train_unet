@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-Skriptas skirtas seno formato Ziveo DUOM_2003 ir DUOM_2026_01_25 duomenų rinkiniams analizuoti.
 Surenka įrašų statistiką iš nurodyto aplanko .
 Kiekvienas įrašas turi turėti JSON metaduomenų failą ir atitinkamą duomenų failą.
 Duomenų failai gali būti .bin / trijų skaitmenų plėtiniai (size//4 imčių) arba .npy (np.load(...).size).
@@ -18,6 +17,9 @@ import json
 import numpy as np
 import pandas as pd
 
+from openpyxl.utils import get_column_letter
+
+
 JsonLikeRef = Union[str, Path]
 
 # -----------------------------
@@ -27,6 +29,7 @@ JsonLikeRef = Union[str, Path]
 class RecordSummary:
     sequenceId: str
     recordingId: Optional[str]
+    basename: str    
     file_name: str
     channel_count: Optional[int]
     user_id: Optional[str]
@@ -54,6 +57,24 @@ class RecordSummary:
 
     has_comment: bool
     json_keys_correct: bool
+
+def read_filenames_from_excel(xlsx_path: Path) -> tuple[list[str], pd.DataFrame]:
+    """Skaito Excel, grąžina sąrašą `.npy` failų ir visą DF (meta duomenims paimti)."""
+    print("\nSkaitomas Excel: %s", xlsx_path)
+    df = pd.read_excel(xlsx_path, dtype=str)  # saugu tolimesnėms konversijoms
+    if "filename" not in df.columns or "tag" not in df.columns:
+        raise ValueError("Excel must contain columns: 'filename' and 'tag'")
+
+    filtered = df[df["tag"] != "9999"]
+    names = []
+    for s in filtered["filename"].dropna():
+        name = str(s).strip()
+        if not name.endswith(".npy"):
+            name += ".npy"
+        names.append(name)
+
+    print("Įrašų sąraše:", len(names))
+    return names, df
 
 
 def _flatten_flags(flags: Any) -> List[str]:
@@ -117,6 +138,7 @@ def _safe_json_load_path(path: Path) -> Any:
 def summarize_record(
     sequenceId: str,
     # recordingId: str,
+    basename: str,
     file_name: str,
     json_ref: JsonLikeRef,
     data_ref: JsonLikeRef,
@@ -175,8 +197,8 @@ def summarize_record(
     nz_cnt, nz_samples = _sum_noise_samples(noises)
 
     duration_s = (samples / fs) if (fs is not None and fs > 0 and samples > 0) else None
-    noises_fraction = (nz_samples / samples) if (samples > 0) else None
-    annotated_noises_fraction = (ann_nz_samples / samples) if (samples > 0) else None
+    noises_fraction = (nz_samples / samples)*100. if (samples > 0) else None
+    annotated_noises_fraction = (ann_nz_samples / samples)*100. if (samples > 0) else None
 
     allowed_keys = {
         "channelCount",
@@ -195,6 +217,7 @@ def summarize_record(
     rec = RecordSummary(
         sequenceId=sequenceId,
         recordingId=recordingId,
+        basename=basename,
         file_name=Path(data_ref).name,
         channel_count=int(channel_count) if isinstance(channel_count, int) else None,
         user_id=str(user_id) if isinstance(user_id, str) else None,
@@ -223,9 +246,20 @@ def summarize_record(
 
 
 def find_data_file(json_path: Path) -> Tuple[Path, str] | None:
-    """Return matching data file and extension for a given JSON (same stem)."""
+    """Return matching data file and extension for a given JSON.
+
+    Supports these layouts (same folder):
+      - <id>.json  -> <id>.npy / <id>.bin / <id>.<ddd>
+      - <id>.<ddd>.json -> <id>.<ddd>   (three-digit extension kept, then '.json' appended)
+    """
     stem = json_path.stem
     rec_dir = json_path.parent
+
+    # Special case: JSON is '<id>.<ddd>.json' and data file is '<id>.<ddd>'
+    exact = rec_dir / stem
+    if exact.exists() and exact.is_file() and exact.suffix[1:].isdigit() and len(exact.suffix) == 4:
+        return exact, exact.suffix
+
     # priority: .npy, .bin, then any three-digit extension
     candidates = [
         rec_dir / f"{stem}.npy",
@@ -235,11 +269,9 @@ def find_data_file(json_path: Path) -> Tuple[Path, str] | None:
         [p for p in rec_dir.glob(f"{stem}.*") if p.suffix[1:].isdigit() and len(p.suffix) == 4]
     )
     for p in candidates:
-        if p.exists():
+        if p.exists() and p.is_file():
             return p, p.suffix
     return None
-
-
 def sample_count(path: Path, ext: str) -> int:
     ext = ext.lower()
     if ext == ".npy":
@@ -261,9 +293,37 @@ def infer_sequence_id(json_path: Path) -> str:
     return json_path.parent.parent.name if json_path.parent.name == "recordings" else json_path.parent.name
 
 
+def resolve_out_paths(out_arg, default_dir: Path, default_stem: str = "records_summary"):
+    """
+    Returns (csv_path, xlsx_path) based on --out.
+    --out can be:
+      - None -> default_dir/default_stem.{csv,xlsx}
+      - a path with or without suffix -> treated as base path/stem
+      - a directory -> file name uses default_stem inside that directory
+    """
+    if out_arg:
+        p = Path(out_arg)
+    else:
+        p = default_dir / default_stem
+
+    # If user passed a directory, put default file name inside it
+    if p.exists() and p.is_dir():
+        p = p / default_stem
+    elif str(p).endswith(("/", "\\")):  # in case directory doesn't exist yet
+        p = p / default_stem
+
+    # Drop suffix if they gave one (csv/xlsx/anything) -> use as base
+    base = p.with_suffix("")
+
+    csv_path = base.with_suffix(".csv")
+    xlsx_path = base.with_suffix(".xlsx")
+    return csv_path, xlsx_path
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Summarize ECG records in a folder (non-zip).")
     ap.add_argument("data_dir", type=Path, help="Root folder containing sequence subfolders with recordings/")
+    ap.add_argument("--full_list_path", type=Path, required=True, help="excel with full listof annotated recordings")
     ap.add_argument("--fs", type=int, required=True, help="Sampling frequency in Hz")
     ap.add_argument("--out", type=Path, default=None, help="CSV output path (default: <data_dir>/records_summary.csv)")
     args = ap.parse_args()
@@ -272,23 +332,37 @@ def main() -> int:
     if not data_dir.exists():
         raise SystemExit(f"data_dir not found: {data_dir}")
 
+    # Nuskaitome excel failą su duomenimis apie įrašus su anotacijomis ir triukšmais (anotuotų įrašų sąrašas),
+    # sukuriame failų vardų sąrašą file_names ir dataframe df_meta su įrašų duomenimis.
+    # Reikalingas, kad pagal lokalų failo vardą (tipo filename =1001_01.json) galėtume rasti Zive failo vardą
+    # (tipo basename=1626941.468)
+    file_names, df_meta = read_filenames_from_excel(args.full_list_path)
+    # print(file_names)
+    # print(df_meta.head())
+
+
     # Raskime visus JSON failus in data directory
     json_files = sorted(data_dir.rglob("*.json"))
     records: list[Dict] = []
 
     # Surandame kiekvieno įrašo statistiką ir kaupiame įrašus
     for jp in json_files:
-        print(f"Processing JSON: {jp}")
+        # print(f"Processing JSON: {jp}")
         match = find_data_file(jp)
         if match is None:
             print(f"WARN: no data file found for {jp}")
             continue
         data_path, data_ext = match
         seq_id = infer_sequence_id(jp)
-        rec_id = jp.stem
+        # rec_id = jp.stem
+        filename = jp.stem
+        basename = df_meta.set_index("filename")["basename"].loc[filename]
+        # print(f"Found data file: {data_path} for JSON: {jp}, sequence: {seq_id}, basename: {basename}")
+
         rec, rec_dict = summarize_record(
             sequenceId=seq_id,
             # recordingId=rec_id,
+            basename=basename,
             file_name=match[0].name,
             json_ref=jp,
             data_ref=data_path,
@@ -299,7 +373,7 @@ def main() -> int:
             fs=args.fs,
         )
         records.append(rec_dict)
-        print(rec_dict)
+        # print(rec_dict)
 
     # Konvertuojame sukauptus įrašus į DataFrame
     df = pd.DataFrame(records)
@@ -311,9 +385,9 @@ def main() -> int:
     # Atsirenkame parametrus, kurie bus rodomi santraukoje
     # 2) Select only the columns you want (skip any missing ones safely)
     cols = [
-        "nr", "file_name", "recordingId", "user_id", "samples", "duration_s",
+        "nr", "file_name", "basename", "recordingId", "user_id", "samples", "duration_s",
         "rpeaks_count", "ann_n_count", "ann_s_count", "ann_v_count", "ann_u_count",
-        "annotated_noises_count", "annotated_noises_fraction", "noises_count", "noises_fraction",
+        "annotated_noises_count", "annotated_noises_fraction", "noises_count", "noises_fraction","flags"
     ]
     cols = [c for c in cols if c in df.columns]
     df_sel = df.loc[:, cols]
@@ -338,14 +412,49 @@ def main() -> int:
 
     df_print = df_sel.rename(columns=col_short)  # type: ignore
     # print("\ndf_print:", df_print.head())
+   
+   
+        # Įrašome santraukos statistiką į CSV ir Excel failą
+   
+    csv_path, xlsx_path = resolve_out_paths(args.out, data_dir, "records_summary")
+    df_print.to_csv(csv_path, index=False)
+    # df_print.to_excel(xlsx_path, index=False, engine="openpyxl")
     
-    # Įrašome santraukos statistiką į CSV failą
-    out_path = args.out or (data_dir / "records_summary.csv")
-    df_print.to_csv(out_path, index=False)
-    
+        # Įrašome santraukos statistiką į Excel failą
+    df_out = df_print.copy()
+
+    # Ensure numeric so Excel can format properly
+    for c in ["dur_s", "ann_nz_frac", "nz_frac"]:
+        if c in df_out.columns:
+            df_out[c] = pd.to_numeric(df_out[c], errors="coerce")
+            
+    # Įrašant pakoreguojame formatavimą kai kuriems stulpeliams
+    with pd.ExcelWriter(xlsx_path, engine="openpyxl") as writer:
+        sheet = "summary"
+        df_out.to_excel(writer, index=False, sheet_name=sheet)
+        ws = writer.book[sheet]
+
+        fmt_map = {
+            "dur_s": "0.0",       # .1f
+            "ann_nz_frac": '0.0"%"',  # .1f (already 0–100)
+            "nz_frac": '0.0"%"',      # .1f (already 0–100)
+        }
+
+        headers = [cell.value for cell in ws[1]]
+        col_idx = {name: i + 1 for i, name in enumerate(headers) if name is not None}
+
+        for name, fmt in fmt_map.items():
+            if name not in col_idx:
+                continue
+            c = col_idx[name]
+            for r in range(2, ws.max_row + 1):  # skip header
+                ws.cell(row=r, column=c).number_format = fmt
+
+
     # Išvedame santraukos statistiką į konsolę
-    print(f"\nSaved {len(df_print)} records to {out_path}")
-    print(f"Data directory: {data_dir}")
+    print(f"\nData directory: {data_dir}")
+    print(f"Saved CSV : {csv_path}")
+    print(f"Saved XLSX: {xlsx_path}")
     print("Summary statistics:")
     print(
         df_print.to_string(
@@ -353,7 +462,8 @@ def main() -> int:
             float_format=None,
             formatters={
                 "dur_s": lambda x: f"{x:.2f}" if pd.notna(x) else "",
-                "ann_nz_frac": lambda x: f"{x:.4f}" if pd.notna(x) else "",
+                "ann_nz_frac": lambda x: f"{x:.1f}%" if pd.notna(x) else "",
+                "nz_frac": lambda x: f"{x:.1f}%" if pd.notna(x) else "",
             }
         )
     )
@@ -364,6 +474,10 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
-# python3 analyze_records.py ../DUOM_2026_01_25/user-65955b5f50e02b125d4998ad/659ec124870b3d1d1630be39/recordings --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
-# python3 analyze_records.py ../DUOM_2026_01_25/659ebcdd870b3d1d6e30bb61 --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
-# python3 analyze_records.py /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_FOR_TRAINING --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
+"""
+python3 analyze_records_2023.py ../DUOM_2026_01_25/user-65955b5f50e02b125d4998ad/659ec124870b3d1d1630be39/recordings --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
+python3 analyze_records_2023.py ../DUOM_2026_01_25/659ebcdd870b3d1d6e30bb61 --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
+python3 analyze_records_2023.py /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_FOR_TRAINING \
+--full_list_path ../../1_PREPARE_TRAIN_UNET_DATA/ecg_zive_npy_for_preparing/visi_zive_irasai_atrankai.xlsx \
+--fs 200 --out records_summary.csv
+"""
