@@ -413,7 +413,11 @@ def main() -> int:
     df_print = df_sel.rename(columns=col_short)  # type: ignore
     # print("\ndf_print:", df_print.head())
    
-   
+    # Inserting 2 new columns for external annotating and noises annotated
+    i = list(df_print.columns).index("nr") + 1
+    df_print.insert(i,   "FOR_EXTERNAL_ANNOTATING", "")
+    df_print.insert(i+1, "NOISES_ANNOTATED",        "")
+
         # Įrašome santraukos statistiką į CSV ir Excel failą
    
     csv_path, xlsx_path = resolve_out_paths(args.out, data_dir, "records_summary")
