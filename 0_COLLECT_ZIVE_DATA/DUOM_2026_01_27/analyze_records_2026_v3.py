@@ -735,5 +735,6 @@ if __name__ == "__main__":
 
 """
 python3 analyze_records_2026_v3.py user-6581e16ce2b0bd5f0e7540a4/68ffa1cbad358145351671eb/recordings --fs 200 --out records_summary
+python3 analyze_records_2026_v3.py /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_COLLECT_ZIVE_DATA/DUOM_2026_01_25/659ebcdd870b3d1d6e30bb61 --fs 200 --out records_summary
 
 """
