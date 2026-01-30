@@ -2,6 +2,8 @@
 """
 process_ecg_sequences.py
 
+# https://chatgpt.com/c/697b915b-d6fc-832a-bf19-f09ec2635297
+
 Goal
 ----
 Process ECG data sequences for a single patient from either:
@@ -1091,6 +1093,6 @@ if __name__ == "__main__":
 python process_ecg_sequences.py path/to/user.zip --fs 200
 python process_ecg_sequences.py path/to/user.zip --out /some/output/folder
 
-python process_ecg_sequences.py user-6581e16ce2b0bd5f0e7540a4 -v
+python process_ecg_sequences.py user-6581e16ce2b0bd5f0e7540a4 -v --out user-6581e16ce2b0bd5f0e7540a4_out
 
 """
