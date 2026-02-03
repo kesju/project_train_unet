@@ -1,33 +1,20 @@
 
-fileName = '1097_0.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.5
-    },
-    {
-        "startTime": 408.0,
-        "endTime": 420.0
-    }
-]
+Neįtrauktų į mokymo imtį sąrašas:
 
-fileName = '1097_1.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.0
-    }
-]
-
-
-fileName = '1102_0.npy'
-[
-    {
-        "startTime": 101.0,
-        "endTime": 106.0
-    }
-]
-
+fileName = '1001_2.npy',  # zj, kokybė nebloga, žymėjimas koreguotas, gana daug triukšminių intervalų, gal geriau tinka testavimui
+fileName = '1001_3.npy'
+fileName = '1001_5.npy'
+fileName = '1001_7.npy'
+fileName = '1006_2.npy'
+fileName = '1006_3.npy'
+fileName = '1002_1.npy'
+ 
+fileName = '1008_0.npy',neuŽbaigtas anotavimas
+fileName = '1008_12.npy', 238 sek. nepažymėtas V, , neuŽbaigtas anotavimas
+fileName = '1009_12.npy'#  geros kokybės , neuŽbaigtas anotavimas
+fileName = '1009_13.npy' # geros kokybės, neuŽbaigtas anotavimas
+fileName = '1025_0.npy', neuŽbaigtas anotavimas
+fileName = '1030_5.npy' bet nettrauktas į mokymo imtį
 
 
 
@@ -123,13 +110,6 @@ fileName = '1001_5.npy'
     }  	
 ]
 
-fileName = '1001_6.npy'
-[
-    {
-        "startTime": 601.0,
-        "endTime": 602.5
-    }
-]
 
 fileName = '1001_7.npy'
 [
@@ -143,11 +123,56 @@ fileName = '1001_7.npy'
     }	
 ]
 
-fileName = '1001_8.npy'
+
+# Redaguotas, užfiksuotas
+
+fileName = '1006_2.npy'
 [
     {
-        "startTime": 532.0,
-        "endTime": 535.0
+        "startTime": 0.0,
+        "endTime": 18.0
+    },
+    {
+        "startTime": 73.0,
+        "endTime": 76.5
+    },
+    {
+        "startTime": 427.5,
+        "endTime": 448.0
+    },
+    {
+        "startTime": 459.0,
+        "endTime": 473.0
+    }
+]
+
+# Redaguotas. užfiksuotas
+
+fileName = '1006_3.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.0
+    },
+    {
+        "startTime": 198.0,
+        "endTime": 208.0
+    },
+    {
+        "startTime": 217.5,
+        "endTime": 219.5
+    },
+    {
+        "startTime": 325.0,
+        "endTime": 327.5
+    },
+    {
+        "startTime": 399.0,
+        "endTime": 403.0
+    },
+    {
+        "startTime": 544.5,
+        "endTime": 546.5
     }
 ]
 
@@ -239,6 +264,209 @@ fileName = '1002_1.npy'
 
 
 
+# redaguotas, užfiksuotas, neuŽbaigtas anotavimas
+fileName = '1008_0.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 0.5
+    }
+]
+
+# redaguotas, užfiksuotas, 238 sek. nepažymėtas V, , neuŽbaigtas anotavimas
+fileName = '1008_12.npy'
+[
+    {
+        "startTime": 149.5,
+        "endTime": 151.0
+    },
+	{
+        "startTime": 471.0,
+        "endTime": 484.5
+    },
+	{
+        "startTime": 494.0,
+        "endTime": 501.0
+    },
+	{
+        "startTime": 505.0,
+        "endTime": 517.0
+    },
+	{
+        "startTime": 545.0,
+        "endTime": 550.0
+    }
+]
+
+
+
+# redaguotas, užfiksuotas: geros kokybės , neuŽbaigtas anotavimas
+fileName = '1009_12.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.0
+    },
+    {
+        "startTime": 267.0,
+        "endTime": 310.0
+    }
+]   
+
+
+# redaguotas, užfiksuotas: geros kokybės,  , neuŽbaigtas anotavimas
+fileName = '1009_13.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.0
+    }
+]   
+
+
+
+# redaguotas
+fileName = '1025_0.npy', neuŽbaigtas anotavimas
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.0
+    },
+	{
+        "startTime": 225.0,
+        "endTime": 230.0
+    },
+	{
+        "startTime": 275.5,
+        "endTime": 278.0
+    },
+	{
+        "startTime": 335.0,
+        "endTime": 339.0
+    },
+	{
+        "startTime": 424.0,
+        "endTime": 430.0
+    },
+		{
+        "startTime": 461.5,
+        "endTime": 463.5
+    },
+		{
+        "startTime": 633.0,
+        "endTime": 635.5
+    }
+]   
+
+
+
+# redaguotas, bet nettrauktas į mokymo imtį
+fileName = '1030_5.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.0
+    },
+	{
+        "startTime": 5.5,
+        "endTime": 6.5
+    },
+	{
+        "startTime": 63.5,
+        "endTime": 65.5
+    },
+	{
+        "startTime": 98.0,
+        "endTime": 100.0
+	},
+	{
+        "startTime": 184.0,
+        "endTime": 186.0
+	},
+	{
+        "startTime": 488.0,
+        "endTime": 490.0
+	},
+	{
+        "startTime": 521.5,
+        "endTime": 523.5
+	},
+	{
+        "startTime": 572.0,
+        "endTime": 575.0
+	},
+	{
+        "startTime": 630.0,
+        "endTime": 639.0
+	}
+]
+
+
+
+
+
+___________________________________________________
+
+
+
+
++
+fileName = '1097_0.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.5
+    },
+    {
+        "startTime": 408.0,
+        "endTime": 420.0
+    }
+]
+
++
+fileName = '1097_1.npy'
+[
+    {
+        "startTime": 0.0,
+        "endTime": 1.0
+    }
+]
+
++
+fileName = '1102_0.npy'
+[
+    {
+        "startTime": 101.0,
+        "endTime": 106.0
+    }
+]
+
+
+
+
++
+fileName = '1001_6.npy'
+[
+    {
+        "startTime": 601.0,
+        "endTime": 602.5
+    }
+]
+
+
++
+fileName = '1001_8.npy'
+[
+    {
+        "startTime": 532.0,
+        "endTime": 535.0
+    }
+]
+
+
+
+
++
 fileName = '1004_0.npy'
 [
     {
@@ -267,6 +495,7 @@ fileName = '1004_0.npy'
     }
 ]
 
++
 # redaguotas, užfiksuotas
 fileName = '1005_0.npy'
 [
@@ -277,7 +506,7 @@ fileName = '1005_0.npy'
 ]
 
 
-
++
 fileName = '1005_4.npy'
 [
     {
@@ -286,6 +515,7 @@ fileName = '1005_4.npy'
     }
 ]
 
++
 fileName = '1006_1.npy'
 [
     {
@@ -294,58 +524,8 @@ fileName = '1006_1.npy'
     }
 ]
 
-# Redaguotas, užfiksuotas
 
-fileName = '1006_2.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 18.0
-    },
-    {
-        "startTime": 73.0,
-        "endTime": 76.5
-    },
-    {
-        "startTime": 427.5,
-        "endTime": 448.0
-    },
-    {
-        "startTime": 459.0,
-        "endTime": 473.0
-    }
-]
-
-# Redaguotas. užfiksuotas
-
-fileName = '1006_3.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.0
-    },
-    {
-        "startTime": 198.0,
-        "endTime": 208.0
-    },
-    {
-        "startTime": 217.5,
-        "endTime": 219.5
-    },
-    {
-        "startTime": 325.0,
-        "endTime": 327.5
-    },
-    {
-        "startTime": 399.0,
-        "endTime": 403.0
-    },
-    {
-        "startTime": 544.5,
-        "endTime": 546.5
-    }
-]
-
++
 # redaguotas, užfiksuotas
 fileName = '1007_1.npy'
 [
@@ -359,65 +539,7 @@ fileName = '1007_1.npy'
     }
 ]
 
-# redaguotas, užfiksuotas
-fileName = '1008_0.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 0.5
-    }
-]
-
-# redaguotas, užfiksuotas, 238 sek. nepažymėtas V
-fileName = '1008_12.npy'
-[
-    {
-        "startTime": 149.5,
-        "endTime": 151.0
-    },
-	{
-        "startTime": 471.0,
-        "endTime": 484.5
-    },
-	{
-        "startTime": 494.0,
-        "endTime": 501.0
-    },
-	{
-        "startTime": 505.0,
-        "endTime": 517.0
-    },
-	{
-        "startTime": 545.0,
-        "endTime": 550.0
-    }
-]
-
-
-
-# redaguotas, užfiksuotas: geros kokybės
-fileName = '1009_12.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.0
-    },
-    {
-        "startTime": 267.0,
-        "endTime": 310.0
-    }
-]   
-
-
-# redaguotas, užfiksuotas: geros kokybės
-fileName = '1009_13.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.0
-    }
-]   
-
++
 # redaguotas, užfiksuotas
 fileName = '1010_0.npy'
 [
@@ -435,7 +557,7 @@ fileName = '1010_0.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1011_0.npy'
 [
@@ -445,7 +567,7 @@ fileName = '1011_0.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1011_1.npy'
 [
@@ -476,7 +598,7 @@ fileName = '1011_1.npy'
 ]   
 
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1013_13.npy'
 [
@@ -494,7 +616,7 @@ fileName = '1013_13.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1013_14.npy'
 [
@@ -504,7 +626,7 @@ fileName = '1013_14.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1015_0.npy'
 [
@@ -538,6 +660,7 @@ fileName = '1015_17.npy'
 ]   
 
 
++
 # redaguotas, užfiksuotas
 fileName = '1017_0.npy'
 [
@@ -547,6 +670,7 @@ fileName = '1017_0.npy'
     }
 ]   
 
++
 # redaguotas, užfiksuotas
 fileName = '1018_6.npy'
 [
@@ -560,7 +684,7 @@ fileName = '1018_6.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1018_7.npy'
 [
@@ -570,7 +694,7 @@ fileName = '1018_7.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1019_0.npy'
 [
@@ -596,7 +720,7 @@ fileName = '1019_0.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1019_1.npy'
 [
@@ -614,7 +738,7 @@ fileName = '1019_1.npy'
     }
 ]   
 
-
++
 # redaguotas, užfiksuotas
 fileName = '1023_0.npy'
 [
@@ -624,6 +748,7 @@ fileName = '1023_0.npy'
     }
 ]   
 
++
 # redaguotas
 fileName = '1024_0.npy'
 [
@@ -633,40 +758,8 @@ fileName = '1024_0.npy'
     }
 ]   
 
-# redaguotas
-fileName = '1025_0.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.0
-    },
-	{
-        "startTime": 225.0,
-        "endTime": 230.0
-    },
-	{
-        "startTime": 275.5,
-        "endTime": 278.0
-    },
-	{
-        "startTime": 335.0,
-        "endTime": 339.0
-    },
-	{
-        "startTime": 424.0,
-        "endTime": 430.0
-    },
-		{
-        "startTime": 461.5,
-        "endTime": 463.5
-    },
-		{
-        "startTime": 633.0,
-        "endTime": 635.5
-    }
-]   
 
-
++
 # redaguotas
 fileName = '1026_0.npy'
 [
@@ -692,6 +785,7 @@ fileName = '1026_0.npy'
     }
 ]   
 
++
 # redaguotas
 fileName = '1026_4.npy'
 [
@@ -741,7 +835,7 @@ fileName = '1026_4.npy'
 ]   
 
 
-
++
 # redaguotas
 fileName = '1027_0.npy'
 [
@@ -779,6 +873,7 @@ fileName = '1027_0.npy'
     }
 ]   
 
++
 # redaguotas
 fileName = '1028_1.npy'
 [
@@ -792,6 +887,7 @@ fileName = '1028_1.npy'
     }
 ]
 
++
 # redaguotas
 fileName = '1029_0.npy'
 [
@@ -808,50 +904,6 @@ fileName = '1029_0.npy'
         "endTime": 466.0
     }
 ]
-
-
-# redaguotas
-fileName = '1030_5.npy'
-[
-    {
-        "startTime": 0.0,
-        "endTime": 1.0
-    },
-	{
-        "startTime": 5.5,
-        "endTime": 6.5
-    },
-	{
-        "startTime": 63.5,
-        "endTime": 65.5
-    },
-	{
-        "startTime": 98.0,
-        "endTime": 100.0
-	},
-	{
-        "startTime": 184.0,
-        "endTime": 186.0
-	},
-	{
-        "startTime": 488.0,
-        "endTime": 490.0
-	},
-	{
-        "startTime": 521.5,
-        "endTime": 523.5
-	},
-	{
-        "startTime": 572.0,
-        "endTime": 575.0
-	},
-	{
-        "startTime": 630.0,
-        "endTime": 639.0
-	}
-]
-
-
 
 
 

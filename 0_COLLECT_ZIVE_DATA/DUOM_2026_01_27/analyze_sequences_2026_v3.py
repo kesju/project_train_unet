@@ -1093,6 +1093,6 @@ if __name__ == "__main__":
 python process_ecg_sequences.py path/to/user.zip --fs 200
 python process_ecg_sequences.py path/to/user.zip --out /some/output/folder
 
-python process_ecg_sequences.py user-6581e16ce2b0bd5f0e7540a4 -v --out user-6581e16ce2b0bd5f0e7540a4_out
+python analyze_sequences_2026_v3.py user-6581e16ce2b0bd5f0e7540a4 -v --out user-6581e16ce2b0bd5f0e7540a4_out
 
 """
