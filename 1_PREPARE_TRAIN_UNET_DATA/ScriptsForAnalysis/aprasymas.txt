@@ -1,0 +1,97 @@
+
+1_PREPARE_TRAIN_UNET_DATA/ScriptsForAnalysis
+
+PAGRINDINIAI SKRIPTAI:
+
+- analyze_records_2023.py
+
+Surenka įrašų statistiką iš nurodyto aplanko .
+Kiekvienas įrašas turi turėti JSON metaduomenų failą ir atitinkamą duomenų failą.
+Duomenų failai gali būti .bin / trijų skaitmenų plėtiniai (size//4 imčių) arba .npy (np.load(...).size).
+
+Papildomai naudojama anotuotų įrašų Excel lentelė su duomenimis apie įrašus su anotacijomis 
+ir triukšmais (anotuotų įrašų sąrašas), iš jo sukuriame failų vardų sąrašą file_names
+ir dataframe df_meta su įrašų duomenimis. Reikalingas, kad pagal lokalų failo vardą 
+(tipo filename =1001_01.json) galėtume rasti Zive failo vardą (tipo basename=1626941.468)
+---
+Handles data files with .bin / three-digit extensions (size//4 samples) or .npy (np.load(...).size).
+
+Scriptas skirtas duomenims, su json 2023 formatu (nėra ml ekstrasistolių).
+pvz. Panaudotas surinkti statistikai apie įrašus skirtus mokymui aplanke:
+/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_FOR_TRAINING
+Panaudotas pagalbinis sąrašas:
+--full_list_path ../../1_PREPARE_TRAIN_UNET_DATA/ecg_zive_npy_for_preparing/visi_zive_irasai_atrankai._extended.xlsx
+Rezultatas: 1_PREPARE_TRAIN_UNET_DATA/ScriptsForAnalysis/records_summary_v1.xlsx
+
+Pastaba:visi_zive_irasai_atrankai._extended.xlsx gautas iš visi_zive_irasai_atrankai.xlsx
+rankiniu būdu įterpus stulpelį flag, gautą iš printing_all_flags.ipynb
+Pradinis failas yra: \\wsl.localhost\Ubuntu\home\kesju\DI\2025_ZIVEO\PROJECT_TRAIN_UNET\DATA_ORIG\ecg_zive_npy\visi_zive_irasai.xlsx
+
+
+- sort_records_modif_v3.py
+Surušiuoja įrašus anotuotų įrašų Excel lentelėje ir sukuria naują lentelę,
+kurioje galima lengvai surasti kurie paciento įrašai turi daugiausia ekstrasistolių
+ir mažiausiai triukšmų.
+
+Takes a DataFrame read from Excel and returns it sorted exactly as you described:
+- group by userId
+- within each group: sort by (S+V) descending
+- tie-break: ann_nz_len ascending (smaller first)
+- keeps full rows together (stable sort)
+
+Scriptas skirtas duomenims, su json 2023 formatu (nėra ml ekstrasistolių)
+pvz. naudoja visi_zive_irasai_atrankai._modif_v1.xlsx
+rezultatas: visi_zive_irasai_atrankai._modif_v1_sorted_grouped_highlighted_basename_dot.xlsx
+
+Dar reikia skripto, kuris patikslina nuskaitydamas realius json lentelę:
+visi_zive_irasai_atrankai._modif_v1.xlsx,
+tačiau reikia kad LInas sutvarkytų Zive duomenų atsisiuntimą ir pradėti siuntinėtis anotuotus duomenims
+
+
+
+PAGALBINIAI SKRIPTAI:
+
+- checking_for_old_data.ipynb
+
+# Comparing of list of Annotator View records with records with metadata from Excel
+Annotator View - Zive interfeisas, jame yra Completed sąrašas, kuriame yra pateikiami
+įrašai su flag=  EXTERNALLY_ANNOTATED, tačiau nenuimtas flag= FOR_EXTERNAL_ANNOTATING
+
+Rankiniu būdu iš Zive interfeiso nuskaitytas įrašų failų vardų sąrašas, pereinama per
+visus įrašus anotuotų įrašų Excel lentelėje ir suformuojama informacija apie juos.
+Surasta, kad jau apie 60 įrašų yra iš šios lentelės. 
+
+Skriptas laikinas, tik susigaudyti, kiek yra nesutvarkytų iki pabaigos įrašų.
+
+Visi įrašai su abiem flags = FOR_EXTERNAL_ANNOTATING, EXTERNALLY_ANNOTATED anotuotų
+įrašų Excel lentelėje yra surandami su skriptu printing_all_flags.ipynb
+
+
+- printing_all_flags.ipynb
+
+Išveda visų įrašų iš anotuotų įrašų Excel lentelės flags
+pvz. 
+nr	filename	flags
+1	1000_1.npy	EXTERNALLY_ANNOTATED,FOR_EXTERNAL_ANNOTATING,PSEUDO_ANNOTATED
+2	1000_2.npy	EXTERNALLY_ANNOTATED,FOR_EXTERNAL_ANNOTATING,PSEUDO_ANNOTATED
+3	1001_0.npy	FULLY_ANNOTATED_PROFESSIONALLY
+4	1001_1.npy	EXTERNALLY_ANNOTATED,FOR_EXTERNAL_ANNOTATING,PSEUDO_ANNOTATED
+5	1001_2.npy	FULLY_ANNOTATED_PROFESSIONALLY
+6	1001_3.npy	FULLY_ANNOTATED_PROFESSIONALLY
+...
+
+
+- printing_all_about_annotated_noises.ipynb
+
+Išveda visų įrašų iš anotuotų įrašų Excel lentelės rankomis suvestų triukšminių anotacijų sąrašą
+
+pvz.
+nr	filename	ann_nz_cnt	ann_nz_len
+1	1000_1.npy	0	        0
+2	1000_2.npy	0	        0
+3	1001_0.npy	0	        0
+4	1001_1.npy	0	        0
+5	1001_2.npy	11	        15698
+...
+
+

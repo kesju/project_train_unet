@@ -323,7 +323,7 @@ def resolve_out_paths(out_arg, default_dir: Path, default_stem: str = "records_s
 def main() -> int:
     ap = argparse.ArgumentParser(description="Summarize ECG records in a folder (non-zip).")
     ap.add_argument("data_dir", type=Path, help="Root folder containing sequence subfolders with recordings/")
-    ap.add_argument("--full_list_path", type=Path, required=True, help="excel with full listof annotated recordings")
+    ap.add_argument("--full_list_path", type=Path, required=True, help="excel with full list of annotated recordings")
     ap.add_argument("--fs", type=int, required=True, help="Sampling frequency in Hz")
     ap.add_argument("--out", type=Path, default=None, help="CSV output path (default: <data_dir>/records_summary.csv)")
     args = ap.parse_args()
@@ -479,9 +479,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 """
-python3 analyze_records_2023.py ../DUOM_2026_01_25/user-65955b5f50e02b125d4998ad/659ec124870b3d1d1630be39/recordings --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
-python3 analyze_records_2023.py ../DUOM_2026_01_25/659ebcdd870b3d1d6e30bb61 --fs 200 --out ../DUOM_2026_01_25/records_summary.csv
 python3 analyze_records_2023.py /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_FOR_TRAINING \
---full_list_path ../../1_PREPARE_TRAIN_UNET_DATA/ecg_zive_npy_for_preparing/visi_zive_irasai_atrankai.xlsx \
---fs 200 --out records_summary.csv
+--full_list_path ../../1_PREPARE_TRAIN_UNET_DATA/ecg_zive_npy_for_preparing/visi_zive_irasai_atrankai._extended.xlsx \
+--fs 200 --out records_summary_v1.csv
 """
