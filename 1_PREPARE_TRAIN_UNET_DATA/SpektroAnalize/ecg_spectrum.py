@@ -532,3 +532,11 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+"""
+path="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/DATA_ORIG/ecg_zive_npy/1009_0.npy"
+python ecg_spectrum.py "$path" --fs 200 --baseline highpass --hp-cutoff 0.5
+
+
+"""
