@@ -1,0 +1,17 @@
+# chmod +x analyze_records_2026_v4.sh
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# python analyze_records_2026_v4.py \
+#   "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_COLLECT_ZIVE_DATA/DUOM_2026_01_27/Igno/68d7aecd5c19760a179cfa0d/recordings" \
+#   --fs 200 \
+#   --out "records_summary_2026_v4_IGNO.csv"
+
+
+# Testavimui
+python analyze_records_2026_v4.py \
+  "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_COLLECT_ZIVE_DATA/DUOM_2026_01_27/Igno/4_records_igno_2026" \
+  --fs 200 \
+  --out "records_summary_2026_v4_IGNO_4.csv"
+
