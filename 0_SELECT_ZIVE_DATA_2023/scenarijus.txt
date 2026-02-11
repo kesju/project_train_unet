@@ -1,0 +1,25 @@
+There is text file 06_Sarasas_anotavimui_testas.txt with list of basename and excel file visi_zive_irasai_atrankai._modif_v1.xlsx. Give me the script which reads the files, collects all rows from  visi_zive_irasai_atrankai._modif_v1.xlsx with basename from the list 06_Sarasas_anotavimui_testas.txt and writes it to ne excel file 06_Anotavimo_logas.xlsx to Sheet with name 'sarasas'. Also create another sheet, which has the name 'logas' and which has the format of 05_Anotavimo_logas.xlsx, but is filled with values from file 06_Anotavimo_logas.xlsx:
+file_name from filename, rec_id from recordingId, uid from userId, others columns names and values are the same
+
+	1. Atsirenkami failai su basename iš visi_zive_irasai_atrankai._modif_v1.xlsx (arba surušiuoto failo visi_zive_irasai_atrankai._modif_v1_sorted_grouped_highlighted_basename_dot.xlsx) ir sudaromas tekstinis failas su failų vardų sąrašu:  06_Sarasas_anotavimui.txt
+
+	B. Reikia prijungti triukšmų dtektavimo skriptą ir preliminariai įvertinti ml triukšmus, kurie bus naudojami preliminariam triukšmingumo įvertinimui.  
+
+https://chatgpt.com/c/698b1432-f904-8392-935d-65af0eec977f
+
+Praledžiamas skriptas: 
+
+/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/1_PREPARE_TRAIN_UNET_DATA/TriuksmaiAnotacijosDuomenyse2023/make_xx_annotation_list_and_log.py
+./make_xx_annotation_list_and_log.sh
+
+Rezultatas:
+
+Sukuriamas Excel failas pvz. 06_Anotavimo_logas.xlsx su Sheet :sarasas ir Sheet: logas
+
+	2. Užpildomas logas, parengiamas sąrašas Žygimantui (kartu įrašo json pažymint FOR_EXTERNAL_ANNOTATION) , parengiamas sąrašas  Nikai ( (kartu įrašo json pažymint FOR_EXTERNAL_ANNOTATION) , užpildomas 06_Anotavimo_logas.xlsx Sheet 'logas', jei reikia, suderinami abiejos anotacijos, kad nesutaptų, išsiunčiami laiškai Žygimantui ir Nikai.
+
+	3. Gavus žinią iš Žygimano arba /ir Nikos, užpildomas Sheet 'logas', įrašų json užfiksuojamas rezultatas su žymėmis: FULLY_ANNOTATED_PROFESSIONALLY, NOISES_ANNOTATED ir panaikinant FOR_EXTERNAL_ANNOTATION.
+
+	4. Toliau nusprendžiama, kurie įrašai tinka mokymo imčiai triukšmų detektavimo algoritmui tobulinti ir įtraukiami į atitinkamas saugyklas
+	
+	
