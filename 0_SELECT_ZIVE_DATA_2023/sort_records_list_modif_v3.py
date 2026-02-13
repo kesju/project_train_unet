@@ -210,6 +210,6 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 """
-python sort_records_modif_v3.py "visi_zive_irasai_atrankai._modif_v1.xlsx"
+python sort_records_list_modif_v3.py "visi_zive_irasai_atrankai._modif_v1.xlsx"
 
 """

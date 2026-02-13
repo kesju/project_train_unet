@@ -1,9 +1,9 @@
-# chmod +x analyze_records_2026_v4.sh
+# chmod +x analyze_records_2026_v5.sh
 
 #!/usr/bin/env bash
 set -euo pipefail
 
-python analyze_records_2026_v4.py \
+python analyze_records_2026_v5.py \
   "1_5_Anotacijos_logai/recordings_5.zip" \
   --fs 200 \
   --out "1_5_Anotacijos_logai/records_summary_recordings_5.csv"
