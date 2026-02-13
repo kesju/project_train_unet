@@ -68,9 +68,11 @@ class RecordSummary:
     json_ok: bool
 
     ml_noises_count: int
+    ml_noises_samples: int
     ml_noises_fraction: Optional[float]
 
     h_noises_count: int
+    h_noises_samples: int
     h_noises_fraction: Optional[float]
 
     has_comment: bool
@@ -122,19 +124,20 @@ def _extract_rpeaks_list(rpeaks: Any) -> List[Dict[str, Any]]:
     return []
 
 
-def _extract_h_counts(h_counts: Any) -> Dict[str, int]:
+def _extract_mrk_counts(mrk_counts: Any) -> Dict[str, int]:
     """
     Supports:
       - flat dict: {"N": 10, "S": 2, ...}
       - variant dict: {"merged": {"N":10}, "ml": {"U":7}, ...}
+      mrk_counts - mark "N", "S", "V", "U" counts for the chosen variant (merged > human > ml).: 
     Returns cleaned mapping for the chosen variant.
     """
-    if not isinstance(h_counts, dict):
+    if not isinstance(mrk_counts, dict):
         return {}
 
     # Variant dict?
-    if any(isinstance(v, dict) for k, v in h_counts.items() if k != "__info"):
-        v = _pick_variant_dict(h_counts, ("merged", "human", "ml"))
+    if any(isinstance(v, dict) for k, v in mrk_counts.items() if k != "__info"):
+        v = _pick_variant_dict(mrk_counts, ("merged", "human", "ml"))
         if isinstance(v, dict):
             out: Dict[str, int] = {}
             for k, val in v.items():
@@ -149,7 +152,7 @@ def _extract_h_counts(h_counts: Any) -> Dict[str, int]:
 
     # Flat dict
     out2: Dict[str, int] = {}
-    for k, v in h_counts.items():
+    for k, v in mrk_counts.items():
         if k == "__info":
             continue
         if isinstance(v, int):
@@ -171,14 +174,14 @@ def _extract_rpeaks_list_for_variant(rpeaks: Any, variant: str) -> List[Dict[str
     return []
 
 
-def _extract_h_counts_for_variant(h_counts: Any, variant: str) -> Dict[str, int]:
+def _extract_mrk_counts_for_variant(mrk_counts: Any, variant: str) -> Dict[str, int]:
     """Extract rpeakAnnotationCounts mapping for a specific variant (e.g., 'ml').
 
     Returns empty dict if structure is old schema (flat dict) or the variant is missing.
     """
-    if not isinstance(h_counts, dict):
+    if not isinstance(mrk_counts, dict):
         return {}
-    v = h_counts.get(variant)
+    v = mrk_counts.get(variant)
     if not isinstance(v, dict):
         return {}
     out: Dict[str, int] = {}
@@ -360,10 +363,15 @@ def summarize_record(
     # rpeaks + annotation counts (support old and new schema)
     rpeaks_any = meta.get("rpeaks") if isinstance(meta, dict) else None
     rpk_cnt, _rpk_first, _rpk_last, rpk_ann = _summarize_rpeaks(rpeaks_any)
-
-    h_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
-    h_counts_clean = _extract_h_counts(h_counts_any)
-
+    print(f"\nDEBUG: {sequenceId}/{basename} - rpeaks count: {rpk_cnt}, annotation counts: {rpk_ann}")
+    # DEBUG: recordings_5/1742319.328 - rpeaks count: 632, annotation counts: {'N': 604, 'V': 27, 'S': 1}
+    
+    mrk_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
+    print(f"DEBUG: {sequenceId}/{basename} - raw mrk_counts_any: {mrk_counts_any}")
+    
+    h_counts_clean = _extract_mrk_counts(mrk_counts_any)
+    print(f"DEBUG: {sequenceId}/{basename} - cleaned h_counts_clean: {h_counts_clean}")
+    
     # If counts missing, fallback to counts derived from rpeaks list
     if not h_counts_clean:
         h_counts_clean = rpk_ann
@@ -374,7 +382,7 @@ def summarize_record(
     h_u = int(h_counts_clean.get("U", 0))
 
     # ML-only annotation counts (S/V/U) – optional columns (new schema stores per-variant)
-    ml_counts = _extract_h_counts_for_variant(h_counts_any, "ml")
+    ml_counts = _extract_mrk_counts_for_variant(mrk_counts_any, "ml")
     if not ml_counts:
         ml_rpeaks = _extract_rpeaks_list_for_variant(rpeaks_any, "ml")
         tmp: Dict[str, int] = {}
@@ -394,11 +402,11 @@ def summarize_record(
     # noises (indices or times)
     h_noises = meta.get("noises_annotated") if isinstance(meta, dict) else None
     h_nz_cnt, h_nz_samples = _sum_noise_samples(h_noises, fs)
-    noises = meta.get("noises") if isinstance(meta, dict) else None
-    ml_nz_cnt, nz_samples = _sum_noise_samples(noises, fs)
+    ml_noises = meta.get("noises") if isinstance(meta, dict) else None
+    ml_nz_cnt, ml_nz_samples = _sum_noise_samples(ml_noises, fs)
 
     duration_s = (samples / fs) if (fs and fs > 0 and samples > 0) else None
-    ml_noises_fraction = (nz_samples / samples) * 100.0 if samples > 0 else None
+    ml_noises_fraction = (ml_nz_samples / samples) * 100.0 if samples > 0 else None
     h_noises_fraction = (h_nz_samples / samples) * 100.0 if samples > 0 else None
 
     allowed_keys = {
@@ -436,15 +444,17 @@ def summarize_record(
         ml_u_count=int(ml_u),
         json_ok=bool(json_ok),
         ml_noises_count=int(ml_nz_cnt),
+        ml_noises_samples=int(ml_nz_samples),
         ml_noises_fraction=float(ml_noises_fraction) if ml_noises_fraction is not None else None,
         h_noises_count=int(h_nz_cnt),
+        h_noises_samples=int(h_nz_samples),
         h_noises_fraction=float(h_noises_fraction) if h_noises_fraction is not None else None,
         has_comment=bool(meta.get("comment")) if isinstance(meta, dict) else False,
         json_keys_correct=bool(json_keys_correct),
     )
 
     rec_dict = asdict(rec)
-    rec_dict["_noises_samples"] = nz_samples
+    rec_dict["_noises_samples"] = ml_nz_samples
     rec_dict["_annotated_noises_samples"] = h_nz_samples
     return rec, rec_dict
 
@@ -632,7 +642,10 @@ def main() -> int:
         data_dir_label = data_dir
 
     df = pd.DataFrame(records)
-
+    print(f"\nDEBUG: Total records summarized: {len(df)}")
+    print(f"DEBUG: DataFrame columns: {df.columns.tolist()}")
+    print(df.head(5))
+    
     if df.empty:
         print("No records found.")
         return 0
@@ -646,8 +659,8 @@ def main() -> int:
         "nr", "basename", "recordingId", "user_id", "samples", "duration_s",
         "rpeaks_count", "h_n_count", "h_s_count", "h_v_count", "h_u_count",
         "ml_s_count", "ml_v_count", "ml_u_count",
-        "h_noises_count", "h_noises_fraction",
-        "ml_noises_count", "ml_noises_fraction",
+        "h_noises_count", "h_noises_samples", "h_noises_fraction",
+        "ml_noises_count", "ml_noises_samples", "ml_noises_fraction",
         "flags",
     ]
     cols = [c for c in cols if c in df.columns]
@@ -660,8 +673,10 @@ def main() -> int:
         "duration_s": "dur_s",
         "rpeaks_count": "rpk_cnt",
         "h_noises_count": "h_nz_cnt",
+        "h_noises_samples": "h_nz_len",
         "h_noises_fraction": "h_nz_frac",
         "ml_noises_count": "ml_nz_cnt",
+        "ml_noises_samples": "ml_nz_len",
         "ml_noises_fraction": "ml_nz_frac",
         "h_n_count": "hN",
         "h_s_count": "hS",

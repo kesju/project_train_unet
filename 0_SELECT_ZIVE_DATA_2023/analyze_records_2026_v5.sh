@@ -6,7 +6,7 @@ set -euo pipefail
 python analyze_records_2026_v5.py \
   "1_5_Anotacijos_logai/recordings_5.zip" \
   --fs 200 \
-  --out "1_5_Anotacijos_logai/records_summary_recordings_5.csv"
+  --out "1_5_Anotacijos_logai/records_summary_recordings_5-5.xlsx"
 
 
 # Testavimui
