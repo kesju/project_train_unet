@@ -693,7 +693,7 @@ def main() -> None:
     cols["rec_id"] = pick_col(hdr, "rec_id", "recordingid", "recording_id", "recording id")
     cols["uid"] = pick_col(hdr, "uid", "user_id", "userid", "user id")
     cols["samples"] = pick_col(hdr, "samples", "sample_cnt", "sample_count")
-    cols["cmt"] = pick_col(hdr, "comment")
+    cols["cmt"] = pick_col(hdr, "cmt", "comment")
     cols["dur_s"] = pick_col(hdr, "dur_s", "duration_s", "duration", "dur")
     cols["rpk_cnt"] = pick_col(hdr, "rpk_cnt", "rpeaks_cnt", "rpeaks_count", "rpeaks")
     cols["hN"] = pick_col(hdr, "hn", "hN")
@@ -705,16 +705,16 @@ def main() -> None:
     cols["mlU"] = pick_col(hdr, "mlu", "mlU")
     cols["h_nz_cnt"] = pick_col(hdr, "h_nz_cnt", "h_nz_count")
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length", "h_nz_len_s", "h_nz_seconds")
-    cols["h_nz_frac%"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
+    cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
     cols["noni"] = pick_col(hdr, "noni")
     cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
     cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len", "ml_nz_length", "ml_nz_len_s", "ml_nz_seconds")
-    cols["ml_nz_frac%"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
+    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
     cols["flags"] = pick_col(hdr, "flags")
 
     # print(f"Column mapping: {cols}")
     
-        # Only 'basename' is strictly required. Other columns are optional; if missing in the Excel,
+    # Only 'basename' is strictly required. Other columns are optional; if missing in the Excel,
     # the script will simply not populate them.
     if cols["basename"] is None:
         raise RuntimeError("Missing required column in Excel header row: ['basename']")
@@ -908,6 +908,7 @@ def main() -> None:
                         "rec_id": rec.recordingId,
                         "uid": rec.user_id,
                         "samples": int(rec.samples),
+                    "cmt": rec.cmt,
                         "dur_s": float(rec.duration_s) if rec.duration_s is not None else None,
                         "rpk_cnt": int(rec.rpeaks_count),
                         "hN": int(rec.h_n_count),
