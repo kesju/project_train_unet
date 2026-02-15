@@ -67,9 +67,11 @@ class RecordSummary:
     json_ok: bool
 
     ml_noises_count: int
+    ml_noises_samples: int
     ml_noises_fraction: Optional[float]
 
     h_noises_count: int
+    h_noises_samples: int
     h_noises_fraction: Optional[float]
 
     has_comment: bool
@@ -107,7 +109,7 @@ def _extract_rpeaks_list(rpeaks: Any) -> List[Dict[str, Any]]:
     return []
 
 
-def _extract_h_counts(h_counts: Any) -> Dict[str, int]:
+def _extract_mrk_counts(h_counts: Any) -> Dict[str, int]:
     if not isinstance(h_counts, dict):
         return {}
     # Variant dict?
@@ -144,7 +146,7 @@ def _extract_rpeaks_list_for_variant(rpeaks: Any, variant: str) -> List[Dict[str
     return []
 
 
-def _extract_h_counts_for_variant(h_counts: Any, variant: str) -> Dict[str, int]:
+def _extract_mrk_counts_for_variant(h_counts: Any, variant: str) -> Dict[str, int]:
     if not isinstance(h_counts, dict):
         return {}
     v = h_counts.get(variant)
@@ -267,11 +269,11 @@ def summarize_record(
     rpeaks_any = meta.get("rpeaks") if isinstance(meta, dict) else None
     rpk_cnt, _rpk_first, _rpk_last, _rpk_ann = _summarize_rpeaks(rpeaks_any)
 
-    h_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
+    mrk_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
 
     # Only treat counts as "human" if they come from explicit "human" variant
     # (or from a flat dict without variants).
-    h_counts_human = _extract_h_counts_for_variant(h_counts_any, "human")
+    h_counts_human = _extract_mrk_counts_for_variant(mrk_counts_any, "human")
 
     # If JSON has no explicit human counts, try to derive them from human rpeaks variant.
     if not h_counts_human:
@@ -289,7 +291,7 @@ def summarize_record(
 
     # If rpeakAnnotationCounts is a flat dict (no variants), accept it as human.
     if not h_counts_human:
-        flat = _extract_h_counts(h_counts_any)
+        flat = _extract_mrk_counts(mrk_counts_any)
         if flat:
             h_counts_human = flat
 
@@ -300,7 +302,7 @@ def summarize_record(
     h_v = int(h_counts_human.get("V", 0)) if has_human_counts else 0
     h_u = int(h_counts_human.get("U", 0)) if has_human_counts else 0
 
-    ml_counts = _extract_h_counts_for_variant(h_counts_any, "ml")
+    ml_counts = _extract_mrk_counts_for_variant(mrk_counts_any, "ml")
     if not ml_counts:
         ml_rpeaks = _extract_rpeaks_list_for_variant(rpeaks_any, "ml")
         tmp2: Dict[str, int] = {}
@@ -319,8 +321,8 @@ def summarize_record(
 
     h_noises = meta.get("noises_annotated") if isinstance(meta, dict) else None
     h_nz_cnt, h_nz_samples = _sum_noise_samples(h_noises, fs)
-    noises = meta.get("noises") if isinstance(meta, dict) else None
-    ml_nz_cnt, ml_nz_samples = _sum_noise_samples(noises, fs)
+    ml_noises = meta.get("noises") if isinstance(meta, dict) else None
+    ml_nz_cnt, ml_nz_samples = _sum_noise_samples(ml_noises, fs)
 
     duration_s = (samples / fs) if (fs and fs > 0 and samples > 0) else None
     ml_noises_fraction = (ml_nz_samples / samples) * 100.0 if samples > 0 else None
@@ -361,8 +363,10 @@ def summarize_record(
         ml_u_count=int(ml_u),
         json_ok=bool(json_ok),
         ml_noises_count=int(ml_nz_cnt),
+        ml_noises_samples=int(ml_nz_samples),
         ml_noises_fraction=float(ml_noises_fraction) if ml_noises_fraction is not None else None,
         h_noises_count=int(h_nz_cnt),
+        h_noises_samples=int(h_nz_samples),
         h_noises_fraction=float(h_noises_fraction) if h_noises_fraction is not None else None,
         has_comment=bool(meta.get("comment")) if isinstance(meta, dict) else False,
         json_keys_correct=bool(json_keys_correct),
@@ -587,8 +591,8 @@ def _extract_from_json_only(meta: Dict[str, Any], fs: int) -> Dict[str, Any]:
     rpeaks_any = meta.get("rpeaks")
     rpk_cnt, *_ = _summarize_rpeaks(rpeaks_any)
 
-    h_counts_any = meta.get("rpeakAnnotationCounts")
-    h_counts_human = _extract_h_counts_for_variant(h_counts_any, "human")
+    mrk_counts_any = meta.get("rpeakAnnotationCounts")
+    h_counts_human = _extract_mrk_counts_for_variant(mrk_counts_any, "human")
     if not h_counts_human:
         human_rpeaks = _extract_rpeaks_list_for_variant(rpeaks_any, "human")
         if human_rpeaks:
@@ -601,11 +605,11 @@ def _extract_from_json_only(meta: Dict[str, Any], fs: int) -> Dict[str, Any]:
                     tmp[str(av)] = tmp.get(str(av), 0) + 1
             h_counts_human = tmp
     if not h_counts_human:
-        flat = _extract_h_counts(h_counts_any)
+        flat = _extract_mrk_counts(mrk_counts_any)
         if flat:
             h_counts_human = flat
 
-    ml_counts = _extract_h_counts_for_variant(h_counts_any, "ml")
+    ml_counts = _extract_mrk_counts_for_variant(mrk_counts_any, "ml")
     if not ml_counts:
         ml_rpeaks = _extract_rpeaks_list_for_variant(rpeaks_any, "ml")
         tmp2: Dict[str, int] = {}
@@ -628,11 +632,11 @@ def _extract_from_json_only(meta: Dict[str, Any], fs: int) -> Dict[str, Any]:
 
     h_noises = meta.get("noises_annotated")
     h_nz_cnt, _h_nz_samples = _sum_noise_samples(h_noises, fs)
+    
     ml_noises = meta.get("noises")
     ml_nz_cnt, _ml_nz_samples = _sum_noise_samples(ml_noises, fs)
 
     total_samples = _infer_total_samples_from_meta(meta, fs)
-    h_nz_len = (_h_nz_samples / fs) if (fs and fs > 0) else None  # seconds
     h_nz_frac = (float(_h_nz_samples) / total_samples * 100.0) if (total_samples and total_samples > 0) else None
     ml_nz_frac = (float(_ml_nz_samples) / total_samples * 100.0) if (total_samples and total_samples > 0) else None
 
@@ -651,9 +655,10 @@ def _extract_from_json_only(meta: Dict[str, Any], fs: int) -> Dict[str, Any]:
         "mlV": int(ml_v),
         "mlU": int(ml_u),
         "h_nz_cnt": int(h_nz_cnt),
-        "h_nz_len": float(h_nz_len) if h_nz_len is not None else None,
+        "h_nz_len": int(_h_nz_samples) if _h_nz_samples is not None else None,
         "h_nz_frac": float(h_nz_frac) if h_nz_frac is not None else None,
         "ml_nz_cnt": int(ml_nz_cnt),
+        "ml_nz_len": int(_ml_nz_samples) if _ml_nz_samples is not None else None,
         "ml_nz_frac": float(ml_nz_frac) if ml_nz_frac is not None else None,
         "flags": _flags_to_cell_value(flags_list),
     }
@@ -670,6 +675,12 @@ def main() -> None:
 
     wb = openpyxl.load_workbook(args.excel)
     ws = wb[args.sheet] if args.sheet else wb.active
+    
+    # Print header row and first row for debugging
+    values = ["" if cell.value is None else str(cell.value) for cell in ws[1]]
+    print("\t".join(values))
+    values = ["" if cell.value is None else str(cell.value) for cell in ws[2]]
+    print("\t".join(values))
 
     hdr = build_header_map(ws)
 
@@ -690,12 +701,15 @@ def main() -> None:
     cols["mlU"] = pick_col(hdr, "mlu", "mlU")
     cols["h_nz_cnt"] = pick_col(hdr, "h_nz_cnt", "h_nz_count")
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length", "h_nz_len_s", "h_nz_seconds")
-    cols["noni"] = pick_col(hdr, "noni")
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
+    cols["noni"] = pick_col(hdr, "noni")
     cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
+    cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len", "ml_nz_length", "ml_nz_len_s", "ml_nz_seconds")
     cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
     cols["flags"] = pick_col(hdr, "flags")
 
+    print(f"Column mapping: {cols}")
+    
         # Only 'basename' is strictly required. Other columns are optional; if missing in the Excel,
     # the script will simply not populate them.
     if cols["basename"] is None:
@@ -757,7 +771,7 @@ def main() -> None:
         if col_key in ("h_nz_frac", "ml_nz_frac") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
-        if col_key in ("h_nz_len",) and isinstance(new_val, (int, float, np.floating)):
+        if col_key in ("h_nz_len","ml_nz_len") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
         if cell_changed(old_val, new_val):
@@ -780,6 +794,7 @@ def main() -> None:
                 continue
 
             row, _is_new = get_or_create_row(bn)
+            print(f"Processing: {jp} -> row {row} (new: {_is_new})")
 
             data_info = find_data_file_fs(jp)
             if data_info is None:
@@ -813,10 +828,11 @@ def main() -> None:
                     "mlV": int(rec.ml_v_count),
                     "mlU": int(rec.ml_u_count),
                     "h_nz_cnt": int(rec.h_noises_count),
-                    "h_nz_len": float(_rec_dict.get("_h_noises_samples", 0)) / args.fs if (args.fs and args.fs > 0 and _rec_dict.get("_h_noises_samples") is not None) else None,
+                    "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)) if (args.fs and args.fs > 0 and _rec_dict.get("_h_noises_samples") is not None) else None,
                     "noni": int(rec.h_noises_count),
                     "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,
                     "ml_nz_cnt": int(rec.ml_noises_count),
+                    "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)) if (args.fs and args.fs > 0 and _rec_dict.get("_ml_noises_samples") is not None) else None,
                     "ml_nz_frac": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,
                     "flags": _flags_to_cell_value(rec.flags or []),
                 }
