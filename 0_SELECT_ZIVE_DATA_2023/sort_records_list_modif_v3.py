@@ -43,8 +43,8 @@ def sort_df_grouped(
     Rules:
       - Group rows by userId.
       - Inside group:
-          1) Sort by hS+hV desc, tie: h_nz_frac asc
-          2) If ALL rows in group have hS+hV == 0, sort by mlS+mlV desc, tie: ml_nz_frac asc
+          1) Sort by hS+hV desc, tie: h_nz_frac% asc
+          2) If ALL rows in group have hS+hV == 0, sort by mlS+mlV desc, tie: ml_nz_frac% asc
       - Add group_no as first column (1..N by first appearance of userId in output).
       - Preserve all original columns (plus group_no).
     """
@@ -89,7 +89,7 @@ def write_excel_with_formatting(
     - Writes df to Excel.
     - Highlights first row of each user group (light fill).
     - Forces basename column to TEXT and ensures ',' -> '.' in values.
-    - Formats h_nz_frac and ml_nz_frac as one decimal + literal % sign,
+    - Formats h_nz_frac% and ml_nz_frac% as one decimal + literal % sign,
       assuming values are already in percent units (12.3 means 12.3%).
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -123,7 +123,7 @@ def write_excel_with_formatting(
 
     # Percent columns: one decimal + literal percent sign
     # Values are already in percent units (e.g. 12.3 == 12.3%)
-    for pct_col in ["h_nz_frac", "ml_nz_frac"]:
+    for pct_col in ["h_nz_frac%", "ml_nz_frac%"]:
         if pct_col in col_index:
             cidx = col_index[pct_col]
             for r in range(2, ws.max_row + 1):
@@ -173,8 +173,8 @@ def main() -> int:
     hV_col = pick_col(df, "hV")
     mlS_col = pick_col(df, "mlS")
     mlV_col = pick_col(df, "mlV")
-    ann_nz_col = pick_col(df, "h_nz_frac", "h_nz_frac")
-    ml_nz_col = pick_col(df, "ml_nz_frac", "ml_nz_frac")
+    ann_nz_col = pick_col(df, "h_nz_frac%", "h_nz_frac%")
+    ml_nz_col = pick_col(df, "ml_nz_frac%", "ml_nz_frac%")
 
     basename_col = "basename" if "basename" in df.columns else None
 
@@ -210,6 +210,6 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 """
-python sort_records_list_modif_v3.py "0_SELECT_ZIVE_DATA_2023/visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx"
+python sort_records_list_modif_v3.py "visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx"
 
 """
