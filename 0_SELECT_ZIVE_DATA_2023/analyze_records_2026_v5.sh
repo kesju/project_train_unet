@@ -11,7 +11,7 @@ set -euo pipefail
 
 # Testavimui
 python analyze_records_2026_v5.py \
-  "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Anotuoti_visi_duomenys" \
+  "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui" \
   --fs 200 \
-  --out "records_summary_2026_v5_visi_atsisiusti.csv"
+  --out "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/records_summary_2026_v5_duomenys_testui.csv"
 

@@ -268,7 +268,7 @@ def summarize_record(
     flags_list = _flatten_flags(meta.get("flags") if isinstance(meta, dict) else None)
     comment = meta.get("comment") if isinstance(meta, dict) else None
     rpeaks_any = meta.get("rpeaks") if isinstance(meta, dict) else None
-    rpk_cnt, _rpk_first, _rpk_last, _rpk_ann = _summarize_rpeaks(rpeaks_any)
+    rpeaks_count, _rpk_first, _rpk_last, _rpk_ann = _summarize_rpeaks(rpeaks_any)
 
     mrk_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
 
@@ -355,7 +355,7 @@ def summarize_record(
         cmt=str(comment) if isinstance(comment, str) else None,
         flags_count=len(flags_list),
         flags=flags_list,
-        rpeaks_count=int(rpk_cnt),
+        rpeaks_count=int(rpeaks_count),
         h_n_count=h_n,
         h_s_count=h_s,
         h_v_count=h_v,
@@ -908,7 +908,7 @@ def main() -> None:
                         "rec_id": rec.recordingId,
                         "uid": rec.user_id,
                         "samples": int(rec.samples),
-                    "cmt": rec.cmt,
+                        "cmt": rec.cmt,
                         "dur_s": float(rec.duration_s) if rec.duration_s is not None else None,
                         "rpk_cnt": int(rec.rpeaks_count),
                         "hN": int(rec.h_n_count),
