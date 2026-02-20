@@ -3,27 +3,27 @@
     "channelCount": 1,
     "userId": "613b1d0c3d08d413ffcdc8f6",
     "flags": [
-        "FOR_EXTERNAL_ANNOTATING",
-        "EXTERNALLY_ANNOTATED",
-        "AI_DATASET"
+        "FULLY_ANNOTATED_PROFESSIONALLY"
     ],
     "noises": [],
     "noises_annotated": [],
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {
-            "V": 8,
-            "N": 10,
-            "S": 11
+            "V": 15,
+            "N": 9,
+            "U": 1,
+            "S": 2
         },
         "ml": {
             "U": 11,
             "V": 9
         },
         "merged": {
-            "N": 723,
-            "V": 8,
-            "S": 11
+            "N": 722,
+            "V": 15,
+            "U": 1,
+            "S": 2
         }
     },
     "rpeaks": {
@@ -51,11 +51,11 @@
             },
             {
                 "sampleIndex": 36988,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 40477,
-                "annotationValue": "S"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 40592,
@@ -63,15 +63,11 @@
             },
             {
                 "sampleIndex": 43531,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 53558,
                 "annotationValue": "V"
-            },
-            {
-                "sampleIndex": 53686,
-                "annotationValue": "N"
             },
             {
                 "sampleIndex": 62261,
@@ -87,11 +83,11 @@
             },
             {
                 "sampleIndex": 89036,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 97164,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 103571,
@@ -111,7 +107,7 @@
             },
             {
                 "sampleIndex": 111841,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 111951,
@@ -119,7 +115,7 @@
             },
             {
                 "sampleIndex": 112654,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 112767,
@@ -127,11 +123,11 @@
             },
             {
                 "sampleIndex": 116276,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 116382,
-                "annotationValue": "S"
+                "annotationValue": "N"
             },
             {
                 "sampleIndex": 125833,
@@ -140,10 +136,6 @@
             {
                 "sampleIndex": 125953,
                 "annotationValue": "V"
-            },
-            {
-                "sampleIndex": 126082,
-                "annotationValue": "N"
             }
         ],
         "ml": [
@@ -1075,7 +1067,7 @@
             },
             {
                 "sampleIndex": 36988,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 37185,
@@ -1151,7 +1143,7 @@
             },
             {
                 "sampleIndex": 40477,
-                "annotationValue": "S"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 40592,
@@ -1223,7 +1215,7 @@
             },
             {
                 "sampleIndex": 43531,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 43718,
@@ -1444,10 +1436,6 @@
             {
                 "sampleIndex": 53558,
                 "annotationValue": "V"
-            },
-            {
-                "sampleIndex": 53686,
-                "annotationValue": "N"
             },
             {
                 "sampleIndex": 53800,
@@ -2311,7 +2299,7 @@
             },
             {
                 "sampleIndex": 89036,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 89187,
@@ -2523,7 +2511,7 @@
             },
             {
                 "sampleIndex": 97164,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 97353,
@@ -2843,7 +2831,7 @@
             },
             {
                 "sampleIndex": 111841,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 111951,
@@ -2863,7 +2851,7 @@
             },
             {
                 "sampleIndex": 112654,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 112767,
@@ -2943,11 +2931,11 @@
             },
             {
                 "sampleIndex": 116276,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 116382,
-                "annotationValue": "S"
+                "annotationValue": "N"
             },
             {
                 "sampleIndex": 116577,
@@ -3152,10 +3140,6 @@
             {
                 "sampleIndex": 125953,
                 "annotationValue": "V"
-            },
-            {
-                "sampleIndex": 126082,
-                "annotationValue": "N"
             },
             {
                 "sampleIndex": 126203,
