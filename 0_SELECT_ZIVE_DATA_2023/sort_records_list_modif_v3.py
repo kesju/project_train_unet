@@ -1,215 +1,196 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+import os, re
+from collections import OrderedDict
+from copy import copy
 
-from __future__ import annotations
-
-import argparse
-from pathlib import Path
-
-import pandas as pd
-from openpyxl import load_workbook
+import openpyxl
 from openpyxl.styles import PatternFill
 
 
-def pick_col(df: pd.DataFrame, *names: str) -> str:
-    """Return the first existing column name from candidates."""
-    for n in names:
-        if n in df.columns:
-            return n
-    raise KeyError(f"None of these columns exist: {names}")
+IN_PATH = "visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx"
 
 
-def to_num(s: pd.Series) -> pd.Series:
-    return pd.to_numeric(s, errors="coerce")
+def norm_header(x):
+    if x is None:
+        return ""
+    s = str(x).strip().lower()
+    s = re.sub(r"\s+", "", s)
+    return s
 
 
-def drop_unnamed_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop Excel artifact columns like 'Unnamed: 22'."""
-    mask = ~df.columns.astype(str).str.match(r"^Unnamed:\s*\d+$")
-    return df.loc[:, mask]
+def to_float(x, default=0.0):
+    """Accepts numbers or strings like '12,5%' / '12.5%' / '12,5'."""
+    if x is None:
+        return default
+    if isinstance(x, (int, float)):
+        return float(x)
+    s = str(x).strip()
+    if not s:
+        return default
+    s = s.replace("%", "").replace(" ", "").replace(",", ".")
+    try:
+        return float(s)
+    except Exception:
+        return default
 
 
-def sort_df_grouped(
-    df: pd.DataFrame,
-    user_col: str,
-    hS_col: str,
-    hV_col: str,
-    mlS_col: str,
-    mlV_col: str,
-    ann_nz_col: str,
-    ml_nz_col: str,
-) -> pd.DataFrame:
-    """
-    Rules:
-      - Group rows by userId.
-      - Inside group:
-          1) Sort by hS+hV desc, tie: h_nz_frac% asc
-          2) If ALL rows in group have hS+hV == 0, sort by mlS+mlV desc, tie: ml_nz_frac% asc
-      - Add group_no as first column (1..N by first appearance of userId in output).
-      - Preserve all original columns (plus group_no).
-    """
-    df2 = df.copy()
-
-    df2["_ann_sum"] = to_num(df2[hS_col]).fillna(0) + to_num(df2[hV_col]).fillna(0)
-    df2["_ml_sum"] = to_num(df2[mlS_col]).fillna(0) + to_num(df2[mlV_col]).fillna(0)
-    df2["_ann_nz"] = to_num(df2[ann_nz_col]).fillna(float("inf"))
-    df2["_ml_nz"] = to_num(df2[ml_nz_col]).fillna(float("inf"))
-
-    def _sort_group(g: pd.DataFrame) -> pd.DataFrame:
-        if (g["_ann_sum"].fillna(0) == 0).all():
-            return g.sort_values(by=["_ml_sum", "_ml_nz"], ascending=[False, True], kind="mergesort")
-        return g.sort_values(by=["_ann_sum", "_ann_nz"], ascending=[False, True], kind="mergesort")
-
-    parts = []
-    # deterministic group order by userId
-    for _, g in df2.groupby(user_col, sort=True):
-        parts.append(_sort_group(g))
-
-    out = pd.concat(parts, axis=0).reset_index(drop=True)
-
-    # group_no by first appearance in output
-    user_order = pd.Index(out[user_col].astype(str)).drop_duplicates()
-    group_map = {u: i + 1 for i, u in enumerate(user_order)}
-    out.insert(0, "group_no", out[user_col].astype(str).map(group_map))
-
-    # Drop helper columns
-    out = out.drop(columns=["_ann_sum", "_ml_sum", "_ann_nz", "_ml_nz"], errors="ignore")
-    return out
+def copy_cell_style(src_cell, dst_cell):
+    """Copy everything EXCEPT value."""
+    if src_cell.has_style:
+        dst_cell._style = copy(src_cell._style)
+    dst_cell.number_format = src_cell.number_format
+    dst_cell.font = copy(src_cell.font)
+    dst_cell.fill = copy(src_cell.fill)
+    dst_cell.border = copy(src_cell.border)
+    dst_cell.alignment = copy(src_cell.alignment)
+    dst_cell.protection = copy(src_cell.protection)
+    dst_cell.comment = src_cell.comment
 
 
-def write_excel_with_formatting(
-    df: pd.DataFrame,
-    out_path: Path,
-    sheet_name: str,
-    user_col: str,
-    basename_col: str | None,
-    highlight_hex: str = "EAF2FF",
-) -> None:
-    """
-    - Writes df to Excel.
-    - Highlights first row of each user group (light fill).
-    - Forces basename column to TEXT and ensures ',' -> '.' in values.
-    - Formats h_nz_frac% and ml_nz_frac% as one decimal + literal % sign,
-      assuming values are already in percent units (12.3 means 12.3%).
-    """
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name=sheet_name)
-
-    wb = load_workbook(out_path)
-    ws = wb[sheet_name]
-
-    header = [cell.value for cell in ws[1]]
-    col_index = {name: idx + 1 for idx, name in enumerate(header)}
-
-    # Highlight first row of each group
-    fill = PatternFill(start_color=highlight_hex, end_color=highlight_hex, fill_type="solid")
-    first_rows = df.groupby(user_col, sort=False).head(1).index.tolist()  # 0-based in df
-
-    for i0 in first_rows:
-        excel_row = 2 + i0  # header row is 1
-        for c in range(1, ws.max_column + 1):
-            ws.cell(row=excel_row, column=c).fill = fill
-
-    # Basename: force text + '.' decimal separator
-    if basename_col and basename_col in col_index:
-        bcol = col_index[basename_col]
-        for r in range(2, ws.max_row + 1):
-            cell = ws.cell(row=r, column=bcol)
-            v = "" if cell.value is None else str(cell.value).replace(",", ".")
-            cell.value = v
-            cell.number_format = "@"  # TEXT
-
-    # Percent columns: one decimal + literal percent sign
-    # Values are already in percent units (e.g. 12.3 == 12.3%)
-    for pct_col in ["h_nz_frac%", "ml_nz_frac%"]:
-        if pct_col in col_index:
-            cidx = col_index[pct_col]
-            for r in range(2, ws.max_row + 1):
-                cell = ws.cell(row=r, column=cidx)
-                if cell.value is None or str(cell.value).strip() == "":
-                    continue
-                try:
-                    cell.value = float(cell.value)
-                except Exception:
-                    # leave non-numeric as-is
-                    pass
-                cell.number_format = '0.0"%"'
-
-    wb.save(out_path)
+def copy_cell(src_cell, dst_cell):
+    """Copy value + style."""
+    dst_cell.value = src_cell.value
+    copy_cell_style(src_cell, dst_cell)
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description="Sort visi_zive_irasai_atrankai._modif_v1.xlsx by userId + ann/ml rules.")
-    ap.add_argument("inp", type=Path, help="Input .xlsx")
-    ap.add_argument(
-        "--out",
-        type=Path,
-        default=None,
-        help="Output .xlsx (default: input stem + _sorted_grouped_highlighted_basename_dot.xlsx)",
-    )
-    ap.add_argument("--sheet", type=str, default="sorted", help="Output sheet name")
-    ap.add_argument("--highlight", type=str, default="FFEE99", help="Hex fill for first row of each group")
-    
-    # Very light blue: EAF2FF
-    # Light blue: D6E8FF
-    # Very light yellow: FFF7CC
-    # Light yellow: FFEE99
-    
-    
-    args = ap.parse_args()
+def main(in_path: str):
+    if not os.path.exists(in_path):
+        raise FileNotFoundError(f"Input not found: {in_path}")
 
-    inp: Path = args.inp
-    if args.out is None:
-        args.out = inp.with_name(inp.stem + "_sorted_grouped_highlighted_basename_dot.xlsx")
+    wb = openpyxl.load_workbook(in_path)
+    ws = wb.active
 
-    df = pd.read_excel(inp)
-    df = drop_unnamed_columns(df)  # <--- exclude Unnamed: 22/23/24 (and any Unnamed:*)
+    header = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
+    hmap = {norm_header(v): i + 1 for i, v in enumerate(header)}
 
-    # Robust column mapping (matches your file)
-    user_col = pick_col(df, "userId", "userID")
-    hS_col = pick_col(df, "hS")
-    hV_col = pick_col(df, "hV")
-    mlS_col = pick_col(df, "mlS")
-    mlV_col = pick_col(df, "mlV")
-    ann_nz_col = pick_col(df, "h_nz_frac%", "h_nz_frac%")
-    ml_nz_col = pick_col(df, "ml_nz_frac%", "ml_nz_frac%")
+    def col_idx(*cands):
+        for c in cands:
+            k = norm_header(c)
+            if k in hmap:
+                return hmap[k]
+        return None
 
-    basename_col = "basename" if "basename" in df.columns else None
+    c_user  = col_idx("userId", "userid", "user_id")
+    c_hS    = col_idx("hS", "hs")
+    c_hV    = col_idx("hV", "hv")
+    c_mlS   = col_idx("mlS", "mls")
+    c_mlV   = col_idx("mlV", "mlv")
+    c_hnzf  = col_idx("h_nz_frac%", "h_nz_frac", "hnzfrac%", "hnzfrac")
+    c_mlnzf = col_idx("ml_nz_frac%", "ml_nz_frac", "mlnzfrac%", "mlnzfrac")
 
-    df_sorted = sort_df_grouped(
-        df=df,
-        user_col=user_col,
-        hS_col=hS_col,
-        hV_col=hV_col,
-        mlS_col=mlS_col,
-        mlV_col=mlV_col,
-        ann_nz_col=ann_nz_col,
-        ml_nz_col=ml_nz_col,
-    )
+    missing = [
+        name for name, c in [
+            ("userId", c_user),
+            ("hS", c_hS),
+            ("hV", c_hV),
+            ("mlS", c_mlS),
+            ("mlV", c_mlV),
+            ("h_nz_frac%", c_hnzf),
+            ("ml_nz_frac%", c_mlnzf),
+        ] if c is None
+    ]
+    if missing:
+        raise RuntimeError(
+            f"Missing required columns in header row: {missing}\n"
+            f"Available headers (normalized): {sorted(hmap.keys())}"
+        )
 
-    # Also ensure basename fix at dataframe level
-    if basename_col:
-        df_sorted[basename_col] = df_sorted[basename_col].astype(str).str.replace(",", ".", regex=False)
+    # Read rows
+    rows = []
+    for r in range(2, ws.max_row + 1):
+        uid = ws.cell(row=r, column=c_user).value
+        if uid is None and all(
+            ws.cell(row=r, column=c).value in (None, "")
+            for c in range(1, ws.max_column + 1)
+        ):
+            continue
 
-    write_excel_with_formatting(
-        df=df_sorted,
-        out_path=args.out,
-        sheet_name=args.sheet,
-        user_col=user_col,
-        basename_col=basename_col,
-        highlight_hex=args.highlight,
-    )
+        row_cells = [ws.cell(row=r, column=c) for c in range(1, ws.max_column + 1)]
+        hs_sum = to_float(ws.cell(row=r, column=c_hS).value) + to_float(ws.cell(row=r, column=c_hV).value)
+        ml_sum = to_float(ws.cell(row=r, column=c_mlS).value) + to_float(ws.cell(row=r, column=c_mlV).value)
+        hnzf = to_float(ws.cell(row=r, column=c_hnzf).value, default=0.0)
+        mlnzf = to_float(ws.cell(row=r, column=c_mlnzf).value, default=0.0)
 
-    print(f"Wrote: {args.out}")
-    return 0
+        rows.append({
+            "orig_row": r,
+            "userId": "" if uid is None else str(uid).strip(),
+            "hs_sum": hs_sum,
+            "ml_sum": ml_sum,
+            "hnzf": hnzf,
+            "mlnzf": mlnzf,
+            "cells": row_cells,
+        })
+
+    # Group by userId in first-appearance order
+    groups = OrderedDict()
+    for item in rows:
+        groups.setdefault(item["userId"], []).append(item)
+
+    def sort_group(items):
+        all_hs_zero = all(abs(x["hs_sum"]) < 1e-12 for x in items)
+        if all_hs_zero:
+            return sorted(items, key=lambda x: (-x["ml_sum"], x["mlnzf"], x["orig_row"]))
+        return sorted(items, key=lambda x: (-x["hs_sum"], x["hnzf"], x["orig_row"]))
+
+    sorted_groups = [(uid, sort_group(items)) for uid, items in groups.items()]
+
+    base, ext = os.path.splitext(in_path)
+    out_path = base + "_sorted" + ext
+
+    out_wb = openpyxl.Workbook()
+    out_ws = out_wb.active
+    out_ws.title = ws.title
+    out_ws.sheet_view.freeze_panes = ws.freeze_panes
+
+    # Column widths
+    out_ws.column_dimensions["A"].width = 8
+    for col_letter, dim in ws.column_dimensions.items():
+        if len(col_letter) == 1 and "A" <= col_letter <= "Y":
+            shifted = chr(ord(col_letter) + 1)
+            out_ws.column_dimensions[shifted].width = dim.width
+
+    # Header row: NEW A1 value, style copied without overwriting value
+    h1 = out_ws.cell(row=1, column=1, value="grp_no")
+    copy_cell_style(ws.cell(row=1, column=1), h1)
+
+    # Copy original headers shifted by +1
+    for c in range(1, ws.max_column + 1):
+        copy_cell(ws.cell(row=1, column=c), out_ws.cell(row=1, column=c + 1))
+
+    # Highlight for first row of each group
+    # group_fill = PatternFill("solid", fgColor="E8F4FF")
+    # group_fill = PatternFill("solid", fgColor="FFF2CC")  # light yellow
+    # group_fill = PatternFill("solid", fgColor="FFFFCC")  # very pale yellow
+    # group_fill = PatternFill("solid", fgColor="FFF9C4")  # soft light yellow
+    group_fill = PatternFill("solid", fgColor="FFFF00")  # pure yellow
+
+
+    out_r = 2
+    group_no = 1
+    for uid, items in sorted_groups:
+        first = True
+        for item in items:
+            # grp_no value must not be overwritten by style copy
+            gcell = out_ws.cell(row=out_r, column=1, value=group_no)
+            copy_cell_style(item["cells"][0], gcell)
+
+            # Copy row cells shifted by +1
+            for j, src_cell in enumerate(item["cells"], start=2):
+                copy_cell(src_cell, out_ws.cell(row=out_r, column=j))
+
+            if first:
+                for j in range(1, ws.max_column + 2):
+                    out_ws.cell(row=out_r, column=j).fill = copy(group_fill)
+                first = False
+
+            out_r += 1
+        group_no += 1
+
+    if ws.row_dimensions[1].height is not None:
+        out_ws.row_dimensions[1].height = ws.row_dimensions[1].height
+
+    out_wb.save(out_path)
+    print(f"Saved: {out_path}")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
-
-"""
-python sort_records_list_modif_v3.py "visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx"
-
-"""
+    main(IN_PATH)

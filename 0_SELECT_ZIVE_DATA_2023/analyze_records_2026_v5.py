@@ -363,14 +363,14 @@ def summarize_record(
     # rpeaks + annotation counts (support old and new schema)
     rpeaks_any = meta.get("rpeaks") if isinstance(meta, dict) else None
     rpk_cnt, _rpk_first, _rpk_last, rpk_ann = _summarize_rpeaks(rpeaks_any)
-    print(f"\nDEBUG: {sequenceId}/{basename} - rpeaks count: {rpk_cnt}, annotation counts: {rpk_ann}")
+    # print(f"\nDEBUG: {sequenceId}/{basename} - rpeaks count: {rpk_cnt}, annotation counts: {rpk_ann}")
     # DEBUG: recordings_5/1742319.328 - rpeaks count: 632, annotation counts: {'N': 604, 'V': 27, 'S': 1}
     
     mrk_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
-    print(f"DEBUG: {sequenceId}/{basename} - raw mrk_counts_any: {mrk_counts_any}")
+    # print(f"DEBUG: {sequenceId}/{basename} - raw mrk_counts_any: {mrk_counts_any}")
     
     h_counts_clean = _extract_mrk_counts(mrk_counts_any)
-    print(f"DEBUG: {sequenceId}/{basename} - cleaned h_counts_clean: {h_counts_clean}")
+    # print(f"DEBUG: {sequenceId}/{basename} - cleaned h_counts_clean: {h_counts_clean}")
     
     # If counts missing, fallback to counts derived from rpeaks list
     if not h_counts_clean:
@@ -643,8 +643,8 @@ def main() -> int:
 
     df = pd.DataFrame(records)
     print(f"\nDEBUG: Total records summarized: {len(df)}")
-    print(f"DEBUG: DataFrame columns: {df.columns.tolist()}")
-    print(df.head(5))
+    # print(f"DEBUG: DataFrame columns: {df.columns.tolist()}")
+    # print(df.head(5))
     
     if df.empty:
         print("No records found.")
@@ -729,18 +729,18 @@ def main() -> int:
     print(f"\nInput: {data_dir_label}")
     # print(f"Saved CSV : {csv_path}")
     print(f"Saved XLSX: {xlsx_path}")
-    print("Summary statistics:")
-    print(
-        df_print.to_string(
-            index=False,
-            float_format=None,
-            formatters={
-                "dur_s": lambda x: f"{x:.2f}" if pd.notna(x) else "",
-                "h_nz_frac": lambda x: f"{x:.1f}%" if pd.notna(x) else "",
-                "ml_nz_frac": lambda x: f"{x:.1f}%" if pd.notna(x) else "",
-            }
-        )
-    )
+    # print("Summary statistics:")
+    # print(
+    #     df_print.to_string(
+    #         index=False,
+    #         float_format=None,
+    #         formatters={
+    #             "dur_s": lambda x: f"{x:.2f}" if pd.notna(x) else "",
+    #             "h_nz_frac": lambda x: f"{x:.1f}%" if pd.notna(x) else "",
+    #             "ml_nz_frac": lambda x: f"{x:.1f}%" if pd.notna(x) else "",
+    #         }
+    #     )
+    # )
 
     return 0
 

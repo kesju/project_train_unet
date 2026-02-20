@@ -271,40 +271,49 @@ def summarize_record(
     rpeaks_count, _rpk_first, _rpk_last, _rpk_ann = _summarize_rpeaks(rpeaks_any)
 
     mrk_counts_any = meta.get("rpeakAnnotationCounts") if isinstance(meta, dict) else None
-    print(f"DEBUG: {sequenceId}/{basename} - raw mrk_counts_any: {mrk_counts_any}")
+    # print(f"DEBUG: {sequenceId}/{basename} - raw mrk_counts_any: {mrk_counts_any}")
 
-    # Only treat counts as "human" if they come from explicit "human" variant
-    # (or from a flat dict without variants).
-    # h_counts_clean = _extract_mrk_counts(mrk_counts_any)
-    h_counts_human = _extract_mrk_counts_for_variant(mrk_counts_any, "human")
-    print(f"DEBUG: {sequenceId}/{basename} - cleaned h_counts_human: {h_counts_human}")
+    # Pick counts for the "H" columns (hN/hS/hV/hU).
+    # IMPORTANT: Prefer explicit "merged" counts if present, then "human".
+    # Only if neither exists do we fall back to a flat dict / derived counts.
+    def _counts_for_h_columns() -> Tuple[Dict[str, int], str]:
+        # 1) Explicit counts by variant
+        for var in ("merged", "human"):
+            d = _extract_mrk_counts_for_variant(mrk_counts_any, var)
+            if d:
+                return d, var
 
-    # If JSON has no explicit human counts, try to derive them from human rpeaks variant.
-    if not h_counts_human:
-        human_rpeaks = _extract_rpeaks_list_for_variant(rpeaks_any, "human")
-        if human_rpeaks:
-            tmp: Dict[str, int] = {}
-            for rp in human_rpeaks:
-                av = rp.get("annotationValue")
-                if isinstance(av, str):
-                    tmp[av] = tmp.get(av, 0) + 1
-                elif av is not None:
-                    s = str(av)
-                    tmp[s] = tmp.get(s, 0) + 1
-            h_counts_human = tmp
+        # 2) Derive from rpeaks by variant (merged first, then human)
+        for var in ("merged", "human"):
+            rp_list = _extract_rpeaks_list_for_variant(rpeaks_any, var)
+            if rp_list:
+                tmp: Dict[str, int] = {}
+                for rp in rp_list:
+                    av = rp.get("annotationValue")
+                    if isinstance(av, str):
+                        tmp[av] = tmp.get(av, 0) + 1
+                    elif av is not None:
+                        s = str(av)
+                        tmp[s] = tmp.get(s, 0) + 1
+                if tmp:
+                    return tmp, f"derived:{var}"
 
-    # If rpeakAnnotationCounts is a flat dict (no variants), accept it as human.
-    if not h_counts_human:
+        # 3) Flat dict (no variants) -> treat as primary counts
         flat = _extract_mrk_counts(mrk_counts_any)
         if flat:
-            h_counts_human = flat
+            return flat, "flat"
 
-    has_human_counts = bool(h_counts_human)
+        return {}, "none"
 
-    h_n = int(h_counts_human.get("N", 0)) if has_human_counts else 0
-    h_s = int(h_counts_human.get("S", 0)) if has_human_counts else 0
-    h_v = int(h_counts_human.get("V", 0)) if has_human_counts else 0
-    h_u = int(h_counts_human.get("U", 0)) if has_human_counts else 0
+    h_counts_primary, h_counts_src = _counts_for_h_columns()
+    # print(f"DEBUG: {sequenceId}/{basename} - h_counts_primary source={h_counts_src}: {h_counts_primary}")
+
+    has_h_counts = bool(h_counts_primary)
+
+    h_n = int(h_counts_primary.get("N", 0)) if has_h_counts else 0
+    h_s = int(h_counts_primary.get("S", 0)) if has_h_counts else 0
+    h_v = int(h_counts_primary.get("V", 0)) if has_h_counts else 0
+    h_u = int(h_counts_primary.get("U", 0)) if has_h_counts else 0
 
     ml_counts = _extract_mrk_counts_for_variant(mrk_counts_any, "ml")
     if not ml_counts:
@@ -377,7 +386,7 @@ def summarize_record(
     )
 
     rec_dict = asdict(rec)
-    rec_dict["__has_human_counts"] = bool(has_human_counts)
+    rec_dict["__has_human_counts"] = bool(has_h_counts)  # kept key name for backward compatibility
     rec_dict["_ml_noises_samples"] = int(ml_nz_samples)
     rec_dict["_h_noises_samples"] = int(h_nz_samples)
     return rec, rec_dict
@@ -597,22 +606,32 @@ def _extract_from_json_only(meta: Dict[str, Any], fs: int) -> Dict[str, Any]:
     rpk_cnt, *_ = _summarize_rpeaks(rpeaks_any)
 
     mrk_counts_any = meta.get("rpeakAnnotationCounts")
-    h_counts_human = _extract_mrk_counts_for_variant(mrk_counts_any, "human")
-    if not h_counts_human:
-        human_rpeaks = _extract_rpeaks_list_for_variant(rpeaks_any, "human")
-        if human_rpeaks:
-            tmp: Dict[str, int] = {}
-            for rp in human_rpeaks:
-                av = rp.get("annotationValue")
-                if isinstance(av, str):
-                    tmp[av] = tmp.get(av, 0) + 1
-                elif av is not None:
-                    tmp[str(av)] = tmp.get(str(av), 0) + 1
-            h_counts_human = tmp
-    if not h_counts_human:
+    # Pick counts for the "H" columns (hN/hS/hV/hU).
+    # Prefer explicit "merged" counts, then "human", then derive from rpeaks, then flat dict.
+    def _counts_for_h_columns() -> Dict[str, int]:
+        for var in ("merged", "human"):
+            d = _extract_mrk_counts_for_variant(mrk_counts_any, var)
+            if d:
+                return d
+        for var in ("merged", "human"):
+            rp_list = _extract_rpeaks_list_for_variant(rpeaks_any, var)
+            if rp_list:
+                tmp: Dict[str, int] = {}
+                for rp in rp_list:
+                    av = rp.get("annotationValue")
+                    if isinstance(av, str):
+                        tmp[av] = tmp.get(av, 0) + 1
+                    elif av is not None:
+                        s = str(av)
+                        tmp[s] = tmp.get(s, 0) + 1
+                if tmp:
+                    return tmp
         flat = _extract_mrk_counts(mrk_counts_any)
         if flat:
-            h_counts_human = flat
+            return flat
+        return {}
+
+    h_counts_primary = _counts_for_h_columns()
 
     ml_counts = _extract_mrk_counts_for_variant(mrk_counts_any, "ml")
     if not ml_counts:
@@ -626,10 +645,10 @@ def _extract_from_json_only(meta: Dict[str, Any], fs: int) -> Dict[str, Any]:
                 tmp2[str(av)] = tmp2.get(str(av), 0) + 1
         ml_counts = tmp2
 
-    h_n = int(h_counts_human.get("N", 0)) if h_counts_human else 0
-    h_s = int(h_counts_human.get("S", 0)) if h_counts_human else 0
-    h_v = int(h_counts_human.get("V", 0)) if h_counts_human else 0
-    h_u = int(h_counts_human.get("U", 0)) if h_counts_human else 0
+    h_n = int(h_counts_primary.get("N", 0)) if h_counts_primary else 0
+    h_s = int(h_counts_primary.get("S", 0)) if h_counts_primary else 0
+    h_v = int(h_counts_primary.get("V", 0)) if h_counts_primary else 0
+    h_u = int(h_counts_primary.get("U", 0)) if h_counts_primary else 0
 
     ml_s = int(ml_counts.get("S", 0)) if ml_counts else 0
     ml_v = int(ml_counts.get("V", 0)) if ml_counts else 0
