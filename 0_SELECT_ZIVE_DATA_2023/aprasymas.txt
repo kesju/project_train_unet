@@ -20,3 +20,17 @@ kurią nuskaito nurodytame aplnke ar zip faile ir išduoda papildytą sąrašą 
 Pertvarko sarašą visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx taip, kad pacientų įrašų grupėse pirmiausiai būtų išdėstytos eilutės su didžiausiu kiekiu ekstrasistolių, taip pat toliau būtų dėstomos eilutės su mažiausiu triukšmų kiekiu. Išduodą pertvarkytą sąrašą: visi_zive_irasai_atrankai._modif_v1 - Darb_updated_sorted.xlsx
 Pertvarkomas failas nurodomas skripto pradžioje: IN_PATH = "visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx"
 
+
+
+	4. use_ecg_denoising_with_quality_3.ipynb
+
+Analizuoja triukšmus visus įrašus iš aplanko pvz. PseudoAnnotated ir nurodytus basename stulpelyje Excel faile su įrašų sarašu, pvz.
+Pseudo_annotated.xlsx ir sukuria naują Excel failą, kuriame sudeda triukšmų suradimo reultatus ir parametrus iš pradinio Excel failo.
+Skriptas perdirbtas iš 4_TEST_UNET/use_ecg_denoising_with_quality_2.ipynb ir pritaikytas darbui su įrašais originaliu Zive formatu.
+
+
+
+	5. use_ecg_denoising_with_graph_3.ipynb
+
+
+Skriptas perdirbtas iš 4_TEST_UNET/use_ecg_denoising_unet_extended_with_graph.ipynb.
