@@ -620,6 +620,7 @@ def train_and_test_model(ecg_records_dir, model_output, vis_dir='visualizations'
     logger.info(f"SNR:  {np.mean(snr_list):.2f} ± {np.std(snr_list):.2f} dB")
     logger.info(f"Corr: {np.mean(corr_list):.3f} ± {np.std(corr_list):.3f}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate a 1D U-Net Denoising Autoencoder for ECG")
     parser.add_argument('--ecg_records_dir', type=str, required=True, help='Path to directory with ECG .npy files')

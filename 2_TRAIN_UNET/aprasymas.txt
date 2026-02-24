@@ -15,12 +15,23 @@ proporcija nustatoma su parametru train_split batch faile train_ecg_denoising_un
 Apmokyto UNET modelio parametrai įrašomi į aplanką results, tolesniam naudojimui (pvz. testavimui) jie perrašomi
 iš aplanko 2_TRAIN_UNET/results į aplanką MODEL_UNET.
 
-Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_6.keras:
+Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_7.keras:
 1024 - 'SEGMENT_LENGTH'
 0_5 - 'OVERLAP'
 3 - papildymas, leidžiantis susigaudyti su kokiais duomenimis buvo mokymas. 3 reiškia, kad naudojama mokymo imtis po 3-io
     papildymo duomenimis (žr. 3-as etapas - duomenys mokymui). Jei 0, reiškia, kad mokyta iš ecg_selected_for_test
 7 - pridėjau, kad būtų aišku, kad mokyta su train_ecg_denoising_unet7.py 
+
+naujausias variantas naudoja pakeistą filtravimą:
+ # Apply  filter
+fp = {  'type': 'bandpass',
+                'method':'butterworth',
+                'order':4,
+                'sampling_rate':fs,
+                'lowcut':0.5,
+                'highcut':70 }
+    
+ecg_data_start = ecg_filter(ecg_data_orig, fp)
 
 
 Log pranešimai valdomu užduodant batch faile train_ecg_denoising_unet7.sh log_level.
