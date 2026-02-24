@@ -55,6 +55,10 @@ import re
 PARALLEL_PATH = Path().resolve().parent / "SUPL_FUNCTIONS"
 sys.path.append(str(PARALLEL_PATH))
 
+# Pakeitimai, kuriuos reikia padaryti
+order = 4
+highcut = 70.0
+
 # bandpass_filter
 def bandpass_filter(signal, fs=200, lowcut=0.5, highcut=90., method="butterworth", order=5):
     filtered = nk.signal_filter(signal, fs, lowcut, highcut, method, order)

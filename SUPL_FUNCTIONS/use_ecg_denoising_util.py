@@ -14,20 +14,20 @@ def ecg_filter(ecg_signal, fp):
     # or bandpass (if both are provided) filter to the signal.
    
     Parameters with example values:
-    fp = {  'type': 'lowpass' or 'bandpass',
+    fp = {  'type': 'lowcut' or 'bandpass',
             'method':'butterworth',
             'order':5,
             'sampling_rate':200,
             'lowcut':0.5,
-            'highcut':90. }
+            'highcut':70. }
     """
     
-    if fp['type'] == 'lowpass':
+    if fp['type'] == 'lowcut':
         # Apply lowpass filter to ecg signal.
         ecg_signal_flt = nk.signal_filter(signal=ecg_signal, sampling_rate=fp['sampling_rate'], lowcut=fp['lowcut'], method=fp['method'], order=fp['order'])
     else:
         # Apply bandpass filter to ecg signal.
-        ecg_signal_flt = nk.signal_filter(signal=ecg_signal, sampling_rate=fp['sampling_rate'], lowcut=fp['lowcut'], method=fp['method'], order=fp['order'])
+        ecg_signal_flt = nk.signal_filter(signal=ecg_signal, sampling_rate=fp['sampling_rate'], lowcut=fp['lowcut'], highcut=fp['highcut'], method=fp['method'], order=fp['order'])
     return ecg_signal_flt
 
 
