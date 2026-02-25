@@ -1,0 +1,24 @@
+fs: 200
+memory_lean: true
+merging:
+  enabled: True
+  t_gap_max_secs: 1.0 # t_gap_max_secs: maximum allowed gap (in seconds) between two intervals before they are merged (default 30 s).
+  extra_interval_secs: 1.0   # extra_interval_secs: additional time (in seconds) to consider for merging intervals (default 5 s).
+  t_start_gap_max_secs: 1.0 # t_start_gap_max_secs: maximum allowed gap (in seconds) at the start of the signal (default 10 s).
+  t_end_gap_max_secs:  1.0   # t_end_gap_max_secs: maximum allowed gap (in seconds) at the end of the signal (default 10 s).
+stitching:
+  enabled: True
+  sliding_window_size_secs: 0.4 # slicing window
+  main_window_size_secs: 0.9  # main window_size = sliding_window_size * 5
+ectopy:
+  enabled: true
+  model_name: "best_model_final_2.keras"  # unet model file name for ectopy detection
+  scaler_name: "scaler.pkl"  # scaler file name
+  window_secs: 1.0 # Window size in seconds for ectopy indices
+  # segment_length: 1024 # Segment length
+  # overlap: 0.5          # Overlap fraction
+
+  
+# check if the conditions are met:
+# OK. 2*sliding_window_size is less main_window_size
+# OK. main_window_size is less than all specified values: t_gap_max, extra_interval, t_start_gap_max, t_end_gap_max
