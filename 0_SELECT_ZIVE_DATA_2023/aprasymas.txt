@@ -29,8 +29,25 @@ Pseudo_annotated.xlsx ir sukuria naują Excel failą, kuriame sudeda triukšmų 
 Skriptas perdirbtas iš 4_TEST_UNET/use_ecg_denoising_with_quality_2.ipynb ir pritaikytas darbui su įrašais originaliu Zive formatu.
 
 
-
 	5. use_ecg_denoising_with_graph_3.ipynb
 
 
 Skriptas perdirbtas iš 4_TEST_UNET/use_ecg_denoising_unet_extended_with_graph.ipynb.
+
+
+
+	6. 0_SELECT_ZIVE_DATA_2023/ectopy_in_zive_one.ipynb
+
+Skriptas iš home\kesju\DI\2025_ZIVEO\S-ITP-25-9\MAKETAS_ZIVE\ECTOPY\ectopy_in_zive_one.ipynb
+ir patvarkytas, kad veiktų su bibliotekomis iš ITP259
+
+
+	7. use_ecg_denoising_pipeline_with_graph_v0.ipynb
+
+Skriptas perdarytas iš 0_SELECT_ZIVE_DATA_2023/ectopy_in_zive_one.ipynb ir pritaikyas išvalytų įrašų grafiniam vaizdavimui,
+siekiant įvertinti judesių triukšmo valymą ir slenksčio įtaką. Grafikai įrašomi į diską su modelio ir slenksčio parametrais,
+taip kaip skripte use_ecg_denoising_with_graph_3.ipynb
+
+
+	8. bus analogas 0_SELECT_ZIVE_DATA_2023/update_records_list_modif_v7.py su pridėta funkcija įvertinanti triukšmus ir 
+	pridedanti jų parametrus prie Excel lentelės su kitais įrašų parametrais  
