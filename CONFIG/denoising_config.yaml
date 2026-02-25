@@ -8,18 +8,18 @@ filter:
   highcut: 70.
   order: 4
 outliers:
-  enabled: False
+  enabled: True
   ekg_min: -3.0
   ekg_max: 4.0
   length_fragment: 200
 rdropouts:
-  enabled: False
+  enabled: True
   HR_MIN: 20  # HR
   HR_MAX: 220 # HR
   len_frag: 2000  # Length of each fragment, 10 secs
   step_size: 100 
 motions:
-  enabled: False
+  enabled: True`
   model_name: "resunet_ecg_1024_0_5_3_7.keras"  # unet model name 
   segment_length: 1024 # Segment length
   overlap: 0.5          # Overlap fraction
