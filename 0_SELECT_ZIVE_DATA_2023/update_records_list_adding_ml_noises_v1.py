@@ -815,10 +815,13 @@ def main() -> None:
 
         for jp in sorted(json_paths):
             bn = norm_basename(jp.stem)
+            # stem returns the final path component without its suffix (file extension)
             if not bn:
                 continue
             if bn.lower() == "manifest":
                 continue
+            #  "manifest" - Lino sukuriamas json su sąrašu,
+            # bet jis neturi atitikmens duomenų faile, todėl jį praleidžiame
 
             row, _is_new = get_or_create_row(bn)
             # print(f"Processing: {jp} -> row {row} (new: {_is_new})")
