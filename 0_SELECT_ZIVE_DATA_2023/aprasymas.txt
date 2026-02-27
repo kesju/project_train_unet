@@ -1,23 +1,8 @@
-Parengti 3 skriptai 2023 duomenų tvarkymui aplanke 0_SELECT_ZIVE_DATA_2023:
-
-	1. analyze_records_2026_v5.py
-	analyze_records_2026_v5.sh
-
-Analizuoja įrašus aplanke ar zip ir išduoda sąrašą su parametrais iš json
-Pvz. 0_SELECT_ZIVE_DATA_2023/records_summary_2026_v5_visi_atsisiusti_duomenys.xlsx
+Parengti skriptai 2023 duomenų tvarkymui aplanke 0_SELECT_ZIVE_DATA_2023:
 
 
-	2. update_records_list_modif_v7.py
-	   update_records_list_modif_v7.py
-	
-	
-Atnaujina/papildo  informaciją įrašų saraše visi_zive_irasai_atrankai._modif_v1 - Darb.xlsx  ,
-kurią nuskaito nurodytame aplnke ar zip faile iš json failų ir išduoda papildytą sąrašą pvz. visi_zive_irasai_atrankai._modif_v1 - Darb_updated.xlsx
-
-
-
-	2.1 update_records_list_adding_ml_noises_v1.py
-	   update_records_list_adding_ml_noises_v1.py
+	2.1 update_records_list_adding_ml_noises_v2.py
+	   update_records_list_adding_ml_noises_v2.py
 	
 	
 Atnaujina/papildo  informaciją įrašų saraše visi_zive_irasai_atrankai._modif_v1 - Darb.xlsx  ,
@@ -59,5 +44,4 @@ siekiant įvertinti judesių triukšmo valymą ir slenksčio įtaką. Grafikai �
 taip kaip skripte use_ecg_denoising_with_graph_3.ipynb
 
 
-	8. bus analogas 0_SELECT_ZIVE_DATA_2023/update_records_list_modif_v7.py su pridėta funkcija įvertinanti triukšmus ir 
-	pridedanti jų parametrus prie Excel lentelės su kitais įrašų parametrais  
+	
