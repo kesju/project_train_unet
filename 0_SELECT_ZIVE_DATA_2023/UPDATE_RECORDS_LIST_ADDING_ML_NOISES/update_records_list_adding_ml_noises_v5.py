@@ -649,6 +649,30 @@ def main() -> None:
 
     hdr = build_header_map(ws)
 
+    # -------------------------------------------------------------
+    # NEW: Option B+ - remove legacy columns (ml_nz_cnt, ml_nz_len)
+    # -------------------------------------------------------------
+    legacy_headers = ("ml_nz_cnt", "ml_nz_len")
+    legacy_cols = sorted({hdr.get(h) for h in legacy_headers if hdr.get(h)}, reverse=True)
+    if legacy_cols:
+        for c in legacy_cols:
+            header_val = ws.cell(row=1, column=int(c)).value
+            try:
+                ws.delete_cols(int(c), 1)
+                log_info(f"Removed legacy Excel column '{header_val}' (index {c})")
+            except Exception:
+
+                # Best-effort: if deletion fails, at least blank header + cells
+                try:
+                    ws.cell(row=1, column=int(c)).value = None
+                    for r in range(2, ws.max_row + 1):
+                        ws.cell(row=r, column=int(c)).value = None
+                except Exception:
+                    pass
+        # Rebuild header map after column deletion
+        hdr = build_header_map(ws)
+
+
     cols: Dict[str, Optional[int]] = {}
     cols["basename"] = pick_col(hdr, "basename")
     cols["rec_id"] = pick_col(hdr, "rec_id", "recordingid", "recording_id", "recording id")
@@ -683,6 +707,46 @@ def main() -> None:
 
     if cols["basename"] is None:
         raise RuntimeError("Missing required column in Excel header row: ['basename']")
+
+
+    # -------------------------------------------------------------
+    # NEW: Option B - auto-create missing output columns in Excel
+    # -------------------------------------------------------------
+    def ensure_col(col_key: str, header_name: str, number_format: Optional[str] = None) -> None:
+        """Ensure a column exists in row 1; if missing, append it to the right."""
+        nonlocal hdr
+        if cols.get(col_key) is not None:
+            return
+        new_col = ws.max_column + 1
+        # Copy header style from the first existing header cell (best-effort)
+        src_header_cell = ws.cell(row=1, column=1)
+        dst_header_cell = ws.cell(row=1, column=new_col)
+        dst_header_cell.value = header_name
+        try:
+            dst_header_cell._style = _copy_style(src_header_cell._style)
+            dst_header_cell.font = _copy_style(src_header_cell.font)
+            dst_header_cell.border = _copy_style(src_header_cell.border)
+            dst_header_cell.fill = _copy_style(src_header_cell.fill)
+            dst_header_cell.number_format = src_header_cell.number_format
+            dst_header_cell.protection = _copy_style(src_header_cell.protection)
+            dst_header_cell.alignment = _copy_style(src_header_cell.alignment)
+        except Exception:
+            pass
+        if number_format:
+            # Apply to entire column (data rows) later when writing values
+            # but setting on header cell is harmless and keeps format visible in Excel.
+            dst_header_cell.number_format = number_format
+        # Update header map and cols mapping
+        hdr[str(header_name).strip().lower()] = new_col
+        cols[col_key] = new_col
+
+    # Required NEW output columns
+    ensure_col("out", "out")
+    ensure_col("rdr", "rdr")
+    ensure_col("noi", "noi")
+    ensure_col("tp", "tp%")
+    # Keep ml_nz_frac% = tp%
+    ensure_col("ml_nz_frac", "ml_nz_frac%")
 
     c_basename = int(cols["basename"])
 
@@ -830,7 +894,15 @@ def main() -> None:
                 "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)),
                 "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
 
-             trtttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+                # NEW: instead of ml_nz_cnt/ml_nz_len
+                "out": out_cnt,
+                "rdr": rdr_cnt,
+                "noi": noi_cnt,
+                "tp": tp_pct,
+
+                # NEW: ml_nz_frac% = tp%
+                "ml_nz_frac": tp_pct,
+
                 "flags": _flags_to_cell_value(rec.flags or []),
                 "noni": int(rec.h_noises_count),
             }

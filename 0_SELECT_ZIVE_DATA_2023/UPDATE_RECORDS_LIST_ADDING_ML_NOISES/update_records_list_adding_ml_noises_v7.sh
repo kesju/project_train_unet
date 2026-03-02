@@ -1,4 +1,4 @@
-# chmod +x update_records_list_adding_ml_noises_v3.sh
+# chmod +x update_records_list_adding_ml_noises_v7.sh
 
 # python update_records_list_adding_ml_noises_v1.py \
 #   --excel "visi_zive_irasai_atrankai._modif_v1 - Darb.xlsx" \
@@ -23,7 +23,7 @@
 
 
 # # Testavimui
-python update_records_list_adding_ml_noises_v3.py \
+python update_records_list_adding_ml_noises_v7.py \
   --excel "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui.xlsx" \
   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui" \
   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \

@@ -647,8 +647,79 @@ def main() -> None:
     wb = openpyxl.load_workbook(args.excel)
     ws = wb[args.sheet] if args.sheet else wb.active
 
+    
     hdr = build_header_map(ws)
 
+    # -------------------------------------------------------------
+    # Remove legacy columns (ml_nz_cnt, ml_nz_len)
+    # -------------------------------------------------------------
+    legacy_headers = ("ml_nz_cnt", "ml_nz_len")
+    legacy_cols = sorted({hdr.get(h) for h in legacy_headers if hdr.get(h)}, reverse=True)
+    if legacy_cols:
+        for c in legacy_cols:
+            header_val = ws.cell(row=1, column=int(c)).value
+            try:
+                ws.delete_cols(int(c), 1)
+                log_info(f"Removed legacy Excel column '{header_val}' (index {c})")
+            except Exception:
+                # Best-effort: if deletion fails, at least blank header + cells
+                try:
+                    ws.cell(row=1, column=int(c)).value = None
+                    for r in range(2, ws.max_row + 1):
+                        ws.cell(row=r, column=int(c)).value = None
+                except Exception:
+                    pass
+        hdr = build_header_map(ws)
+
+    # -------------------------------------------------------------
+    # Remove any completely empty header columns (user doesn't need them)
+    # -------------------------------------------------------------
+    def _remove_empty_header_cols() -> None:
+        """Remove truly empty columns.
+
+        IMPORTANT: We do *not* delete columns just because the header cell is empty.
+        Some workbooks have occasional blank header cells while the column still
+        contains real data (e.g., user-maintained columns like notes/flags).
+
+        A column is removed only if:
+          - header is empty/blank, AND
+          - all cells in rows 2..max_row are also empty/blank
+        """
+        empty_cols: List[int] = []
+        max_r = ws.max_row
+        for col in range(1, ws.max_column + 1):
+            v = ws.cell(row=1, column=col).value
+            if v is not None and str(v).strip() != "":
+                continue  # header exists
+            # Check if the whole column (below header) is empty
+            has_data = False
+            for r in range(2, max_r + 1):
+                vv = ws.cell(row=r, column=col).value
+                if vv is None:
+                    continue
+                if isinstance(vv, str) and vv.strip() == "":
+                    continue
+                has_data = True
+                break
+            if not has_data:
+                empty_cols.append(col)
+
+        for col in sorted(empty_cols, reverse=True):
+            try:
+                ws.delete_cols(int(col), 1)
+                log_info(f"Removed truly empty Excel column (index {col})")
+            except Exception:
+                try:
+                    ws.cell(row=1, column=int(col)).value = None
+                except Exception:
+                    pass
+
+    _remove_empty_header_cols()
+    hdr = build_header_map(ws)
+
+    # -------------------------------------------------------------
+    # Column mapping (we will auto-create / reposition output columns)
+    # -------------------------------------------------------------
     cols: Dict[str, Optional[int]] = {}
     cols["basename"] = pick_col(hdr, "basename")
     cols["rec_id"] = pick_col(hdr, "rec_id", "recordingid", "recording_id", "recording id")
@@ -665,24 +736,144 @@ def main() -> None:
     cols["mlV"] = pick_col(hdr, "mlv", "mlV")
     cols["mlU"] = pick_col(hdr, "mlu", "mlU")
     cols["h_nz_cnt"] = pick_col(hdr, "h_nz_cnt", "h_nz_count")
-
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length")
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
     cols["noni"] = pick_col(hdr, "noni")
-
-    # KEEP ml_nz_frac column (we will set it = tp%)
-    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
-
     cols["flags"] = pick_col(hdr, "flags")
 
-    # NEW: columns to write instead of ml_nz_cnt/ml_nz_len
+    # We will write tp_pct into ml_nz_frac% and DO NOT keep a separate tp% column.
+    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
+
+    # NEW output columns (must be placed immediately before ml_nz_frac%)
     cols["out"] = pick_col(hdr, "out", "out_cnt", "outliers")
     cols["rdr"] = pick_col(hdr, "rdr", "rdr_cnt", "rdropouts")
     cols["noi"] = pick_col(hdr, "noi", "noi_cnt", "motions")
-    cols["tp"] = pick_col(hdr, "tp", "tp%", "tp_pct", "tp %")
 
     if cols["basename"] is None:
         raise RuntimeError("Missing required column in Excel header row: ['basename']")
+
+    # -------------------------------------------------------------
+    # Helpers: create column, delete columns by header, and reposition outputs
+    # -------------------------------------------------------------
+    def _copy_header_style(dst_cell) -> None:
+        # Copy header style from column 1 header cell (best-effort)
+        src_header_cell = ws.cell(row=1, column=1)
+        try:
+            dst_cell._style = _copy_style(src_header_cell._style)
+            dst_cell.font = _copy_style(src_header_cell.font)
+            dst_cell.border = _copy_style(src_header_cell.border)
+            dst_cell.fill = _copy_style(src_header_cell.fill)
+            dst_cell.number_format = src_header_cell.number_format
+            dst_cell.protection = _copy_style(src_header_cell.protection)
+            dst_cell.alignment = _copy_style(src_header_cell.alignment)
+        except Exception:
+            pass
+
+    def _ensure_col_exists(col_key: str, header_name: str) -> None:
+        nonlocal hdr
+        if cols.get(col_key) is not None:
+            return
+        new_col = ws.max_column + 1
+        cell = ws.cell(row=1, column=new_col)
+        cell.value = header_name
+        _copy_header_style(cell)
+        hdr[str(header_name).strip().lower()] = new_col
+        cols[col_key] = new_col
+
+    def _find_cols_by_header_names(names_lower: Set[str]) -> List[int]:
+        out_cols: List[int] = []
+        for col in range(1, ws.max_column + 1):
+            v = ws.cell(row=1, column=col).value
+            if v is None:
+                continue
+            if str(v).strip().lower() in names_lower:
+                out_cols.append(col)
+        return out_cols
+
+    def _delete_cols(cols_to_delete: List[int], reason: str) -> None:
+        for col in sorted(set(cols_to_delete), reverse=True):
+            try:
+                ws.delete_cols(int(col), 1)
+                log_info(f"Deleted Excel column index {col} ({reason})")
+            except Exception:
+                # Best-effort blank
+                try:
+                    ws.cell(row=1, column=int(col)).value = None
+                    for r in range(2, ws.max_row + 1):
+                        ws.cell(row=r, column=int(col)).value = None
+                except Exception:
+                    pass
+
+    # Ensure ml_nz_frac% exists (we will set it = tp_pct)
+    _ensure_col_exists("ml_nz_frac", "ml_nz_frac%")
+    hdr = build_header_map(ws)
+    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
+
+    # Delete tp% column if present (not needed anymore)
+    tp_cols = _find_cols_by_header_names({"tp", "tp%", "tp %", "tp_pct"})
+    if tp_cols:
+        _delete_cols(tp_cols, "tp% not needed (tp written into ml_nz_frac%)")
+        _remove_empty_header_cols()
+        hdr = build_header_map(ws)
+
+    # Re-resolve columns after potential deletes
+    cols["out"] = pick_col(hdr, "out", "out_cnt", "outliers")
+    cols["rdr"] = pick_col(hdr, "rdr", "rdr_cnt", "rdropouts")
+    cols["noi"] = pick_col(hdr, "noi", "noi_cnt", "motions")
+    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
+
+    # Insert/move out,rdr,noi so they are immediately BEFORE ml_nz_frac% in this order
+    ml_col = cols["ml_nz_frac"]
+    if ml_col is None:
+        raise RuntimeError("Internal error: ml_nz_frac column should exist after ensure.")
+
+    ml_col_i = int(ml_col)
+
+    # Check if already in place
+    desired_headers = ["out", "rdr", "noi", "ml_nz_frac%"]
+    already_ok = False
+    if ml_col_i >= 4:
+        h1 = ws.cell(row=1, column=ml_col_i - 3).value
+        h2 = ws.cell(row=1, column=ml_col_i - 2).value
+        h3 = ws.cell(row=1, column=ml_col_i - 1).value
+        h4 = ws.cell(row=1, column=ml_col_i).value
+        if (
+            (str(h1).strip().lower() if h1 is not None else "") == "out"
+            and (str(h2).strip().lower() if h2 is not None else "") == "rdr"
+            and (str(h3).strip().lower() if h3 is not None else "") == "noi"
+            and (str(h4).strip().lower() if h4 is not None else "") in ("ml_nz_frac%", "ml_nz_frac", "ml_nz_frac %")
+        ):
+            already_ok = True
+
+    if not already_ok:
+        # Create three columns before ml_nz_frac
+        ws.insert_cols(ml_col_i, amount=3)
+        # Set headers
+        for offset, name in enumerate(["out", "rdr", "noi"]):
+            cell = ws.cell(row=1, column=ml_col_i + offset)
+            cell.value = name
+            _copy_header_style(cell)
+
+        # Remove duplicates of out/rdr/noi that may exist elsewhere (keep the newly created ones)
+        keep_cols = {ml_col_i, ml_col_i + 1, ml_col_i + 2}
+        dup_cols: List[int] = []
+        for col in range(1, ws.max_column + 1):
+            v = ws.cell(row=1, column=col).value
+            if v is None:
+                continue
+            key = str(v).strip().lower()
+            if key in ("out", "rdr", "noi") and col not in keep_cols:
+                dup_cols.append(col)
+        if dup_cols:
+            _delete_cols(dup_cols, "duplicate out/rdr/noi columns (repositioned)")
+        _remove_empty_header_cols()
+
+    hdr = build_header_map(ws)
+    # Final column indices
+    cols["out"] = pick_col(hdr, "out")
+    cols["rdr"] = pick_col(hdr, "rdr")
+    cols["noi"] = pick_col(hdr, "noi")
+    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
 
     c_basename = int(cols["basename"])
 
@@ -734,7 +925,7 @@ def main() -> None:
         cell = ws.cell(row=row, column=col_i)
 
         # percent columns always mean 0..100
-        if col_key in ("h_nz_frac", "ml_nz_frac", "tp") and isinstance(new_val, (int, float, np.floating)):
+        if col_key in ("h_nz_frac", "ml_nz_frac") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
         if cell_changed(cell.value, new_val):
@@ -830,7 +1021,12 @@ def main() -> None:
                 "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)),
                 "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
 
-             trtttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+                # NEW: instead of ml_nz_cnt/ml_nz_len
+                "out": out_cnt,
+                "rdr": rdr_cnt,
+                "noi": noi_cnt,                # NEW: ml_nz_frac% = tp%
+                "ml_nz_frac": tp_pct,
+
                 "flags": _flags_to_cell_value(rec.flags or []),
                 "noni": int(rec.h_noises_count),
             }
