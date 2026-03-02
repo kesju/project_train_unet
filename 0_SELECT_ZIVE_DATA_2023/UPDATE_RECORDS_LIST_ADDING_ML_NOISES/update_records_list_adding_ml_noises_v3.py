@@ -36,6 +36,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
+from ecg_denoising_pipeline import DenoisingPipelineConfig, ECGDenoisingPipeline, run_denoising_pipeline
 import numpy as np
 import openpyxl
 from openpyxl.styles import PatternFill
@@ -54,12 +55,19 @@ from record_noise_stats import calc_noise_stats_from_result
 
 try:
     # <-- adjust this import to match your project structure if needed
-    from ecg_denoising_pipeline import run_denoising_pipeline, load_ecg_npy
+    from ecg_denoising_pipeline import (
+        run_denoising_pipeline,
+        load_denoising_config_yaml,
+        load_ecg_npy,
+        DenoisingPipelineConfig,
+        check_denoising_config,
+        resolve_model_path
+    )
 except Exception as exc:
     raise ImportError(
         "Cannot import run_denoising_pipeline. Update the import to match your project.\n"
         f"Original error: {exc}"
-    )
+    ) from exc
 
 # If you have a config checker, import it; otherwise we just keep the cfg path.
 try:
@@ -554,6 +562,47 @@ def cell_changed(old: Any, new: Any) -> bool:
 def _flags_to_cell_value(flags_list: List[str]) -> str:
     return "; ".join([f for f in flags_list if f])
 
+def prepare_denoising_pipeline(
+    config_path: Path,
+    model_dir: Path,
+) -> DenoisingPipelineConfig:
+    """Pipeline-aware runner that wires configuration, data loading and execution."""
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    if not model_dir.exists():
+        raise FileNotFoundError(f"Model directory not found: {model_dir}")
+
+    # print_heading("Project paths")
+    # print("DATA_DIR:", data_dir)
+    # print("CONFIG  :", config_path)
+    # print("MODEL_DIR:", model_dir)
+
+    cfg = load_denoising_config_yaml(str(config_path))
+    fs = float(cfg.fs)
+
+    # print_heading("Denoising pipeline config")
+    # friendly_print_denoising_cfg(cfg)
+    check_denoising_config(cfg)
+    
+    # print_heading("Input data")
+    # print(f"File: {file_name}")
+    # len_secs = math.ceil(len(x) / fs)
+    # h, m, s = convert_seconds_to_hms(len_secs)
+    # print(f"len(ecg): {len(x)} samples (~{len_secs:.1f} s) | {h:02d}:{m:02d}:{s:02d}")
+
+    # print("path:", path)
+    # print(f"Loaded {len(gaps_indices)} gap intervals.")
+
+    cfg.motions.model_name = resolve_model_path(model_dir, cfg.motions.model_name)
+    cfg.motions.enabled = True
+
+    # print_heading("UNet model")
+    # print("UNet model path:", cfg.motions.model_name)
+    # print("Motions enabled:", bool(getattr(cfg.motions, "enabled", True)))
+
+    return cfg
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -570,7 +619,16 @@ def main() -> None:
     ap.add_argument("--quiet", action="store_true", help="Silence stdout during denoising/stats")
 
     args = ap.parse_args()
+    
+    def _fmt(v):
+        return str(v) if isinstance(v, Path) else v
 
+    d = vars(args)
+    width = max(len(k) for k in d)
+    print("Arguments:")
+    for k in sorted(d):
+        print(f"  {k:<{width}} : {_fmt(d[k])}")
+    
     src = args.dir
     if not src.exists() or not src.is_dir():
         raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
@@ -580,11 +638,11 @@ def main() -> None:
     # -------------------------------------------------------------
     cfg_denoising_path = args.cfg_denoising
     model_dir = args.model_dir
-
-
-
-    if check_denoising_config is not None:
-        check_denoising_config(cfg_denoising_path)
+    
+    #  Preparing the Denoising pipeline with configuration and model paths
+    print("\n*****Denoising pipeline config:")
+    cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, model_dir)
+    pipe = ECGDenoisingPipeline(cfg_denoising)
 
     wb = openpyxl.load_workbook(args.excel)
     ws = wb[args.sheet] if args.sheet else wb.active
@@ -731,24 +789,14 @@ def main() -> None:
             try:
                 x = load_ecg_1d_for_denoising(data_path, data_ext)
 
+                # Execute the pipeline in the notebook with explicit arguments
+                print("\nRunning Denoising pipeline...")
                 if args.quiet:
                     with contextlib.redirect_stdout(io.StringIO()):
-                        res_denoising, _cfg_used = run_denoising_pipeline(
-                            x=x,
-                            gaps_indices=[],
-                            config_path=cfg_denoising_path,
-                            model_dir=model_dir,
-                            disable_motions=bool(args.disable_motions),
-                        )
+                        res_denoising = pipe.run(x, gaps_indices=[])
                         stats = calc_noise_stats_from_result(res_denoising)
                 else:
-                    res_denoising, _cfg_used = run_denoising_pipeline(
-                        x=x,
-                        gaps_indices=[],
-                        config_path=cfg_denoising_path,
-                        model_dir=model_dir,
-                        disable_motions=bool(args.disable_motions),
-                    )
+                    res_denoising = pipe.run(x, gaps_indices=[])
                     stats = calc_noise_stats_from_result(res_denoising)
 
                 out_cnt = int(stats.get("out", 0))
