@@ -530,20 +530,21 @@ def find_outliers_rdropouts(ecg_signal_start):
         raise ValueError(f"Error: minimum allowed length of ecg_signal_start {minimum_allowed_length_of_ecg_signal_flt_secs} secs is not met.") 
    
     # Parametrai post processing funkcijai 
-    t_gap_max_secs=10
-    extra_interval_secs=10
-    t_start_gap_max_secs=10
-    t_end_gap_max_secs=10
+    t_gap_max_secs=2
+    extra_interval_secs=2
+    t_start_gap_max_secs=2
+    t_end_gap_max_secs=2
 
             # Minkšto apjungimo parametrai: 
 
     # Nustatome pagrindinio lango main_window plotį, kuriame ieškosime apsijungimo vietos
     # ir šliaužiančio lango slicing_window plotį
     
-    sliding_window_size_secs = 1.0 # slicing window
+    sliding_window_size_secs = 0.9 # slicing window
     sliding_window_size = int(sliding_window_size_secs*fs)
 
-    main_window_size = sliding_window_size*5
+    main_window_size = 1.9
+    # main_window_size = sliding_window_size*5
     main_window_size_secs = main_window_size/fs
 
     # print(f"main_window_size: {main_window_size} ({main_window_size_secs:.1f} secs), sliding_window_size: {sliding_window_size} ({sliding_window_size_secs:.1f} secs)")
