@@ -528,6 +528,13 @@ def main() -> None:
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length")
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
     cols["noni"] = pick_col(hdr, "noni")
+    
+    # NEW
+    cols["out"] = pick_col(hdr, "out")
+    cols["rdr"] = pick_col(hdr, "rdr")
+    cols["noi"] = pick_col(hdr, "noi")
+    cols["tp_pct"] = pick_col(hdr, "tp%", "tp %", "tp_pct", "tp")
+    
     cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
     cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len")
     cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
@@ -586,7 +593,7 @@ def main() -> None:
         cell = ws.cell(row=row, column=col_i)
 
         # percent columns always mean 0..100
-        if col_key in ("h_nz_frac", "ml_nz_frac") and isinstance(new_val, (int, float, np.floating)):
+        if col_key in ("h_nz_frac", "ml_nz_frac", "tp_pct") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
         if cell_changed(cell.value, new_val):

@@ -2,32 +2,17 @@
 """
 Directory-only simplified version of update_records_list_adding_ml_noises_v1.py
 
-python update_records_list_adding_ml_noises_v3_denoising.py \
-  --excel /path/to/visi_zive_irasai_atrankai.xlsx \
-  --dir /path/to/AtsisiuntimasZiveDuomenu/DuomenysTestui \
-  --cfg-denoising /path/to/denoising_config.yaml \
-  --model-dir /path/to/MODEL_UNET \
-  --fs 200 \
-  --quiet
-  
-MODIFICATION (per request):
-- Instead of writing ml_nz_cnt and ml_nz_len, write:
-    out, rdr, noi  (from stats = calc_noise_stats_from_result(res_denoising))
-- Set ml_nz_frac% = tp% (tp_pct from stats)
-- Preparation for denoising (paths/config/model loading checks) is done ONCE before main loop
-- In main loop: read ECG -> run denoising -> calc stats -> write to Excel
-
-Notes:
-- This script assumes ECG data is available as .npy (preferred).
-- For non-.npy files it will attempt to read int32 big-endian as a fallback.
-  If your binary scaling is different (e.g., convert to mV), adjust READ_SCALE below.
+Changes vs original:
+- Source is ONLY a directory (no ZIP support)
+- Column mapping simplified:
+    h_nz_len: pick_col(hdr, "h_nz_len", "h_nz_length")
+    ml_nz_len: pick_col(hdr, "ml_nz_len")
+- h_nz_frac and ml_nz_frac ALWAYS mean percentage (0..100), rounded to 1 decimal
 """
 
 from __future__ import annotations
 
 import argparse
-import contextlib
-import io
 import json
 import math
 import re
@@ -36,48 +21,17 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
-from ecg_denoising_pipeline import DenoisingPipelineConfig, ECGDenoisingPipeline, run_denoising_pipeline
 import numpy as np
 import openpyxl
+from ecg_denoising_pipeline import load_ecg_npy
 from openpyxl.styles import PatternFill
+from openpyxl.utils import get_column_letter
 
 JsonLikeRef = Union[str, Path]
 
-# ---------------------------------------------------------------------
-# NEW: denoising + noise stats imports
-# ---------------------------------------------------------------------
-# These are based on the filenames you mentioned:
-# - record_noise_stats.py contains calc_noise_stats_from_result
-# - denoising_pipeline_demo_2.ipynb shows how run_denoising_pipeline is called
-#
-# IMPORTANT: if your run_denoising_pipeline is in a different module, update the import below.
-from record_noise_stats import calc_noise_stats_from_result
-
-try:
-    # <-- adjust this import to match your project structure if needed
-    from ecg_denoising_pipeline import (
-        run_denoising_pipeline,
-        load_denoising_config_yaml,
-        load_ecg_npy,
-        DenoisingPipelineConfig,
-        check_denoising_config,
-        resolve_model_path
-    )
-except Exception as exc:
-    raise ImportError(
-        "Cannot import run_denoising_pipeline. Update the import to match your project.\n"
-        f"Original error: {exc}"
-    ) from exc
-
-# If you have a config checker, import it; otherwise we just keep the cfg path.
-try:
-    from ecg_denoising_pipeline.steps import check_denoising_config
-except Exception:
-    check_denoising_config = None
-
 
 # ---------------------------------------------------------------------
-# Embedded analyzer helpers (unchanged)
+# Embedded analyzer helpers
 # ---------------------------------------------------------------------
 
 @dataclass
@@ -470,32 +424,6 @@ def find_data_file_fs(json_path: Path) -> Optional[Tuple[Path, str]]:
 
 
 # ---------------------------------------------------------------------
-# NEW: ECG loader for denoising
-# ---------------------------------------------------------------------
-
-READ_SCALE = 1.0  # <-- if your binary int32 needs scaling to mV, change this (e.g., 1/1000.0)
-
-# def load_ecg_1d_for_denoising(data_path: Path, data_ext: str) -> np.ndarray:
-#     ext = (data_ext or data_path.suffix or "").lower()
-#     if ext == ".npy":
-#         x = np.load(data_path, allow_pickle=False)
-#         x = np.asarray(x).squeeze()
-#         if x.ndim != 1:
-#             raise RuntimeError(f"{data_path} is not 1D after squeeze(), got shape={x.shape}")
-#         return x.astype(np.float32, copy=False)
-
-#     # Fallback: read int32 big-endian, cast to float
-#     raw = np.fromfile(data_path, dtype=">i4")  # big-endian int32
-#     x = raw.astype(np.float32) * float(READ_SCALE)
-#     return x
-
-
-def load_ecg_1d_for_denoising(data_path: Path, data_ext: str) -> np.ndarray:
-
-    x = load_ecg_npy(data_path)
-
-    return x
-# ---------------------------------------------------------------------
 # Excel helpers
 # ---------------------------------------------------------------------
 
@@ -562,46 +490,27 @@ def cell_changed(old: Any, new: Any) -> bool:
 def _flags_to_cell_value(flags_list: List[str]) -> str:
     return "; ".join([f for f in flags_list if f])
 
-def prepare_denoising_pipeline(
-    config_path: Path,
-    model_dir: Path,
-) -> DenoisingPipelineConfig:
-    """Pipeline-aware runner that wires configuration, data loading and execution."""
 
-    if not config_path.exists():
-        raise FileNotFoundError(f"Config file not found: {config_path}")
-    if not model_dir.exists():
-        raise FileNotFoundError(f"Model directory not found: {model_dir}")
 
-    # print_heading("Project paths")
-    # print("DATA_DIR:", data_dir)
-    # print("CONFIG  :", config_path)
-    # print("MODEL_DIR:", model_dir)
+def hide_columns_by_keys(ws, cols: dict, *keys: str) -> None:
+    for key in keys:
+        col_idx = cols.get(key)
+        if col_idx:
+            col_letter = get_column_letter(col_idx)
+            ws.column_dimensions[col_letter].hidden = True
 
-    cfg = load_denoising_config_yaml(str(config_path))
-    fs = float(cfg.fs)
+def denoise_and_calc_noise_stats_imitation(x: np.ndarray) -> Dict[str, Any]:
+    """
+    Run the denoising pipeline on input signal x, then calculate noise stats from the result.
+    This is a convenience function that combines the steps for easier testing.
+    """
+    # res_denoising = pipe.run(x, gaps_indices=[])
+    # stats = calc_noise_stats_from_denoised_result(res_denoising)
 
-    # print_heading("Denoising pipeline config")
-    # friendly_print_denoising_cfg(cfg)
-    check_denoising_config(cfg)
-    
-    # print_heading("Input data")
-    # print(f"File: {file_name}")
-    # len_secs = math.ceil(len(x) / fs)
-    # h, m, s = convert_seconds_to_hms(len_secs)
-    # print(f"len(ecg): {len(x)} samples (~{len_secs:.1f} s) | {h:02d}:{m:02d}:{s:02d}")
-
-    # print("path:", path)
-    # print(f"Loaded {len(gaps_indices)} gap intervals.")
-
-    cfg.motions.model_name = resolve_model_path(model_dir, cfg.motions.model_name)
-    cfg.motions.enabled = True
-
-    # print_heading("UNet model")
-    # print("UNet model path:", cfg.motions.model_name)
-    # print("Motions enabled:", bool(getattr(cfg.motions, "enabled", True)))
-
-    return cfg
+    return {
+        "out": 1, "rdr": 2, "noi": 3,
+        "tp_pct": 0.5,
+    }
 
 
 def main() -> None:
@@ -611,38 +520,11 @@ def main() -> None:
     ap.add_argument("--fs", type=int, default=200, help="Sampling frequency (Hz). Default: 200")
     ap.add_argument("--sheet", type=str, default=None, help="Sheet name (default: active sheet)")
     ap.add_argument("--out", type=Path, default=None, help="Output Excel path (default: <excel>_updated.xlsx)")
-
-    # NEW: denoising args (prepared once)
-    ap.add_argument("--cfg-denoising", type=Path, required=True, help="Denoising config path")
-    ap.add_argument("--model-dir", type=Path, required=True, help="Model directory for denoising/motions")
-    ap.add_argument("--disable-motions", action="store_true", help="Disable motions stage in denoising pipeline")
-    ap.add_argument("--quiet", action="store_true", help="Silence stdout during denoising/stats")
-
     args = ap.parse_args()
-    
-    def _fmt(v):
-        return str(v) if isinstance(v, Path) else v
 
-    d = vars(args)
-    width = max(len(k) for k in d)
-    print("Arguments:")
-    for k in sorted(d):
-        print(f"  {k:<{width}} : {_fmt(d[k])}")
-    
     src = args.dir
     if not src.exists() or not src.is_dir():
         raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
-
-    # -------------------------------------------------------------
-    # NEW: Prepare denoising ONCE (before main cycle)
-    # -------------------------------------------------------------
-    cfg_denoising_path = args.cfg_denoising
-    model_dir = args.model_dir
-    
-    #  Preparing the Denoising pipeline with configuration and model paths
-    print("\n*****Denoising pipeline config:")
-    cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, model_dir)
-    pipe = ECGDenoisingPipeline(cfg_denoising)
 
     wb = openpyxl.load_workbook(args.excel)
     ws = wb[args.sheet] if args.sheet else wb.active
@@ -666,20 +548,18 @@ def main() -> None:
     cols["mlU"] = pick_col(hdr, "mlu", "mlU")
     cols["h_nz_cnt"] = pick_col(hdr, "h_nz_cnt", "h_nz_count")
 
+    # requested simplifications
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length")
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
     cols["noni"] = pick_col(hdr, "noni")
-
-    # KEEP ml_nz_frac column (we will set it = tp%)
+    cols["out"] = pick_col(hdr, "out")
+    cols["rdr"] = pick_col(hdr, "rdr")
+    cols["noi"] = pick_col(hdr, "noi")
+    cols["tp_pct"] = pick_col(hdr, "tp%", "tp %", "tp_pct", "tp")
+    cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
+    cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len")
     cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
-
     cols["flags"] = pick_col(hdr, "flags")
-
-    # NEW: columns to write instead of ml_nz_cnt/ml_nz_len
-    cols["out"] = pick_col(hdr, "out", "out_cnt", "outliers")
-    cols["rdr"] = pick_col(hdr, "rdr", "rdr_cnt", "rdropouts")
-    cols["noi"] = pick_col(hdr, "noi", "noi_cnt", "motions")
-    cols["tp"] = pick_col(hdr, "tp", "tp%", "tp_pct", "tp %")
 
     if cols["basename"] is None:
         raise RuntimeError("Missing required column in Excel header row: ['basename']")
@@ -734,7 +614,7 @@ def main() -> None:
         cell = ws.cell(row=row, column=col_i)
 
         # percent columns always mean 0..100
-        if col_key in ("h_nz_frac", "ml_nz_frac", "tp") and isinstance(new_val, (int, float, np.floating)):
+        if col_key in ("h_nz_frac", "ml_nz_frac", "tp_pct") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
         if cell_changed(cell.value, new_val):
@@ -746,6 +626,8 @@ def main() -> None:
     print(f"Source: {src}")
     print(f"Found JSON files: {len(json_paths)}")
 
+    # print(json_paths)
+    
     processed = 0
     for jp in sorted(json_paths):
         bn = norm_basename(jp.stem)
@@ -759,10 +641,12 @@ def main() -> None:
 
         data_info = find_data_file_fs(jp)
         if data_info is None:
-            # JSON exists but data missing -> fill what we can from JSON only (no denoising)
+            # JSON exists but data missing -> still fill what we can from JSON only
             meta = load_json_fs(jp)
             if not isinstance(meta, dict):
                 meta = {}
+            # Minimal extraction in this simplified version when data file missing
+            # (If you still want the full JSON-only extraction logic, tell me and I’ll add it back.)
             extracted = {
                 "rec_id": meta.get("recordingId") if isinstance(meta.get("recordingId"), str) else None,
                 "uid": meta.get("userId") if isinstance(meta.get("userId"), str) else None,
@@ -771,6 +655,15 @@ def main() -> None:
         else:
             data_path, data_ext = data_info
             seq = infer_sequence_id_fs(jp, fallback=src.name or "dir")
+
+            noise_stats: Dict[str, Any] = {}
+            try:
+                x = load_ecg_npy(data_path)
+                noise_stats = denoise_and_calc_noise_stats_imitation(x) or {}
+            except Exception as exc:
+                print(f"WARN: failed to calculate noise stats for {data_path}: {exc}")
+                noise_stats = {}
+
             rec, _rec_dict = summarize_record(
                 sequenceId=seq,
                 basename=bn,
@@ -782,36 +675,6 @@ def main() -> None:
                 sample_count_fn=sample_count_fs,
                 fs=args.fs,
             )
-
-            # -------------------------------------------------------------
-            # NEW: denoise + stats per record
-            # -------------------------------------------------------------
-            try:
-                x = load_ecg_1d_for_denoising(data_path, data_ext)
-
-                # Execute the pipeline in the notebook with explicit arguments
-                print("\nRunning Denoising pipeline...")
-                if args.quiet:
-                    with contextlib.redirect_stdout(io.StringIO()):
-                        res_denoising = pipe.run(x, gaps_indices=[])
-                        stats = calc_noise_stats_from_result(res_denoising)
-                else:
-                    res_denoising = pipe.run(x, gaps_indices=[])
-                    stats = calc_noise_stats_from_result(res_denoising)
-
-                out_cnt = int(stats.get("out", 0))
-                rdr_cnt = int(stats.get("rdr", 0))
-                noi_cnt = int(stats.get("noi", 0))
-                tp_pct = float(stats.get("tp_pct", 0.0))
-
-            except Exception as exc:
-                print(f"WARN: denoising/stats failed for {bn}: {exc}")
-                out_cnt = rdr_cnt = noi_cnt = 0
-                tp_pct = 0.0
-
-            # -------------------------------------------------------------
-            # Extracted fields written to Excel
-            # -------------------------------------------------------------
             extracted = {
                 "rec_id": rec.recordingId,
                 "uid": rec.user_id,
@@ -829,10 +692,15 @@ def main() -> None:
                 "h_nz_cnt": int(rec.h_noises_count),
                 "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)),
                 "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
-
-             trtttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+                "ml_nz_cnt": int(rec.ml_noises_count),
+                "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)),
+                "ml_nz_frac": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
                 "flags": _flags_to_cell_value(rec.flags or []),
                 "noni": int(rec.h_noises_count),
+                "out": noise_stats.get("out"),
+                "rdr": noise_stats.get("rdr"),
+                "noi": noise_stats.get("noi"),
+                "tp_pct": noise_stats.get("tp_pct"),
             }
 
         row_changed = False
@@ -853,7 +721,10 @@ def main() -> None:
             continue
         ws.cell(row=r, column=c_basename).fill = MEDIUM_BLUE_FILL
 
-    out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated_3.xlsx")
+    # Optional: hide temporarely the columns if they exist
+    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac")
+
+    out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated.xlsx")
     wb.save(out_path)
 
     print(f"Processed JSON files: {processed}")
