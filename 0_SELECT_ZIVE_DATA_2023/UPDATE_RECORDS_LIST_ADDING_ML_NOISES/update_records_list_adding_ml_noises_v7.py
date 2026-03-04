@@ -603,7 +603,16 @@ def prepare_denoising_pipeline(
 
     return cfg
 
-
+def create_unet_marker(cfg_denoising: DenoisingPipelineConfig) -> str:
+    """Create a marker string based on the UNet model name and threshold for output column naming.""" 
+    unet_model_name = Path(cfg_denoising.motions.model_name).name
+    # print("\nunet_model_name:", unet_model_name, type(unet_model_name))
+    MARKER = unet_model_name.removeprefix("resunet_ecg").removesuffix(".keras")  # -> "_1024_0_5_3_7"
+    threshold = cfg_denoising.motions.threshold
+    threshold_str = str( threshold).replace('.', '_')
+    MARKER += f"_{threshold_str}"
+    return MARKER
+    
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--excel", type=Path, required=True, help="Input Excel (.xlsx)")
@@ -644,7 +653,9 @@ def main() -> None:
     cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, model_dir)
     pipe = ECGDenoisingPipeline(cfg_denoising)
 
-    wb = openpyxl.load_workbook(args.excel)
+    MARKER = create_unet_marker(cfg_denoising)
+
+    wb = openpyxl.load_workbook(args.excel) 
     ws = wb[args.sheet] if args.sheet else wb.active
 
     
@@ -981,7 +992,8 @@ def main() -> None:
                 x = load_ecg_1d_for_denoising(data_path, data_ext)
 
                 # Execute the pipeline in the notebook with explicit arguments
-                print("\nRunning Denoising pipeline...")
+                print(f"\nRunning Denoising pipeline... {bn}")
+                
                 if args.quiet:
                     with contextlib.redirect_stdout(io.StringIO()):
                         res_denoising = pipe.run(x, gaps_indices=[])
@@ -1049,7 +1061,8 @@ def main() -> None:
             continue
         ws.cell(row=r, column=c_basename).fill = MEDIUM_BLUE_FILL
 
-    out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated_3.xlsx")
+    print("Generated MARKER for output:", MARKER)
+    out_path = args.out if args.out else args.excel.with_name(args.excel.stem + MARKER + ".xlsx")
     wb.save(out_path)
 
     print(f"Processed JSON files: {processed}")
