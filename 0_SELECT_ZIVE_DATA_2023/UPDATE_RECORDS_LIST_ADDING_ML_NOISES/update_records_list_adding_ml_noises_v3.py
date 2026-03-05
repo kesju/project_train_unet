@@ -29,6 +29,30 @@ from openpyxl.utils import get_column_letter
 
 JsonLikeRef = Union[str, Path]
 
+# IMPORTANT: if your run_denoising_pipeline is in a different module, update the import below.
+from record_noise_stats import calc_noise_stats_from_denoised_result
+
+try:
+    # <-- adjust this import to match your project structure if needed
+    from ecg_denoising_pipeline import (
+        run_denoising_pipeline,
+        load_denoising_config_yaml,
+        load_ecg_npy,
+        DenoisingPipelineConfig,
+        check_denoising_config,
+        resolve_model_path
+    )
+except Exception as exc:
+    raise ImportError(
+        "Cannot import run_denoising_pipeline. Update the import to match your project.\n"
+        f"Original error: {exc}"
+    ) from exc
+
+# If you have a config checker, import it; otherwise we just keep the cfg path.
+try:
+    from ecg_denoising_pipeline.steps import check_denoising_config
+except Exception:
+    check_denoising_config = None
 
 # ---------------------------------------------------------------------
 # Embedded analyzer helpers
@@ -499,6 +523,57 @@ def hide_columns_by_keys(ws, cols: dict, *keys: str) -> None:
             col_letter = get_column_letter(col_idx)
             ws.column_dimensions[col_letter].hidden = True
 
+def prepare_denoising_pipeline(
+    config_path: Path,
+    model_dir: Path,
+) -> DenoisingPipelineConfig:
+    """Pipeline-aware runner that wires configuration, data loading and execution."""
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    if not model_dir.exists():
+        raise FileNotFoundError(f"Model directory not found: {model_dir}")
+
+    # print_heading("Project paths")
+    # print("DATA_DIR:", data_dir)
+    # print("CONFIG  :", config_path)
+    # print("MODEL_DIR:", model_dir)
+
+    cfg = load_denoising_config_yaml(str(config_path))
+    fs = float(cfg.fs)
+
+    # print_heading("Denoising pipeline config")
+    # friendly_print_denoising_cfg(cfg)
+    check_denoising_config(cfg)
+    
+    # print_heading("Input data")
+    # print(f"File: {file_name}")
+    # len_secs = math.ceil(len(x) / fs)
+    # h, m, s = convert_seconds_to_hms(len_secs)
+    # print(f"len(ecg): {len(x)} samples (~{len_secs:.1f} s) | {h:02d}:{m:02d}:{s:02d}")
+
+    # print("path:", path)
+    # print(f"Loaded {len(gaps_indices)} gap intervals.")
+
+    cfg.motions.model_name = resolve_model_path(model_dir, cfg.motions.model_name)
+    cfg.motions.enabled = True
+
+    # print_heading("UNet model")
+    # print("UNet model path:", cfg.motions.model_name)
+    # print("Motions enabled:", bool(getattr(cfg.motions, "enabled", True)))
+
+    return cfg
+
+def create_unet_marker(cfg_denoising: DenoisingPipelineConfig) -> str:
+    """Create a marker string based on the UNet model name and threshold for output column naming.""" 
+    unet_model_name = Path(cfg_denoising.motions.model_name).name
+    # print("\nunet_model_name:", unet_model_name, type(unet_model_name))
+    MARKER = unet_model_name.removeprefix("resunet_ecg").removesuffix(".keras")  # -> "_1024_0_5_3_7"
+    threshold = cfg_denoising.motions.threshold
+    threshold_str = str( threshold).replace('.', '_')
+    MARKER += f"_{threshold_str}"
+    return MARKER
+
 def denoise_and_calc_noise_stats_imitation(x: np.ndarray) -> Dict[str, Any]:
     """
     Run the denoising pipeline on input signal x, then calculate noise stats from the result.
@@ -520,8 +595,20 @@ def main() -> None:
     ap.add_argument("--fs", type=int, default=200, help="Sampling frequency (Hz). Default: 200")
     ap.add_argument("--sheet", type=str, default=None, help="Sheet name (default: active sheet)")
     ap.add_argument("--out", type=Path, default=None, help="Output Excel path (default: <excel>_updated.xlsx)")
+
+   # NEW: denoising args (prepared once)
+    ap.add_argument("--cfg-denoising", type=Path, required=True, help="Denoising config path")
+    ap.add_argument("--model-dir", type=Path, required=True, help="Model directory for denoising/motions")
+    ap.add_argument("--disable-motions", action="store_true", help="Disable motions stage in denoising pipeline")
+    ap.add_argument("--quiet", action="store_true", help="Silence stdout during denoising/stats")
+   
+   
     args = ap.parse_args()
 
+
+
+    # Open Excel workbook and prepare for updates  ++++++++++++++++++++++++++++++
+    
     src = args.dir
     if not src.exists() or not src.is_dir():
         raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
@@ -627,6 +714,20 @@ def main() -> None:
     print(f"Found JSON files: {len(json_paths)}")
 
     # print(json_paths)
+    
+    # prepare the denoising pipeline (if needed) ++++++++++++++++++++++++++++++++++++++
+
+    cfg_denoising_path = args.cfg_denoising
+    model_dir = args.model_dir
+    
+    #  Preparing the Denoising pipeline with configuration and model paths
+    print("\n*****Denoising pipeline config:")
+    cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, model_dir)
+    pipe = ECGDenoisingPipeline(cfg_denoising)
+    MARKER = create_unet_marker(cfg_denoising)
+
+    
+    # cycle through JSON and data files and update Excel rows ++++++++++++++++++++++++++++++
     
     processed = 0
     for jp in sorted(json_paths):
