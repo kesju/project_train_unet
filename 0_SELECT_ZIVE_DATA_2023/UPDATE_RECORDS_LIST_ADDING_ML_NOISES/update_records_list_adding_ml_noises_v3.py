@@ -35,7 +35,7 @@ from record_noise_stats import calc_noise_stats_from_denoised_result
 try:
     # <-- adjust this import to match your project structure if needed
     from ecg_denoising_pipeline import (
-        run_denoising_pipeline,
+        ECGDenoisingPipeline,
         load_denoising_config_yaml,
         load_ecg_npy,
         DenoisingPipelineConfig,
@@ -54,6 +54,7 @@ try:
 except Exception:
     check_denoising_config = None
 
+from record_noise_stats import calc_noise_stats_from_denoised_result
 # ---------------------------------------------------------------------
 # Embedded analyzer helpers
 # ---------------------------------------------------------------------
@@ -574,19 +575,20 @@ def create_unet_marker(cfg_denoising: DenoisingPipelineConfig) -> str:
     MARKER += f"_{threshold_str}"
     return MARKER
 
-def denoise_and_calc_noise_stats_imitation(x: np.ndarray) -> Dict[str, Any]:
+def denoise_and_calc_noise_stats(x: np.ndarray, pipe: ECGDenoisingPipeline) -> Dict[str, Any]:
     """
     Run the denoising pipeline on input signal x, then calculate noise stats from the result.
     This is a convenience function that combines the steps for easier testing.
     """
-    # res_denoising = pipe.run(x, gaps_indices=[])
-    # stats = calc_noise_stats_from_denoised_result(res_denoising)
-
-    return {
-        "out": 1, "rdr": 2, "noi": 3,
-        "tp_pct": 0.5,
-    }
-
+    res_denoising = pipe.run(x, gaps_indices=[])
+    stats = calc_noise_stats_from_denoised_result(res_denoising)
+    
+    # return {
+    #     "out": 1, "rdr": 2, "noi": 3,
+    #     "tp_pct": 0.5,
+    
+    return {'out': stats['out'], 'rdr': stats['rdr'], 'noi': stats['noi'], 'tp_pct': stats['tp_pct']}
+    
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -616,9 +618,11 @@ def main() -> None:
     wb = openpyxl.load_workbook(args.excel)
     ws = wb[args.sheet] if args.sheet else wb.active
 
+    # create header mapping
     hdr = build_header_map(ws)
 
     cols: Dict[str, Optional[int]] = {}
+    cols["filename"] = pick_col(hdr, "filename", "file", "path")
     cols["basename"] = pick_col(hdr, "basename")
     cols["rec_id"] = pick_col(hdr, "rec_id", "recordingid", "recording_id", "recording id")
     cols["uid"] = pick_col(hdr, "uid", "user_id", "userid", "user id")
@@ -652,7 +656,11 @@ def main() -> None:
         raise RuntimeError("Missing required column in Excel header row: ['basename']")
 
     c_basename = int(cols["basename"])
-
+    c_filename_raw = cols.get("filename")
+    if c_filename_raw is None:
+        raise ValueError("Required column 'filename' not found in Excel header")
+    c_filename = int(c_filename_raw)
+    
     # Map basename -> row index
     basename_to_row: Dict[str, int] = {}
     for r in range(2, ws.max_row + 1):
@@ -716,16 +724,19 @@ def main() -> None:
     # print(json_paths)
     
     # prepare the denoising pipeline (if needed) ++++++++++++++++++++++++++++++++++++++
-
-    cfg_denoising_path = args.cfg_denoising
-    model_dir = args.model_dir
     
     #  Preparing the Denoising pipeline with configuration and model paths
     print("\n*****Denoising pipeline config:")
-    cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, model_dir)
-    pipe = ECGDenoisingPipeline(cfg_denoising)
-    MARKER = create_unet_marker(cfg_denoising)
 
+    cfg_denoising_path = args.cfg_denoising
+    model_dir = args.model_dir
+    print(f"\nDenoising config path: {cfg_denoising_path}")
+    print(f"Model directory: {model_dir}")
+    
+    cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, model_dir)
+    MARKER = create_unet_marker(cfg_denoising)
+    print(f"\nUNet marker: {MARKER}\n")
+    pipe = ECGDenoisingPipeline(cfg_denoising)
     
     # cycle through JSON and data files and update Excel rows ++++++++++++++++++++++++++++++
     
@@ -738,7 +749,8 @@ def main() -> None:
             continue
 
         row, _is_new = get_or_create_row(bn)
-        print(f"Processing: {jp} {bn} -> row {row} (new: {_is_new})")
+        data_filename = ws.cell(row=row, column=c_filename).value
+        print(f"Processing: {bn} ({data_filename}) -> row {row} (new: {_is_new})")
 
         data_info = find_data_file_fs(jp)
         if data_info is None:
@@ -760,7 +772,9 @@ def main() -> None:
             noise_stats: Dict[str, Any] = {}
             try:
                 x = load_ecg_npy(data_path)
-                noise_stats = denoise_and_calc_noise_stats_imitation(x) or {}
+                noise_stats = denoise_and_calc_noise_stats(x, pipe) or {}
+                print(f"Noise stats for {data_path.name}: out={noise_stats['out']}, rdr={noise_stats['rdr']}, noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f}")
+                print()
             except Exception as exc:
                 print(f"WARN: failed to calculate noise stats for {data_path}: {exc}")
                 noise_stats = {}
@@ -825,7 +839,7 @@ def main() -> None:
     # Optional: hide temporarely the columns if they exist
     hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac")
 
-    out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated.xlsx")
+    out_path = args.out if args.out else args.excel.with_name(args.excel.stem + MARKER + ".xlsx")
     wb.save(out_path)
 
     print(f"Processed JSON files: {processed}")
