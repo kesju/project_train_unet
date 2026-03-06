@@ -3,7 +3,7 @@ memory_lean: true
 filter:
   enabled: true
   method: butterworth   # "butterworth", "fir", "bessel", "savgol"
-  type: bandpass   # 'bandpass', 'highpass'
+  type: highpass   # 'bandpass', 'highpass'
   lowcut: 0.5
   highcut: 70.
   order: 4
@@ -20,20 +20,20 @@ rdropouts:
   step_size: 100 
 motions:
   enabled: True`
-  model_name: "resunet_ecg_1024_0_5_0_7_test.keras"  # unet model name 
+  model_name: "resunet_ecg_1024_0_5_3_7.keras"  # unet model name 
   segment_length: 1024 # Segment length
   overlap: 0.5          # Overlap fraction
   threshold: 0.12  # Residual threshold for noise detection (tune as needed)
-# merging:
-#   enabled: True
-#   t_gap_max_secs: 2.0 # t_gap_max_secs: maximum allowed gap (in seconds) between two intervals before they are merged (default 30 s).
-#   extra_interval_secs: 2.0   # extra_interval_secs: additional time (in seconds) to consider for merging intervals (default 5 s).
-#   t_start_gap_max_secs: 2.0 # t_start_gap_max_secs: maximum allowed gap (in seconds) at the start of the signal (default 10 s).
-#   t_end_gap_max_secs:  2.0   # t_end_gap_max_secs: maximum allowed gap (in seconds) at the end of the signal (default 10 s).
-# stitching:
-#   enabled: True
-#   sliding_window_size_secs: 0.9 # slicing window
-#   main_window_size_secs: 1.9  # main window_size = slicing_window_size * 5
+merging:
+  enabled: True
+  t_gap_max_secs: 4.0 # t_gap_max_secs: maximum allowed gap (in seconds) between two intervals before they are merged (default 30 s).
+  extra_interval_secs: 4.0   # extra_interval_secs: additional time (in seconds) to consider for merging intervals (default 5 s).
+  t_start_gap_max_secs: 4.0 # t_start_gap_max_secs: maximum allowed gap (in seconds) at the start of the signal (default 10 s).
+  t_end_gap_max_secs:  4.0   # t_end_gap_max_secs: maximum allowed gap (in seconds) at the end of the signal (default 10 s).
+stitching:
+  enabled: True
+  sliding_window_size_secs: 1.0 # slicing window
+  main_window_size_secs: 3.0  # main window_size = slicing_window_size * 5
 
 # check if the conditions are met:
 # Not OK. 2*sliding_window_size is not less than main_window_size

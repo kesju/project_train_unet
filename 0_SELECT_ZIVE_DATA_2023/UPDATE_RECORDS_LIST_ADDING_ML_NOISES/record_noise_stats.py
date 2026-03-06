@@ -179,7 +179,7 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
     tp_samples = _total_len(union)
     tp_pct = 100.0 * tp_samples / n_start
 
-    return {
+    stats= {
         "out": out_cnt,
         "rdr": rdr_cnt,
         "noi": noi_cnt,
@@ -188,6 +188,7 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
         "n_start": n_start,
         "union_intervals": union,
     }
+    return {'out': stats['out'], 'rdr': stats['rdr'], 'noi': stats['noi'], 'tp_pct': stats['tp_pct']}
     
 
 def prepare_denoising_pipeline(

@@ -575,21 +575,6 @@ def create_unet_marker(cfg_denoising: DenoisingPipelineConfig) -> str:
     MARKER += f"_{threshold_str}"
     return MARKER
 
-def denoise_and_calc_noise_stats(x: np.ndarray, pipe: ECGDenoisingPipeline) -> Dict[str, Any]:
-    """
-    Run the denoising pipeline on input signal x, then calculate noise stats from the result.
-    This is a convenience function that combines the steps for easier testing.
-    """
-    res_denoising = pipe.run(x, gaps_indices=[])
-    stats = calc_noise_stats_from_denoised_result(res_denoising)
-    
-    # return {
-    #     "out": 1, "rdr": 2, "noi": 3,
-    #     "tp_pct": 0.5,
-    
-    return {'out': stats['out'], 'rdr': stats['rdr'], 'noi': stats['noi'], 'tp_pct': stats['tp_pct']}
-    
-
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--excel", type=Path, required=True, help="Input Excel (.xlsx)")
@@ -772,7 +757,8 @@ def main() -> None:
             noise_stats: Dict[str, Any] = {}
             try:
                 x = load_ecg_npy(data_path)
-                noise_stats = denoise_and_calc_noise_stats(x, pipe) or {}
+                res_denoising = pipe.run(x, gaps_indices=[])
+                noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
                 print(f"Noise stats for {data_path.name}: out={noise_stats['out']}, rdr={noise_stats['rdr']}, noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f}")
                 print()
             except Exception as exc:
