@@ -19,7 +19,7 @@ rdropouts:
   len_frag: 2000  # Length of each fragment, 10 secs
   step_size: 100 
 motions:
-  enabled: True`
+  enabled: True
   model_name: "resunet_ecg_1024_0_5_3_7.keras"  # unet model name 
   segment_length: 1024 # Segment length
   overlap: 0.5          # Overlap fraction
