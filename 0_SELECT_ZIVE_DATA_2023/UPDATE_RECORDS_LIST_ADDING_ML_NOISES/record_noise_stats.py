@@ -155,14 +155,14 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
 
     # Outliers are already on ecg_start per your pipeline description
     outliers_start_raw = getattr(res, "outliers_indices_start", []) or []
-    print(f"Raw outliers on ecg_start: {outliers_start_raw}")
+    # print(f"Raw outliers on ecg_start: {outliers_start_raw}")
 
     # rdropouts/motions must be projected to ecg_start
     # Try a few common key spellings to avoid “it works only on my version” issues.
     rdropouts_start_raw = _get_projected_to_start(res, ["rdropouts", "rdropouts", "dropouts", "rdr"])
     print(f"Raw rdropouts projected to ecg_start: {rdropouts_start_raw}")
     motions_start_raw   = _get_projected_to_start(res, ["motions", "motion", "noi", "noise_motions"])
-    print(f"Raw motions projected to ecg_start: {motions_start_raw}")
+    # print(f"Raw motions projected to ecg_start: {motions_start_raw}")
 
     outliers_start = _clip_and_normalize(outliers_start_raw, n_start)
     rdropouts_start = _clip_and_normalize(rdropouts_start_raw, n_start)
