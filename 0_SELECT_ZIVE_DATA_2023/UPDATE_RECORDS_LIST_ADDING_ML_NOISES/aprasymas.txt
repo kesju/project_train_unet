@@ -4,9 +4,27 @@ Pradinis anotuotų įrašų sąrašas
 
 visi_zive_irasai_annot - Darb_updated.xlsx
 Anotuotų įrašų sąrašas su atnaujintomis žymėmis iš redaguotų json failų (po Žygimanto ir Nikos redagavimo)
-Gaunamas su ....
+Gaunamas su update_records_list_v4.py, update_records_list_v4.sh užkomentavus  --denoising \
 
 
 visi_zive_irasai_annot - Darb_updated_1024_0_5_3_7_0_12.xlsx
 Anotuotų įrašų sąrašas su atnaujintomis žymėmis ir detektuotų triukšmų rodikliais, gautais analizuojant įrašus
-Gaunamas su ...
+Gaunamas su update_records_list_v4.py, update_records_list_v4.sh naudojant  --denoising \
+
+
+Geriausiai visi_zive_irasai_annot - Darb_updated.xlsx nukopijuoti į visi_zive_irasai_annot - Darb.xlsx ir į jį rašyti 
+savo žymes. Šiuo metu  į  į visi_zive_irasai_annot - Darb.xlsx nukopijuotas su out	rdr	noi	tp% vertėmis
+visi_zive_irasai_annot - Darb_updated_1024_0_5_3_7_0_12.xlsx. Toliau:
+
+- naudoti update_records_list_v4.py, update_records_list_v4.sh užkomentavus  --denoising \
+- gavus rezultatą visi_zive_irasai_annot - Darb_updated.xlsx, jį kopijuoti į visi_zive_irasai_annot - Darb.xlsx
+- visas rankines žymes įrašyti į visi_zive_irasai_annot - Darb.xlsx
+
+Padarius pakeitimus Zive anotuotuose įrašuose ir atsisiuntus json į 
+2025_ZIVEO\PROJECT_TRAIN_UNET\0_SELECT_ZIVE_DATA_2023\AtsisiuntimasZiveDuomenu\Atsisiusti_visi_anotuoti_duomenys
+vėl naudoti update_records_list_v4.py, update_records_list_v4.sh užkomentavus  --denoising \ ir t.t. , kaip parašyta aukščiau.
+
+
+Naudoti update_records_list_v4.py, update_records_list_v4.sh naudojant  --denoising \ tik tuo atvejų, kai reikia tikslinti 
+out	rdr	noi	tp% vertes.
+
