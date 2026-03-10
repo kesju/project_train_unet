@@ -4,10 +4,20 @@
     "userId": "60a917b354352a3df86dc1f2",
     "flags": [
         "FULLY_ANNOTATED_PROFESSIONALLY",
-        "FOR_EXTERNAL_ANNOTATING"
+        "NOISES_ANNOTATED"
     ],
+    "comment": "N, 2222",
     "noises": [],
-    "noises_annotated": [],
+    "noises_annotated": [
+        {
+            "startIndex": 62900,
+            "endIndex": 63140
+        },
+        {
+            "startIndex": 123700,
+            "endIndex": 123900
+        }
+    ],
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {

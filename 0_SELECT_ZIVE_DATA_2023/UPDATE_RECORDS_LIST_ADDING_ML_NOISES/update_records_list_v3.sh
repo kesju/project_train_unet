@@ -33,7 +33,7 @@
 #   # --quiet \
 
 
-python update_records_list_adding_ml_noises_v3.py \
+python update_records_list_v3.py \
   --excel "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/PseudoAnnotated/Pseudo_annotated.xlsx" \
   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/PseudoAnnotated" \
   --fs 200 \

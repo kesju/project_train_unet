@@ -3,10 +3,40 @@
     "channelCount": 1,
     "userId": "613b1d673d08d4d1f3cdc8f8",
     "flags": [
-        "FULLY_ANNOTATED_PROFESSIONALLY"
+        "FULLY_ANNOTATED_PROFESSIONALLY",
+        "FOR_EXTERNAL_ANNOTATING"
     ],
     "noises": [],
-    "noises_annotated": [],
+    "noises_annotated": [
+        {
+            "startIndex": 0,
+            "endIndex": 4100
+        },
+        {
+            "startIndex": 7450,
+            "endIndex": 8500
+        },
+        {
+            "startIndex": 9500,
+            "endIndex": 9850
+        },
+        {
+            "startIndex": 10250,
+            "endIndex": 10560
+        },
+        {
+            "startIndex": 12750,
+            "endIndex": 15850
+        },
+        {
+            "startIndex": 17500,
+            "endIndex": 17850
+        },
+        {
+            "startIndex": 18300,
+            "endIndex": 22100
+        }
+    ],
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {
