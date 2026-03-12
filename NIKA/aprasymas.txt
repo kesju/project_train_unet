@@ -1,10 +1,10 @@
-2_TRAIN_UNET skriptai skirti UNET modelio mokymui ir validavimui, panaudojant atrinktus ir parengtus ekg įrašus 
-aplanke 1_PREPARE_TRAIN_UNET_DATA ir patalpintus aplanke DATA_FOR_TRAINING.
+train_ecg_denoising_unet8.py skirtas UNET modelio mokymui ir validavimui, panaudojant atrinktus ir parengtus ekg įrašus 
+aplanke DATA_FOR_TRAINING.
 
 Pagrindinis scriptas: train_ecg_denoising_unet8.py, konfiguruojamas ir paleidžiamas
-su batch failu train_ecg_denoising_unet7.sh
+su batch failu train_ecg_denoising_unet8.sh
 
-Triukšmo ir segmentavimo parametrai nurodomi pačiame skripte: train_ecg_denoising_unet7.py.
+Triukšmo ir segmentavimo parametrai nurodomi pačiame skripte: train_ecg_denoising_unet8.py.
 Prideda visų rušių triukšmus, kuriuos galima nurodyti per NOISE_LEVELS
 NOISE_LEVELS = ["clean", "mild", "moderate", "severe"]
 
@@ -12,15 +12,12 @@ Apmokant modelį, naudojamas Basic Split (Train / Test).
 Įrašai, prieš apmokant modelį, atsitiktiniu būdu padalijami į dalį mokymui ir dalį testavimui,
 proporcija nustatoma su parametru train_split batch faile train_ecg_denoising_unet7.sh.
 
-Apmokyto UNET modelio parametrai įrašomi į aplanką results, tolesniam naudojimui (pvz. testavimui) jie perrašomi
-iš aplanko 2_TRAIN_UNET/results į aplanką MODEL_UNET.
-
-Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_7.keras:
+Kaip dešifruoti modelio pavadinimą resunet_ecg_1024_0_5_3_8.keras:
 1024 - 'SEGMENT_LENGTH'
 0_5 - 'OVERLAP'
 3 - papildymas, leidžiantis susigaudyti su kokiais duomenimis buvo mokymas. 3 reiškia, kad naudojama mokymo imtis po 3-io
     papildymo duomenimis (žr. 3-as etapas - duomenys mokymui). Jei 0, reiškia, kad mokyta iš ecg_selected_for_test
-7 - pridėjau, kad būtų aišku, kad mokyta su train_ecg_denoising_unet7.py 
+8 - pridėjau, kad būtų aišku, kad mokyta su train_ecg_denoising_unet7.py 
 
 Log pranešimai valdomu užduodant batch faile train_ecg_denoising_unet8.sh log_level.
 Galimos reikšmės:: 'DEBUG', 'INFO', 'WARNING', 'ERROR'.
