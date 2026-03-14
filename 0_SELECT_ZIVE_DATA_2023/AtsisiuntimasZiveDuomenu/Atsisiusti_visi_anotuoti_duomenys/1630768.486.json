@@ -3,16 +3,17 @@
     "channelCount": 1,
     "userId": "613b1d0c3d08d413ffcdc8f6",
     "flags": [
-        "PSEUDO_ANNOTATED"
+        "FULLY_ANNOTATED_PROFESSIONALLY"
     ],
+    "comment": "Ž:  Kelis kartus po skilvelinės ekstrasistolės šiame įraše stebime vadinamus \"fusion beat\" (susiliejęs kompleksas). Jį lemia tai, jog skilvelių depoliarizaciją lemia tiek neseniai buvusi skilvelinė ekstrasistolė, tiek iš sinusinio mazgo atėjęs impulsas ir šios dvi skilvelio aktyvacijos susilieja, todėl keičia morfologiją, palyginus su įprastu sinusiniu kompleksu, tačiau nėra platus kaip skilvelinė ekstrasistolė. Šiuo atveju tai nėra nei skilvelinė, nei prieširdinė ekstrasistolės, nei normalus QRS kompleksas. Tam, kad neklaidinti algoritmo pažymėjau juos U raide.",
     "noises": [],
     "noises_annotated": [],
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {
-            "N": 6,
-            "V": 12,
-            "S": 1
+            "N": 5,
+            "V": 15,
+            "U": 5
         },
         "ml": {
             "U": 10,
@@ -20,9 +21,9 @@
             "S": 1
         },
         "merged": {
-            "N": 743,
-            "V": 12,
-            "S": 1
+            "N": 736,
+            "V": 15,
+            "U": 5
         }
     },
     "rpeaks": {
@@ -35,6 +36,10 @@
             {
                 "sampleIndex": 12103,
                 "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 12240,
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 18291,
@@ -57,6 +62,10 @@
                 "annotationValue": "V"
             },
             {
+                "sampleIndex": 43733,
+                "annotationValue": "U"
+            },
+            {
                 "sampleIndex": 43970,
                 "annotationValue": "N"
             },
@@ -70,7 +79,7 @@
             },
             {
                 "sampleIndex": 58247,
-                "annotationValue": "N"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 71457,
@@ -81,8 +90,20 @@
                 "annotationValue": "V"
             },
             {
+                "sampleIndex": 71867,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77691,
+                "annotationValue": "V"
+            },
+            {
                 "sampleIndex": 88995,
-                "annotationValue": "S"
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 89129,
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 90215,
@@ -95,6 +116,10 @@
             {
                 "sampleIndex": 120254,
                 "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 120382,
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 126465,
@@ -454,7 +479,7 @@
             },
             {
                 "sampleIndex": 12240,
-                "annotationValue": "N"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 12343,
@@ -1206,7 +1231,7 @@
             },
             {
                 "sampleIndex": 43733,
-                "annotationValue": "N"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 43970,
@@ -1542,7 +1567,7 @@
             },
             {
                 "sampleIndex": 58247,
-                "annotationValue": "N"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 58362,
@@ -1866,7 +1891,7 @@
             },
             {
                 "sampleIndex": 71867,
-                "annotationValue": "N"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 71965,
@@ -2010,7 +2035,7 @@
             },
             {
                 "sampleIndex": 77691,
-                "annotationValue": "N"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 77881,
@@ -2270,11 +2295,11 @@
             },
             {
                 "sampleIndex": 88995,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 89129,
-                "annotationValue": "N"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 89242,
@@ -3014,7 +3039,7 @@
             },
             {
                 "sampleIndex": 120382,
-                "annotationValue": "N"
+                "annotationValue": "U"
             },
             {
                 "sampleIndex": 120526,
