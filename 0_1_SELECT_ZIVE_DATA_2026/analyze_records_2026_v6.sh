@@ -25,6 +25,6 @@
 python analyze_records_2026_v6_1.py \
   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
   --model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET \
-  --dir KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/69b525c88534dd1619e9675f/recordings \
+  --dir AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/69b525c88534dd1619e9675f/recordings \
   --fs 200 \
-  --out KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test_records_summary.xlsx
+  --out AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test_records_summary.xlsx
