@@ -50,6 +50,7 @@ try:
     from ecg_denoising_pipeline import (
         ECGDenoisingPipeline,
         DenoisingPipelineConfig,
+        DenoisingPipelineResult,
         load_denoising_config_yaml,
         load_ecg_npy,
         resolve_model_path,
@@ -65,6 +66,8 @@ try:
     from ecg_denoising_pipeline.steps import check_denoising_config
 except Exception:
     check_denoising_config = None
+
+from ecg_ectopy_pipeline import ECGEctopyPipeline, EctopyPipelineConfig, EctopyPipelineResult, load_ectopy_config_yaml
 
 JsonLikeRef = Union[str, Path]
 
@@ -121,6 +124,9 @@ class OutputRow:
     hS: Optional[int]
     hV: Optional[int]
     hU: Optional[int]
+    mlS: Optional[int]
+    mlV: Optional[int]
+    mlU: Optional[int]
     ectS: int
     ectV: int
     ectU: int
@@ -487,21 +493,41 @@ def _flags_to_cell_value(flags_list: List[str]) -> str:
 
 
 def prepare_denoising_pipeline(
-    config_path: Path,
-    model_dir: Path,
+    denoising_config_path: Path,
+    denoising_model_dir: Path,
     disable_motions: bool = False,
 ) -> DenoisingPipelineConfig:
-    if not config_path.exists():
-        raise FileNotFoundError(f"Config file not found: {config_path}")
-    if not model_dir.exists():
-        raise FileNotFoundError(f"Model directory not found: {model_dir}")
+    if not denoising_config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {denoising_config_path}")
+    if not denoising_model_dir.exists():
+        raise FileNotFoundError(f"Model directory not found: {denoising_model_dir}")
 
-    cfg = load_denoising_config_yaml(str(config_path))
+    cfg = load_denoising_config_yaml(str(denoising_config_path))
     if check_denoising_config is not None:
         check_denoising_config(cfg)
 
-    cfg.motions.model_name = resolve_model_path(model_dir, cfg.motions.model_name)
+    cfg.motions.model_name = resolve_model_path(denoising_model_dir, cfg.motions.model_name)
     cfg.motions.enabled = not disable_motions
+    return cfg
+
+def prepare_ectopy_pipeline(
+    ectopy_config_path: Path,
+    ectopy_model_dir: Path,
+) -> EctopyPipelineConfig:
+    
+    """Entry point when the ectopy pipeline is used ad-hoc (e.g. in notebooks)."""
+    
+    cfg: EctopyPipelineConfig = load_ectopy_config_yaml(ectopy_config_path)
+
+    cfg.ectopy.model_name = resolve_model_path(ectopy_model_dir, cfg.ectopy.model_name)
+    cfg.ectopy.scaler_name = resolve_model_path(ectopy_model_dir, cfg.ectopy.scaler_name)
+
+    cfg.ectopy.ectopy_removing = False
+
+    # print("[ECTOPY] Model:", cfg.ectopy.model_name)
+    # print("[ECTOPY] Scaler:", cfg.ectopy.scaler_name)
+    # print("[ECTOPY] Ectopy removing enabled:", bool(cfg.ectopy.ectopy_removing))
+
     return cfg
 
 
@@ -509,6 +535,38 @@ def compute_ectopy_stats_placeholder(_res_denoising: Any) -> Dict[str, int]:
     """Temporary placeholder. Replace later with the real ectopy function."""
     return {"ectS": 0, "ectV": 0, "ectU": 0}
 
+
+def compute_ectopy_stats(res_ectopy: EctopyPipelineResult | None) -> Dict[str, int]:
+    """
+    Count ectopic beat classes from rpeaks_on_denoised_df.
+
+    Expected mapping in column 'pred':
+        0 -> ectN
+        1 -> ectS
+        2 -> ectV
+        3 -> ectU
+        other values are ignored
+    """
+    stats = {"ectN": 0, "ectS": 0, "ectV": 0, "ectU": 0}
+
+    if res_ectopy is None:
+        return stats
+
+    rpeaks_on_denoised_df = res_ectopy.rpeaks_on_denoised_df
+    if rpeaks_on_denoised_df is None:
+        return stats
+
+    if "pred" not in rpeaks_on_denoised_df.columns:
+        return stats
+
+    counts = rpeaks_on_denoised_df["pred"].value_counts()
+
+    return {
+        "ectN": int(counts.get(0, 0)),
+        "ectS": int(counts.get(1, 0)),
+        "ectV": int(counts.get(2, 0)),
+        "ectU": int(counts.get(3, 0)),
+    }
 
 def build_output_row(
     *,
@@ -529,6 +587,9 @@ def build_output_row(
         hS=int(rec.h_s_count),
         hV=int(rec.h_v_count),
         hU=int(rec.h_u_count),
+        mlS=int(rec.ml_s_count),
+        mlV=int(rec.ml_v_count),
+        mlU=int(rec.ml_u_count),
         ectS=int(ectopy_stats.get("ectS", 0)),
         ectV=int(ectopy_stats.get("ectV", 0)),
         ectU=int(ectopy_stats.get("ectU", 0)),
@@ -565,7 +626,7 @@ def write_output_workbook(
     out_path: Path,
     *,
     cfg_denoising: DenoisingPipelineConfig,
-    model_dir: Path,
+    denoising_model_dir: Path,
 ) -> None:
     # creates a new Excel workbook in memory
     wb = Workbook()
@@ -585,6 +646,9 @@ def write_output_workbook(
         "hS",
         "hV",
         "hU",
+        "mlS",
+        "mlV",
+        "mlU",
         "ectS",
         "ectV",
         "ectU",
@@ -620,6 +684,9 @@ def write_output_workbook(
             row.hS,
             row.hV,
             row.hU,
+            row.mlS,
+            row.mlV,
+            row.mlU,
             row.ectS,
             row.ectV,
             row.ectU,
@@ -638,7 +705,7 @@ def write_output_workbook(
             row.userId,
             row.notes,
         ])
-
+        
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
     auto_adjust_widths(ws)
@@ -646,7 +713,7 @@ def write_output_workbook(
     # Second sheet = Parameters
     ws_params = wb.create_sheet(title="Parameters")
     ws_params["A1"] = "Unet model dir:"
-    ws_params["B1"] = str(model_dir)
+    ws_params["B1"] = str(denoising_model_dir)
     ws_params["A2"] = "Unet model:"
     ws_params["B2"] = Path(cfg_denoising.motions.model_name).name
     ws_params["A3"] = "threshold:"
@@ -665,8 +732,10 @@ def main() -> None:
     ap.add_argument("--dir", type=Path, required=True, help="Directory containing JSON metadata and ECG files")
     ap.add_argument("--fs", type=int, default=200, help="Sampling frequency in Hz. Default: 200")
     ap.add_argument("--cfg-denoising", type=Path, required=True, help="Denoising config path")
-    ap.add_argument("--model-dir", type=Path, required=True, help="Model directory for denoising/motions")
+    ap.add_argument("--unet-model-dir", type=Path, required=True, help="Model directory for denoising/motions")
     ap.add_argument("--disable-motions", action="store_true", help="Disable motions stage in denoising pipeline")
+    ap.add_argument("--cfg-ectopy", type=Path, required=True, help="Ectopy config path")
+    ap.add_argument("--ectopy-model-dir", type=Path, required=True, help="Model directory for ectopy detection")
     ap.add_argument("--out", type=Path, default=None, help="Output Excel path")
     args = ap.parse_args()
 
@@ -675,14 +744,28 @@ def main() -> None:
         raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
 
     cfg_denoising = prepare_denoising_pipeline(
-        config_path=args.cfg_denoising,
-        model_dir=args.model_dir,
-        disable_motions=args.disable_motions,
+        denoising_config_path=args.cfg_denoising,
+        denoising_model_dir=args.unet_model_dir,
+        disable_motions=False,
+        # disable_motions=args.disable_motions,
     )
-    pipe = ECGDenoisingPipeline(cfg_denoising)
+    denoising_pipe = ECGDenoisingPipeline(cfg_denoising)
+    
+    cfg_denoising_disabled_motions = prepare_denoising_pipeline(
+        denoising_config_path=args.cfg_denoising,
+        denoising_model_dir=args.unet_model_dir,
+        disable_motions=True,
+        # disable_motions=args.disable_motions,
+    )
+    denoising_pipe_disabled_motions = ECGDenoisingPipeline(cfg_denoising_disabled_motions)
+    
+    
 
-
-
+    cfg_ectopy = prepare_ectopy_pipeline(
+        ectopy_config_path=args.cfg_ectopy,
+        ectopy_model_dir=args.ectopy_model_dir
+    )
+    ectopy_pipe = ECGEctopyPipeline(cfg_ectopy)
 
     json_paths = [p for p in src.rglob("*.json") if "__MACOSX" not in p.parts and p.is_file()]
     print(f"Source: {src}")
@@ -721,10 +804,26 @@ def main() -> None:
         noise_stats: Dict[str, Any] = {}
         ectopy_stats: Dict[str, Any] = {"ectS": 0, "ectV": 0, "ectU": 0}
         try:
+            # With activated motions stage:
             x = load_ecg_npy(data_path)
-            res_denoising = pipe.run(x, gaps_indices=[])
+            
+            # denoising and getting noise stats
+            res_denoising = denoising_pipe.run(x, gaps_indices=[])
             noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
-            ectopy_stats = compute_ectopy_stats_placeholder(res_denoising)
+            
+            # Without detecting motions stage (for comparison/debugging):
+            x = load_ecg_npy(data_path)
+            
+           # denoising and getting noise stats
+            res_denoising_disabled_motions = denoising_pipe_disabled_motions.run(x, gaps_indices=[])
+            
+            # detecting ectopies and getting ectopy stats (without  detecting motions):
+            res_ectopy = ectopy_pipe.run(res_denoising_disabled_motions, fs=args.fs)
+            # print(f"DEBUG: Ectopy stats for {data_path.name}: {res_ectopy}")
+            ectopy_stats = compute_ectopy_stats(res_ectopy)
+            print(f"Processed {data_path.name}: noise_stats={noise_stats} with enabled detecting motions")
+            print(f"ectopy_stats={ectopy_stats} with disabled detecting motions")
+            
         except Exception as exc:
             print(f"WARN: failed denoising/stat extraction for {data_path.name}: {exc}")
 
@@ -744,7 +843,7 @@ def main() -> None:
         output_rows,
         out_path,
         cfg_denoising=cfg_denoising,
-        model_dir=args.model_dir,
+        denoising_model_dir=args.unet_model_dir,
     )
 
     print(f"Processed records: {processed}")
