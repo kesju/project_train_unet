@@ -6,7 +6,7 @@ filter:
   type: highpass   # 'bandpass', 'highpass'
   lowcut: 0.5
   highcut: 70.
-  order: 4
+  order: 5
 outliers:
   enabled: True
   ekg_min: -3.0
