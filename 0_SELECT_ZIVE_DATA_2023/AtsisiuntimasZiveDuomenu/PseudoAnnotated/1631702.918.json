@@ -3,9 +3,10 @@
     "channelCount": 1,
     "userId": "6143507abd0cc5051b275171",
     "flags": [
-        "PSEUDO_ANNOTATED"
+        "FULLY_ANNOTATED_PROFESSIONALLY",
+        "FOR_EXTERNAL_ANNOTATING"
     ],
-    "comment": "yra mažai",
+    "comment": "Ž.",
     "noises": [],
     "noises_annotated": [
         {
@@ -24,8 +25,7 @@
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {
-            "V": 4,
-            "S": 1
+            "V": 5
         },
         "ml": {
             "U": 9,
@@ -33,8 +33,7 @@
         },
         "merged": {
             "N": 756,
-            "V": 4,
-            "S": 1
+            "V": 5
         }
     },
     "rpeaks": {
@@ -58,7 +57,7 @@
             },
             {
                 "sampleIndex": 113537,
-                "annotationValue": "S"
+                "annotationValue": "V"
             }
         ],
         "ml": [
@@ -2822,7 +2821,7 @@
             },
             {
                 "sampleIndex": 113537,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 113754,

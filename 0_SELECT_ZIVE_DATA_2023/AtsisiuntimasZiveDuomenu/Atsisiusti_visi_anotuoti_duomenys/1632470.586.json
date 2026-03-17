@@ -3,14 +3,16 @@
     "channelCount": 1,
     "userId": "614dbfd24bac1cce7b017aef",
     "flags": [
-        "PSEUDO_ANNOTATED"
+        "FULLY_ANNOTATED_PROFESSIONALLY",
+        "FOR_EXTERNAL_ANNOTATING"
     ],
+    "comment": "Ž.",
     "noises": [],
     "noises_annotated": [],
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {
-            "S": 5
+            "V": 5
         },
         "ml": {
             "U": 3,
@@ -18,7 +20,7 @@
         },
         "merged": {
             "N": 912,
-            "S": 5
+            "V": 5
         }
     },
     "rpeaks": {
@@ -26,23 +28,23 @@
         "human": [
             {
                 "sampleIndex": 90643,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 90921,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 92717,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 93021,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 94287,
-                "annotationValue": "S"
+                "annotationValue": "V"
             }
         ],
         "ml": [
@@ -2718,7 +2720,7 @@
             },
             {
                 "sampleIndex": 90643,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 90835,
@@ -2726,7 +2728,7 @@
             },
             {
                 "sampleIndex": 90921,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 91026,
@@ -2774,7 +2776,7 @@
             },
             {
                 "sampleIndex": 92717,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 92933,
@@ -2782,7 +2784,7 @@
             },
             {
                 "sampleIndex": 93021,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 93124,
@@ -2818,7 +2820,7 @@
             },
             {
                 "sampleIndex": 94287,
-                "annotationValue": "S"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 94472,

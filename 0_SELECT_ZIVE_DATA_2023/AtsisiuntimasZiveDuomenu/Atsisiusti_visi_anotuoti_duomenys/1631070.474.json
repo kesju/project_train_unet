@@ -3,27 +3,33 @@
     "channelCount": 1,
     "userId": "6144c682bd0cc5acb7275368",
     "flags": [
-        "PSEUDO_ANNOTATED"
+        "FULLY_ANNOTATED_PROFESSIONALLY",
+        "FOR_EXTERNAL_ANNOTATING"
     ],
+    "comment": "Ž.",
     "noises": [],
     "noises_annotated": [],
     "rpeakAnnotationCounts": {
         "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
         "human": {
-            "V": 3
+            "V": 4
         },
         "ml": {
             "U": 3,
             "V": 3
         },
         "merged": {
-            "N": 511,
-            "V": 3
+            "N": 510,
+            "V": 4
         }
     },
     "rpeaks": {
         "__info": "human=only explicit changes, ml=only ML abnormal beats (no N stored), merged=all peaks",
         "human": [
+            {
+                "sampleIndex": 34077,
+                "annotationValue": "V"
+            },
             {
                 "sampleIndex": 75056,
                 "annotationValue": "V"
@@ -610,7 +616,7 @@
             },
             {
                 "sampleIndex": 34077,
-                "annotationValue": "N"
+                "annotationValue": "V"
             },
             {
                 "sampleIndex": 34368,
