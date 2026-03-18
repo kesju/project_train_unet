@@ -26,7 +26,7 @@ python update_records_list_v4.py \
 
 # VISI ANOTUOTI IRASAI
 # python update_records_list_v4.py \
-#   --excel "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/UPDATE_RECORDS_LIST_ADDING_ML_NOISES/visi_zive_irasai_annot - Darb.xlsx" \
+#   --excel "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys/visi_zive_irasai_annot-Darb.xlsx" \
 #   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys" \
 #   --fs 200 \
 #   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
