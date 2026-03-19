@@ -1,6 +1,5 @@
 visi_zive_irasai_annot - Darb.xlsx
-Pradinis anotuotų įrašų sąrašas
-
+Pradinis anotuotų įrašų suvestinė
 
 visi_zive_irasai_annot - Darb_updated.xlsx
 Anotuotų įrašų sąrašas su atnaujintomis žymėmis iš redaguotų json failų (po Žygimanto ir Nikos redagavimo)
@@ -27,4 +26,15 @@ vėl naudoti update_records_list_v4.py, update_records_list_v4.sh užkomentavus 
 
 Naudoti update_records_list_v4.py, update_records_list_v4.sh naudojant  --denoising \ tik tuo atvejų, kai reikia tikslinti 
 out	rdr	noi	tp% vertes.
+
+
+- 0_SELECT_ZIVE_DATA_2023/UPDATE_RECORDS_LIST_ADDING_ML_NOISES/validation_of_records_summary.py
+
+    In the records summary Excel file, filename has the form userPrefix_recordingId, for example 1000_1.
+    The first part (1000) represents the user-level identifier, and the second part (1) 
+    represents the recording-level identifier.
+    The validation rule is that all rows with the same filename prefix 
+    before _ must have the same userId, and different filename prefixes must 
+    correspond to different userId values.
+    Therefore, the mapping between filename prefix and userId must be one-to-one across the whole table.
 
