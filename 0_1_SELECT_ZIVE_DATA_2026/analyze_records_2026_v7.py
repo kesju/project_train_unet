@@ -67,7 +67,19 @@ try:
 except Exception:
     check_denoising_config = None
 
-from ecg_ectopy_pipeline import ECGEctopyPipeline, EctopyPipelineConfig, EctopyPipelineResult, load_ectopy_config_yaml
+try:
+    from ecg_ectopy_pipeline import (
+        ECGEctopyPipeline,
+        EctopyPipelineConfig,
+        EctopyPipelineResult,
+        load_ectopy_config_yaml,
+    )
+except Exception as exc:
+    raise ImportError(
+        "Cannot import ECG ectopy pipeline helpers. "
+        "Update imports to match your project structure.\n"
+        f"Original error: {exc}"
+    ) from exc
 
 JsonLikeRef = Union[str, Path]
 
@@ -760,6 +772,8 @@ def main() -> None:
     if not src.exists() or not src.is_dir():
         raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
 
+        # PREPARE DENOISING PART 
+
     cfg_denoising = prepare_denoising_pipeline(
         denoising_config_path=args.cfg_denoising,
         denoising_model_dir=args.unet_model_dir,
@@ -776,11 +790,16 @@ def main() -> None:
     )
     denoising_pipe_disabled_motions = ECGDenoisingPipeline(cfg_denoising_disabled_motions)
 
+        # PREPARE ECTOPY DETECTION PART 
+
     cfg_ectopy = prepare_ectopy_pipeline(
         ectopy_config_path=args.cfg_ectopy,
         ectopy_model_dir=args.ectopy_model_dir
     )
     ectopy_pipe = ECGEctopyPipeline(cfg_ectopy)
+
+
+        # CYCLE through JSON and data files and update Excel rows 
 
     json_paths = [p for p in src.rglob("*.json") if "__MACOSX" not in p.parts and p.is_file()]
     print(f"Source: {src}")
