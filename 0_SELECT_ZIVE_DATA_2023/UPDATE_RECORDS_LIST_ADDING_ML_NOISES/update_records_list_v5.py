@@ -857,7 +857,8 @@ def main() -> None:
                     
                     # denoising and getting noise stats
                     res_denoising_disabled_motions = denoising_pipe_disabled_motions.run(x, gaps_indices=[])
-                    print(f"Noise stats for {data_path.name}: out={noise_stats['out']}, rdr={noise_stats['rdr']}, noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f} with disabled detecting motions")
+                    noise_stats_disabled_motions = calc_noise_stats_from_denoised_result(res_denoising_disabled_motions) or {}
+                    print(f"Noise stats for {data_path.name}: out={noise_stats_disabled_motions['out']}, rdr={noise_stats_disabled_motions['rdr']}, noi={noise_stats_disabled_motions['noi']}, tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} with disabled detecting motions")
                     
                     # detecting ectopies and getting ectopy stats (without  detecting motions):
                     res_ectopy = ectopy_pipe.run(res_denoising_disabled_motions, fs=args.fs)
