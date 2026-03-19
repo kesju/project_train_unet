@@ -565,7 +565,7 @@ def prepare_denoising_pipeline(
         check_denoising_config(cfg)
 
     cfg.motions.model_name = resolve_model_path(denoising_model_dir, cfg.motions.model_name)
-    cfg.motions.enabled = disable_motions
+    cfg.motions.enabled = not disable_motions
     return cfg
 
 
