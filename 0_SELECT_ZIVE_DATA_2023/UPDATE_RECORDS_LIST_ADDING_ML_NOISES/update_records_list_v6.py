@@ -24,7 +24,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 import openpyxl
 from ecg_denoising_pipeline import load_ecg_npy
-from openpyxl.styles import PatternFill
+from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 
@@ -632,6 +632,19 @@ def compute_ectopy_stats(res_ectopy: EctopyPipelineResult | None) -> Dict[str, i
         "ectU": int(counts.get(3, 0)),
     }
 
+
+def auto_adjust_widths(ws) -> None:
+    for column_cells in ws.columns:
+        max_len = 0
+        col_idx = None
+        for cell in column_cells:
+            col_idx = cell.column
+            value = "" if cell.value is None else str(cell.value)
+            if len(value) > max_len:
+                max_len = len(value)
+        if col_idx is not None:
+            ws.column_dimensions[get_column_letter(col_idx)].width = min(max(max_len + 2, 10), 80)
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--excel", type=Path, required=True, help="Input Excel (.xlsx)")
@@ -679,6 +692,10 @@ def main() -> None:
     cols["mlS"] = pick_col(hdr, "mls", "mlS")
     cols["mlV"] = pick_col(hdr, "mlv", "mlV")
     cols["mlU"] = pick_col(hdr, "mlu", "mlU")
+    cols["ectN"] = pick_col(hdr, "ectn", "ectN")
+    cols["ectS"] = pick_col(hdr, "ects", "ectS")
+    cols["ectV"] = pick_col(hdr, "ectv", "ectV")
+    cols["ectU"] = pick_col(hdr, "ectu", "ectU")
     cols["h_nz_cnt"] = pick_col(hdr, "h_nz_cnt", "h_nz_count")
 
     # requested simplifications
@@ -839,7 +856,7 @@ def main() -> None:
             seq = infer_sequence_id_fs(jp, fallback=src.name or "dir")
 
             noise_stats: Dict[str, Any] = {}
-            ectopy_stats: Dict[str, Any] = {"ectS": 0, "ectV": 0, "ectU": 0}
+            ectopy_stats: Dict[str, Any] = {"ectN": 0, "ectS": 0, "ectV": 0, "ectU": 0}
             
             if (args.denoising and denoising_pipe is not None):
                 try:
@@ -869,7 +886,7 @@ def main() -> None:
                 except Exception as exc:
                     print(f"WARN: failed denoising/stat extraction for {data_path.name}: {exc}")
                     noise_stats = {}
-                    ectopy_stats = {"ectS": 0, "ectV": 0, "ectU": 0}
+                    ectopy_stats = {"ectN": 0, "ectS": 0, "ectV": 0, "ectU": 0}
 
             rec, _rec_dict = summarize_record(
                 sequenceId=seq,
@@ -896,6 +913,10 @@ def main() -> None:
                 "mlS": int(rec.ml_s_count),
                 "mlV": int(rec.ml_v_count),
                 "mlU": int(rec.ml_u_count),
+                "ectN": int(ectopy_stats.get("ectN", 0)),
+                "ectS": int(ectopy_stats.get("ectS", 0)),
+                "ectV": int(ectopy_stats.get("ectV", 0)),
+                "ectU": int(ectopy_stats.get("ectU", 0)),
                 "h_nz_cnt": int(rec.h_noises_count),
                 "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)),
                 "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
@@ -931,7 +952,36 @@ def main() -> None:
     # Optional: hide temporarely the columns if they exist
     hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac")
 
+
+    # Save the updated workbook with a new name (original name + "_updated" + marker)
     out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated" + MARKER + ".xlsx")
+
+
+# Save the parameters used for denoising and ectopy detection in a new sheet called "Parameters"
+    ws_params = wb["Parameters"] if "Parameters" in wb.sheetnames else wb.create_sheet(title="Parameters")
+    # denoising model info:
+    ws_params["A1"] = "Unet model dir:"
+    ws_params["B1"] = str(denoising_model_dir)
+    ws_params["A2"] = "Unet model:"
+    ws_params["B2"] = Path(cfg_denoising.motions.model_name).name
+    ws_params["A3"] = "threshold:"
+    ws_params["B3"] = cfg_denoising.motions.threshold
+
+    # ectopy model info:
+    ws_params["A5"] = "Ectopy model dir:"
+    ws_params["B5"] = str(args.ectopy_model_dir)
+    ws_params["A6"] = "Ectopy model:"
+    ws_params["B6"] = Path(cfg_ectopy.ectopy.model_name).name
+
+    ws_params["A7"] = "Ectopy scaler:"
+    ws_params["B7"] = Path(cfg_ectopy.ectopy.scaler_name).name
+
+    # Bolding the parameter labels in column A
+    for cell_ref in ("A1", "A2", "A3", "A5", "A6", "A7"):
+        ws_params[cell_ref].font = Font(bold=True)
+
+    auto_adjust_widths(ws_params)
+
     wb.save(out_path)
     
    
