@@ -7,7 +7,7 @@ Changes vs original:
 - Column mapping simplified:
     h_nz_len: pick_col(hdr, "h_nz_len", "h_nz_length")
     ml_nz_len: pick_col(hdr, "ml_nz_len")
-- h_nz_frac and ml_nz_frac ALWAYS mean percentage (0..100), rounded to 1 decimal
+- h_nz_frac and ml_nz_frac% ALWAYS mean percentage (0..100), rounded to 1 decimal
 """
 
 from __future__ import annotations
@@ -566,7 +566,6 @@ def _split_column_dimension_if_needed(ws, col_idx: int) -> None:
         width = dim.width
         hidden = dim.hidden
         best_fit = dim.bestFit
-        style = dim.style
         collapsed = dim.collapsed
         outline_level = dim.outline_level
         custom_width = dim.customWidth
@@ -583,7 +582,6 @@ def _split_column_dimension_if_needed(ws, col_idx: int) -> None:
         target_dim = ColumnDimension(ws, min=col_idx, max=col_idx, width=width)
         target_dim.hidden = hidden
         target_dim.bestFit = best_fit
-        target_dim.style = style
         target_dim.collapsed = collapsed
         target_dim.outline_level = outline_level
         if custom_width:
@@ -597,7 +595,6 @@ def _split_column_dimension_if_needed(ws, col_idx: int) -> None:
             right_dim = ColumnDimension(ws, min=right_start, max=max_idx, width=width)
             right_dim.hidden = hidden
             right_dim.bestFit = best_fit
-            right_dim.style = style
             right_dim.collapsed = collapsed
             right_dim.outline_level = outline_level
             if custom_width:
@@ -772,7 +769,7 @@ def main() -> None:
     cols["tp_pct"] = pick_col(hdr, "tp%", "tp %", "tp_pct", "tp")
     cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
     cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len")
-    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
+    cols["ml_nz_frac%"] = pick_col(hdr, "ml_nz_frac%", "ml_nz_frac", "ml_nz_frac %")
     cols["flags"] = pick_col(hdr, "flags")
 
     if cols["basename"] is None:
@@ -832,7 +829,7 @@ def main() -> None:
         cell = ws.cell(row=row, column=col_i)
 
         # percent columns always mean 0..100
-        if col_key in ("h_nz_frac", "ml_nz_frac", "tp_pct") and isinstance(new_val, (int, float, np.floating)):
+        if col_key in ("h_nz_frac", "ml_nz_frac%", "tp_pct") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
         if cell_changed(cell.value, new_val):
@@ -990,7 +987,7 @@ def main() -> None:
                 "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
                 "ml_nz_cnt": int(rec.ml_noises_count),
                 "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)),
-                "ml_nz_frac": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
+                "ml_nz_frac%": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
                 "flags": _flags_to_cell_value(rec.flags or []),
                 "out": noise_stats.get("out"),
                 "rdr": noise_stats.get("rdr"),
@@ -1015,7 +1012,7 @@ def main() -> None:
         ws.cell(row=r, column=c_basename).fill = MEDIUM_BLUE_FILL
 
     # Optional: hide temporarely the columns if they exist
-    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac", "mlS", "mlV", "mlU")
+    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac%", "mlS", "mlV", "mlU")
 
     # Ensure ectopy summary columns stay clearly visible
     for key in ("ectN", "ectS", "ectV", "ectU"):
