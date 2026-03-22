@@ -26,6 +26,7 @@ import openpyxl
 from ecg_denoising_pipeline import load_ecg_npy
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.dimensions import ColumnDimension
 
 
 
@@ -542,10 +543,74 @@ def _flags_to_cell_value(flags_list: List[str]) -> str:
 
 
 
+def _split_column_dimension_if_needed(ws, col_idx: int) -> None:
+    """Ensure this column has its own ColumnDimension, not a shared grouped range.
+
+    This prevents hiding one column (e.g. mlU) from also hiding neighboring columns
+    that happen to share the same dimension range in the source workbook.
+    """
+    target_letter = get_column_letter(col_idx)
+
+    # Find a dimension range that covers the target column.
+    for key, dim in list(ws.column_dimensions.items()):
+        min_idx = getattr(dim, "min", None)
+        max_idx = getattr(dim, "max", None)
+        if min_idx is None or max_idx is None:
+            continue
+        if not (min_idx <= col_idx <= max_idx):
+            continue
+        if min_idx == max_idx == col_idx:
+            return
+
+        # Snapshot current formatting/behavior of the shared range.
+        width = dim.width
+        hidden = dim.hidden
+        best_fit = dim.bestFit
+        style = dim.style
+        collapsed = dim.collapsed
+        outline_level = dim.outline_level
+        custom_width = dim.customWidth
+
+        # Left part stays on the original dimension key.
+        if min_idx < col_idx:
+            dim.min = min_idx
+            dim.max = col_idx - 1
+        else:
+            # No left part remains: remove the original grouped dimension.
+            del ws.column_dimensions[key]
+
+        # Create a dedicated dimension for the target column.
+        target_dim = ColumnDimension(ws, min=col_idx, max=col_idx, width=width)
+        target_dim.hidden = hidden
+        target_dim.bestFit = best_fit
+        target_dim.style = style
+        target_dim.collapsed = collapsed
+        target_dim.outline_level = outline_level
+        if custom_width:
+            target_dim.width = width
+        ws.column_dimensions[target_letter] = target_dim
+
+        # Right part, if any, becomes its own grouped dimension.
+        if col_idx < max_idx:
+            right_start = col_idx + 1
+            right_letter = get_column_letter(right_start)
+            right_dim = ColumnDimension(ws, min=right_start, max=max_idx, width=width)
+            right_dim.hidden = hidden
+            right_dim.bestFit = best_fit
+            right_dim.style = style
+            right_dim.collapsed = collapsed
+            right_dim.outline_level = outline_level
+            if custom_width:
+                right_dim.width = width
+            ws.column_dimensions[right_letter] = right_dim
+        return
+
+
 def hide_columns_by_keys(ws, cols: dict, *keys: str) -> None:
     for key in keys:
-        col_idx = cols.get(key)
+        col_idx = cols.get(key) or cols.get(str(key).strip().lower())
         if col_idx:
+            _split_column_dimension_if_needed(ws, col_idx)
             col_letter = get_column_letter(col_idx)
             ws.column_dimensions[col_letter].hidden = True
 
@@ -954,8 +1019,9 @@ def main() -> None:
 
     # Ensure ectopy summary columns stay clearly visible
     for key in ("ectN", "ectS", "ectV", "ectU"):
-        col_idx = cols.get(key)
+        col_idx = cols.get(key) or cols.get(key.lower())
         if col_idx:
+            _split_column_dimension_if_needed(ws, col_idx)
             col_letter = get_column_letter(col_idx)
             ws.column_dimensions[col_letter].hidden = False
             ws.column_dimensions[col_letter].width = 14

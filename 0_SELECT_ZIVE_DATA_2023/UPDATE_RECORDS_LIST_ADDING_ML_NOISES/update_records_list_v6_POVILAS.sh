@@ -14,7 +14,7 @@ python update_records_list_v7.py \
   --fs 200 \
 #   --out "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
 #   # --quiet \
-
+# To make denoising == False, just do not include --denoising.
 
 # # VISI ANOTUOTI IRASAI
 # python update_records_list_v7.py \
