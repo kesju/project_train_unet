@@ -956,7 +956,9 @@ def main() -> None:
     for key in ("ectN", "ectS", "ectV", "ectU"):
         col_idx = cols.get(key)
         if col_idx:
-            ws.column_dimensions[get_column_letter(col_idx)].width = max(ws.column_dimensions[get_column_letter(col_idx)].width or 0, 12)
+            col_letter = get_column_letter(col_idx)
+            ws.column_dimensions[col_letter].hidden = False
+            ws.column_dimensions[col_letter].width = 14
 
     # Save the updated workbook with a new name (original name + "_updated" + marker)
     out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated" + MARKER + ".xlsx")
