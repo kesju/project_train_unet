@@ -7,7 +7,7 @@ Changes vs original:
 - Column mapping simplified:
     h_nz_len: pick_col(hdr, "h_nz_len", "h_nz_length")
     ml_nz_len: pick_col(hdr, "ml_nz_len")
-- h_nz_frac and ml_nz_frac ALWAYS mean percentage (0..100), rounded to 1 decimal
+- h_nz_frac and ml_nz_frac% ALWAYS mean percentage (0..100), rounded to 1 decimal
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ import openpyxl
 from ecg_denoising_pipeline import load_ecg_npy
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.dimensions import ColumnDimension
 
 
 
@@ -542,10 +543,71 @@ def _flags_to_cell_value(flags_list: List[str]) -> str:
 
 
 
+def _split_column_dimension_if_needed(ws, col_idx: int) -> None:
+    """Ensure this column has its own ColumnDimension, not a shared grouped range.
+
+    This prevents hiding one column (e.g. mlU) from also hiding neighboring columns
+    that happen to share the same dimension range in the source workbook.
+    """
+    target_letter = get_column_letter(col_idx)
+
+    # Find a dimension range that covers the target column.
+    for key, dim in list(ws.column_dimensions.items()):
+        min_idx = getattr(dim, "min", None)
+        max_idx = getattr(dim, "max", None)
+        if min_idx is None or max_idx is None:
+            continue
+        if not (min_idx <= col_idx <= max_idx):
+            continue
+        if min_idx == max_idx == col_idx:
+            return
+
+        # Snapshot current formatting/behavior of the shared range.
+        width = dim.width
+        hidden = dim.hidden
+        best_fit = dim.bestFit
+        collapsed = dim.collapsed
+        outline_level = dim.outline_level
+        custom_width = dim.customWidth
+
+        # Left part stays on the original dimension key.
+        if min_idx < col_idx:
+            dim.min = min_idx
+            dim.max = col_idx - 1
+        else:
+            # No left part remains: remove the original grouped dimension.
+            del ws.column_dimensions[key]
+
+        # Create a dedicated dimension for the target column.
+        target_dim = ColumnDimension(ws, min=col_idx, max=col_idx, width=width)
+        target_dim.hidden = hidden
+        target_dim.bestFit = best_fit
+        target_dim.collapsed = collapsed
+        target_dim.outline_level = outline_level
+        if custom_width:
+            target_dim.width = width
+        ws.column_dimensions[target_letter] = target_dim
+
+        # Right part, if any, becomes its own grouped dimension.
+        if col_idx < max_idx:
+            right_start = col_idx + 1
+            right_letter = get_column_letter(right_start)
+            right_dim = ColumnDimension(ws, min=right_start, max=max_idx, width=width)
+            right_dim.hidden = hidden
+            right_dim.bestFit = best_fit
+            right_dim.collapsed = collapsed
+            right_dim.outline_level = outline_level
+            if custom_width:
+                right_dim.width = width
+            ws.column_dimensions[right_letter] = right_dim
+        return
+
+
 def hide_columns_by_keys(ws, cols: dict, *keys: str) -> None:
     for key in keys:
-        col_idx = cols.get(key)
+        col_idx = cols.get(key) or cols.get(str(key).strip().lower())
         if col_idx:
+            _split_column_dimension_if_needed(ws, col_idx)
             col_letter = get_column_letter(col_idx)
             ws.column_dimensions[col_letter].hidden = True
 
@@ -701,14 +763,13 @@ def main() -> None:
     # requested simplifications
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length")
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
-    cols["noni"] = pick_col(hdr, "noni")
     cols["out"] = pick_col(hdr, "out")
     cols["rdr"] = pick_col(hdr, "rdr")
     cols["noi"] = pick_col(hdr, "noi")
     cols["tp_pct"] = pick_col(hdr, "tp%", "tp %", "tp_pct", "tp")
     cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
     cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len")
-    cols["ml_nz_frac"] = pick_col(hdr, "ml_nz_frac", "ml_nz_frac%", "ml_nz_frac %")
+    cols["ml_nz_frac%"] = pick_col(hdr, "ml_nz_frac%", "ml_nz_frac", "ml_nz_frac %")
     cols["flags"] = pick_col(hdr, "flags")
 
     if cols["basename"] is None:
@@ -768,7 +829,7 @@ def main() -> None:
         cell = ws.cell(row=row, column=col_i)
 
         # percent columns always mean 0..100
-        if col_key in ("h_nz_frac", "ml_nz_frac", "tp_pct") and isinstance(new_val, (int, float, np.floating)):
+        if col_key in ("h_nz_frac", "ml_nz_frac%", "tp_pct") and isinstance(new_val, (int, float, np.floating)):
             new_val = round(float(new_val), 1)
 
         if cell_changed(cell.value, new_val):
@@ -787,9 +848,13 @@ def main() -> None:
     if (not args.denoising):
         print("\nDenoising is disabled. Noise stats columns will be left empty.")
         MARKER = ""
-        noise_stats ={}
-        cfg_denoising_path = None
-        pipe = None
+        noise_stats = {}
+        denoising_model_dir = "Not used"
+        cfg_denoising = "Not used"
+        cfg_ectopy = "Not used"
+        ectopy_pipe = None
+        denoising_pipe = None
+        denoising_pipe_disabled_motions = None
     else:
         print("\nDenoising will be performed for each record using the specified config and model.")
     
@@ -922,9 +987,8 @@ def main() -> None:
                 "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
                 "ml_nz_cnt": int(rec.ml_noises_count),
                 "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)),
-                "ml_nz_frac": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
+                "ml_nz_frac%": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
                 "flags": _flags_to_cell_value(rec.flags or []),
-                "noni": int(rec.h_noises_count),
                 "out": noise_stats.get("out"),
                 "rdr": noise_stats.get("rdr"),
                 "noi": noise_stats.get("noi"),
@@ -936,8 +1000,6 @@ def main() -> None:
             if v is None:
                 continue
             row_changed |= set_cell(row, k, v)
-            if k == "h_nz_cnt":
-                row_changed |= set_cell(row, "noni", v)
 
         if row_changed:
             changed_rows.add(row)
@@ -950,8 +1012,16 @@ def main() -> None:
         ws.cell(row=r, column=c_basename).fill = MEDIUM_BLUE_FILL
 
     # Optional: hide temporarely the columns if they exist
-    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac")
-    # dar pslepti: mlS	mlV	mlU noni
+    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac%", "mlS", "mlV", "mlU")
+
+    # Ensure ectopy summary columns stay clearly visible
+    for key in ("ectN", "ectS", "ectV", "ectU"):
+        col_idx = cols.get(key) or cols.get(key.lower())
+        if col_idx:
+            _split_column_dimension_if_needed(ws, col_idx)
+            col_letter = get_column_letter(col_idx)
+            ws.column_dimensions[col_letter].hidden = False
+            ws.column_dimensions[col_letter].width = 8
 
     # Save the updated workbook with a new name (original name + "_updated" + marker)
     out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated" + MARKER + ".xlsx")
@@ -963,18 +1033,18 @@ def main() -> None:
     ws_params["A1"] = "Unet model dir:"
     ws_params["B1"] = str(denoising_model_dir)
     ws_params["A2"] = "Unet model:"
-    ws_params["B2"] = Path(cfg_denoising.motions.model_name).name
+    ws_params["B2"] = "Not used" if cfg_denoising == "Not used" else Path(cfg_denoising.motions.model_name).name
     ws_params["A3"] = "threshold:"
-    ws_params["B3"] = cfg_denoising.motions.threshold
+    ws_params["B3"] = "Not used" if cfg_denoising == "Not used" else cfg_denoising.motions.threshold
 
     # ectopy model info:
     ws_params["A5"] = "Ectopy model dir:"
-    ws_params["B5"] = str(args.ectopy_model_dir)
+    ws_params["B5"] = "Not used" if cfg_ectopy == "Not used" else str(args.ectopy_model_dir)
     ws_params["A6"] = "Ectopy model:"
-    ws_params["B6"] = Path(cfg_ectopy.ectopy.model_name).name
+    ws_params["B6"] = "Not used" if cfg_ectopy == "Not used" else Path(cfg_ectopy.ectopy.model_name).name
 
     ws_params["A7"] = "Ectopy scaler:"
-    ws_params["B7"] = Path(cfg_ectopy.ectopy.scaler_name).name
+    ws_params["B7"] = "Not used" if cfg_ectopy == "Not used" else Path(cfg_ectopy.ectopy.scaler_name).name
 
     # Bolding the parameter labels in column A
     for cell_ref in ("A1", "A2", "A3", "A5", "A6", "A7"):
@@ -983,7 +1053,6 @@ def main() -> None:
     auto_adjust_widths(ws_params)
 
     wb.save(out_path)
-    
    
     print(f"Processed JSON files: {processed}")
     print(f"Changed rows: {len(changed_rows)}")

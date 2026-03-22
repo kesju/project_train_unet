@@ -701,6 +701,7 @@ def main() -> None:
     # requested simplifications
     cols["h_nz_len"] = pick_col(hdr, "h_nz_len", "h_nz_length")
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
+    cols["noni"] = pick_col(hdr, "noni")
     cols["out"] = pick_col(hdr, "out")
     cols["rdr"] = pick_col(hdr, "rdr")
     cols["noi"] = pick_col(hdr, "noi")
@@ -786,13 +787,9 @@ def main() -> None:
     if (not args.denoising):
         print("\nDenoising is disabled. Noise stats columns will be left empty.")
         MARKER = ""
-        noise_stats = {}
-        denoising_model_dir = "Not used"
-        cfg_denoising = "Not used"
-        cfg_ectopy = "Not used"
-        ectopy_pipe = None
-        denoising_pipe = None
-        denoising_pipe_disabled_motions = None
+        noise_stats ={}
+        cfg_denoising_path = None
+        pipe = None
     else:
         print("\nDenoising will be performed for each record using the specified config and model.")
     
@@ -927,6 +924,7 @@ def main() -> None:
                 "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)),
                 "ml_nz_frac": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
                 "flags": _flags_to_cell_value(rec.flags or []),
+                "noni": int(rec.h_noises_count),
                 "out": noise_stats.get("out"),
                 "rdr": noise_stats.get("rdr"),
                 "noi": noise_stats.get("noi"),
@@ -938,6 +936,8 @@ def main() -> None:
             if v is None:
                 continue
             row_changed |= set_cell(row, k, v)
+            if k == "h_nz_cnt":
+                row_changed |= set_cell(row, "noni", v)
 
         if row_changed:
             changed_rows.add(row)
@@ -950,15 +950,8 @@ def main() -> None:
         ws.cell(row=r, column=c_basename).fill = MEDIUM_BLUE_FILL
 
     # Optional: hide temporarely the columns if they exist
-    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac", "mlS", "mlV", "mlU")
-
-    # Ensure ectopy summary columns stay clearly visible
-    for key in ("ectN", "ectS", "ectV", "ectU"):
-        col_idx = cols.get(key)
-        if col_idx:
-            col_letter = get_column_letter(col_idx)
-            ws.column_dimensions[col_letter].hidden = False
-            ws.column_dimensions[col_letter].width = 14
+    hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac")
+    # dar pslepti: mlS	mlV	mlU noni
 
     # Save the updated workbook with a new name (original name + "_updated" + marker)
     out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated" + MARKER + ".xlsx")
@@ -970,18 +963,18 @@ def main() -> None:
     ws_params["A1"] = "Unet model dir:"
     ws_params["B1"] = str(denoising_model_dir)
     ws_params["A2"] = "Unet model:"
-    ws_params["B2"] = "Not used" if cfg_denoising == "Not used" else Path(cfg_denoising.motions.model_name).name
+    ws_params["B2"] = Path(cfg_denoising.motions.model_name).name
     ws_params["A3"] = "threshold:"
-    ws_params["B3"] = "Not used" if cfg_denoising == "Not used" else cfg_denoising.motions.threshold
+    ws_params["B3"] = cfg_denoising.motions.threshold
 
     # ectopy model info:
     ws_params["A5"] = "Ectopy model dir:"
-    ws_params["B5"] = "Not used" if cfg_ectopy == "Not used" else str(args.ectopy_model_dir)
+    ws_params["B5"] = str(args.ectopy_model_dir)
     ws_params["A6"] = "Ectopy model:"
-    ws_params["B6"] = "Not used" if cfg_ectopy == "Not used" else Path(cfg_ectopy.ectopy.model_name).name
+    ws_params["B6"] = Path(cfg_ectopy.ectopy.model_name).name
 
     ws_params["A7"] = "Ectopy scaler:"
-    ws_params["B7"] = "Not used" if cfg_ectopy == "Not used" else Path(cfg_ectopy.ectopy.scaler_name).name
+    ws_params["B7"] = Path(cfg_ectopy.ectopy.scaler_name).name
 
     # Bolding the parameter labels in column A
     for cell_ref in ("A1", "A2", "A3", "A5", "A6", "A7"):
