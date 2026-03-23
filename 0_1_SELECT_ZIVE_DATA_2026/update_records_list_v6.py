@@ -741,6 +741,7 @@ def main() -> None:
     cols["basename"] = pick_col(hdr, "basename")
     cols["rec_id"] = pick_col(hdr, "rec_id", "recordingid", "recording_id", "recording id")
     cols["uid"] = pick_col(hdr, "uid", "user_id", "userid", "user id")
+    cols["tag"] = pick_col(hdr, "tag")
     cols["samples"] = pick_col(hdr, "samples", "sample_cnt", "sample_count")
     cols["cmt"] = pick_col(hdr, "cmt", "comment")
     cols["dur_s"] = pick_col(hdr, "dur_s", "duration_s", "duration", "dur")
@@ -919,7 +920,6 @@ def main() -> None:
             seq = infer_sequence_id_fs(jp, fallback=src.name or "dir")
 
 
-# ŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽ
         noise_stats: Dict[str, Any] = {}
         ectopy_stats: Optional[Dict[str, Any]] = None
 
@@ -1009,7 +1009,6 @@ def main() -> None:
             extracted["ectS"] = int(ectopy_stats.get("ectS", 0))
             extracted["ectV"] = int(ectopy_stats.get("ectV", 0))
             extracted["ectU"] = int(ectopy_stats.get("ectU", 0))
-# ŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽŽ
 
         row_changed = False
         for k, v in extracted.items():
@@ -1038,6 +1037,15 @@ def main() -> None:
             col_letter = get_column_letter(col_idx)
             ws.column_dimensions[col_letter].hidden = False
             ws.column_dimensions[col_letter].width = 8
+
+    # Process tag column to ensure it's treated as text and commas are removed (if any)
+    tag_col = cols.get("tag")
+    if tag_col:
+        for r in range(2, ws.max_row + 1):
+            cell = ws.cell(row=r, column=int(tag_col))
+            if cell.value is not None:
+                cell.number_format = "@"
+                cell.value = str(cell.value).replace(",", "")
 
     # Save the updated workbook with a new name (original name + "_updated" + marker)
     out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated" + MARKER + ".xlsx")
