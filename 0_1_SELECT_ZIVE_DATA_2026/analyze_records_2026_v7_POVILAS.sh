@@ -9,4 +9,4 @@
   --disable-motions \
   --cfg-ectopy "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
   --ectopy-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
-  --out AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test_records_summary.xlsx
+  --out AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/KJ_10min_test_records_summary.xlsx

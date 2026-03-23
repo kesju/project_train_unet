@@ -4,7 +4,7 @@
 # +++++++++++++++++++++++  ALGIRDO SERVERIS +++++++++++++++++++++++
 
 python update_records_list_v6.py \
-  --excel AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_records_summary.xlsx \
+  --excel AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/KJ_10min_test_records_summary.xlsx \
   --dir AtsisiustiDuomenys_2026/KJ_-_2026-03-13_2225_to_2026-03-14_0636_8h_10min_test/69b525c88534dd1619e9675f/recordings \
   --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
   --unet-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET//MODEL_UNET \
