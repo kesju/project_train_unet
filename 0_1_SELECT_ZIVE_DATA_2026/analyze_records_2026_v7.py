@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+
+https://chatgpt.com/c/69c0fe7b-cf84-838a-bdee-7a01e99c1d54
+
 Build an Excel summary table directly from a directory of ECG data files and JSON metadata.
 
 This script is tailored from update_records_list_v4.py.
@@ -35,7 +38,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -507,6 +510,65 @@ def find_data_file_fs(json_path: Path) -> Optional[Tuple[Path, str]]:
 def _flags_to_cell_value(flags_list: List[str]) -> str:
     return "; ".join([f for f in flags_list if f])
 
+
+# Single source of truth for Excel column order:
+# (header shown in Excel, OutputRow attribute name)
+RECORD_COLUMNS: List[Tuple[str, str]] = [
+    ("filename", "filename"),
+    ("basename", "basename"),
+    ("samples", "samples"),
+    ("quality", "quality"),
+    ("tag", "tag"),
+    ("cmt", "cmt"),
+    ("mark", "mark"),
+    ("rpk_cnt", "rpk_cnt"),
+    ("hN", "hN"),
+    ("hS", "hS"),
+    ("hV", "hV"),
+    ("hU", "hU"),
+    ("mlS", "mlS"),
+    ("mlV", "mlV"),
+    ("mlU", "mlU"),
+    ("ectN", "ectN"),
+    ("ectS", "ectS"),
+    ("ectV", "ectV"),
+    ("ectU", "ectU"),
+    ("h_nz_cnt", "h_nz_cnt"),
+    ("h_nz_len", "h_nz_len"),
+    ("h_nz_frac%", "h_nz_frac_pct"),
+    ("out", "out"),
+    ("rdr", "rdr"),
+    ("noi", "noi"),
+    ("tp%", "tp_pct"),
+    ("ml_nz_cnt", "ml_nz_cnt"),
+    ("ml_nz_len", "ml_nz_len"),
+    ("ml_nz_frac%", "ml_nz_frac_pct"),
+    ("flags", "flags"),
+    ("recordingId", "recordingId"),
+    ("userId", "userId"),
+    ("notes", "notes"),
+]
+
+
+def _validate_record_columns() -> None:
+    outputrow_fields = {f.name for f in fields(OutputRow)}
+    missing = [attr_name for _header, attr_name in RECORD_COLUMNS if attr_name not in outputrow_fields]
+    if missing:
+        raise ValueError(f"RECORD_COLUMNS references missing OutputRow fields: {missing}")
+
+
+def _record_headers() -> List[str]:
+    return [header for header, _attr_name in RECORD_COLUMNS]
+
+
+def _record_values(row: OutputRow) -> List[Any]:
+    return [getattr(row, attr_name) for _header, attr_name in RECORD_COLUMNS]
+
+
+def _record_cols_map() -> Dict[str, int]:
+    return {header: i + 1 for i, (header, _attr_name) in enumerate(RECORD_COLUMNS)}
+
+
 def hide_columns_by_keys(ws, cols: dict, *keys: str) -> None:
     for key in keys:
         col_idx = cols.get(key) or cols.get(str(key).strip().lower())
@@ -725,88 +787,35 @@ def write_output_workbook(
     ws = wb.active
     ws.title = "Records"
 
-    headers = [
-        "filename",
-        "basename",
-        "samples",
-        "quality",
-        "tag",
-        "cmt",
-        "mark",
-        "rpk_cnt",
-        "hN",
-        "hS",
-        "hV",
-        "hU",
-        "mlS",
-        "mlV",
-        "mlU",
-        "ectN",
-        "ectS",
-        "ectV",
-        "ectU",
-        "h_nz_cnt",
-        "h_nz_len",
-        "h_nz_frac%",
-        "out",
-        "rdr",
-        "noi",
-        "tp%",
-        "ml_nz_cnt",
-        "ml_nz_len",
-        "ml_nz_frac%",
-        "flags",
-        "recordingId",
-        "userId",
-        "notes",
-    ]
+    _validate_record_columns()
+    headers = _record_headers()
+    cols = _record_cols_map()
+
     ws.append(headers)
 
-    # Optional: hide temporarely the columns if they exist
-    # hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac%", "mlS", "mlV", "mlU")
-    
-    
     for cell in ws[1]:
         cell.font = Font(bold=True)
 
     for row in rows:
-        ws.append([
-            row.filename,
-            row.basename,
-            row.samples,
-            row.tag,
-            row.cmt,
-            row.rpk_cnt,
-            row.hN,
-            row.hS,
-            row.hV,
-            row.hU,
-            row.mlS,
-            row.mlV,
-            row.mlU,
-            row.ectN,
-            row.ectS,
-            row.ectV,
-            row.ectU,
-            row.h_nz_cnt,
-            row.h_nz_len,
-            row.h_nz_frac_pct,
-            row.out,
-            row.rdr,
-            row.noi,
-            row.tp_pct,
-            row.ml_nz_cnt,
-            row.ml_nz_len,
-            row.ml_nz_frac_pct,
-            row.flags,
-            row.recordingId,
-            row.userId,
-            row.notes,
-        ])
-        
+        ws.append(_record_values(row))
+
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
     auto_adjust_widths(ws)
+
+    # Hide internal / intermediate ML columns safely.
+    # _split_column_dimension_if_needed() prevents one hidden column from
+    # accidentally hiding neighboring columns that share a grouped dimension.
+    hide_columns_by_keys(
+        ws,
+        cols,
+        "ml_nz_cnt",
+        "ml_nz_len",
+        "ml_nz_frac%",
+        "mlS",
+        "mlV",
+        "mlU",
+    )
 
     # Second sheet = Parameters
     ws_params = wb.create_sheet(title="Parameters")
@@ -833,12 +842,16 @@ def write_output_workbook(
 
     auto_adjust_widths(ws_params)
 
-    ws_params = wb.create_sheet(title="Marks")
-    ws_params["B2"] = "Pažymėti tag = 1111 , kurie tinka mokymui (pradinis x)"
-    ws_params["B4"] = "Pažymėti tag = 2222,  kokybė nebloga, tačiau ant ribos, gal labiau  tinka triukšmų testavimui (pradinis xx)"
-    
-    
-    ws_params = wb.create_sheet(title="Notes")
+    ws_marks = wb.create_sheet(title="Marks")
+    ws_marks["B2"] = "Pažymėti tag = 1111 , kurie tinka mokymui)"
+    ws_marks["B4"] = "Pažymėti tag = 2222,  kokybė nebloga, tačiau ant ribos, gal labiau  tinka triukšmų testavimui)"
+    ws_marks["B6"] = "Pažymėti tag = 3333, gana daug triukšmų, gali tikti triukšmų testavimui"
+    ws_marks["B8"] = "Pažymėti tag = 5555, ypatingi, 'keisti' atvejai"
+    ws_marks["B10"] = "Pažymėti tag = 9999, kurie niekam netinka"
+    ws_marks["B13"] = "N, J, Z"
+    ws_marks["C13"] = "Nika anotavo triukšmų intervalus, J - Jonas anotavo ekstrasistoles, Z - Žygimantas anotavo ekstrasistoles"
+
+    wb.create_sheet(title="Notes")
     
 
     wb.save(out_path)
