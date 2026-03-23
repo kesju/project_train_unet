@@ -44,6 +44,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 
+from openpyxl.worksheet.dimensions import ColumnDimension
 from record_noise_stats import calc_noise_stats_from_denoised_result
 
 try:
@@ -129,8 +130,10 @@ class OutputRow:
     filename: Optional[str]
     basename: str
     samples: Optional[int]
+    quality: Optional[int]
     tag: Optional[str]
     cmt: Optional[str]
+    mark: Optional[str]
     rpk_cnt: Optional[int]
     hN: Optional[int]
     hS: Optional[int]
@@ -504,6 +507,75 @@ def find_data_file_fs(json_path: Path) -> Optional[Tuple[Path, str]]:
 def _flags_to_cell_value(flags_list: List[str]) -> str:
     return "; ".join([f for f in flags_list if f])
 
+def hide_columns_by_keys(ws, cols: dict, *keys: str) -> None:
+    for key in keys:
+        col_idx = cols.get(key) or cols.get(str(key).strip().lower())
+        if col_idx:
+            _split_column_dimension_if_needed(ws, col_idx)
+            col_letter = get_column_letter(col_idx)
+            ws.column_dimensions[col_letter].hidden = True
+
+
+def _split_column_dimension_if_needed(ws, col_idx: int) -> None:
+    """Ensure this column has its own ColumnDimension, not a shared grouped range.
+
+    This prevents hiding one column (e.g. mlU) from also hiding neighboring columns
+    that happen to share the same dimension range in the source workbook.
+    """
+    target_letter = get_column_letter(col_idx)
+
+    # Find a dimension range that covers the target column.
+    for key, dim in list(ws.column_dimensions.items()):
+        min_idx = getattr(dim, "min", None)
+        max_idx = getattr(dim, "max", None)
+        if min_idx is None or max_idx is None:
+            continue
+        if not (min_idx <= col_idx <= max_idx):
+            continue
+        if min_idx == max_idx == col_idx:
+            return
+
+        # Snapshot current formatting/behavior of the shared range.
+        width = dim.width
+        hidden = dim.hidden
+        best_fit = dim.bestFit
+        collapsed = dim.collapsed
+        outline_level = dim.outline_level
+        custom_width = dim.customWidth
+
+        # Left part stays on the original dimension key.
+        if min_idx < col_idx:
+            dim.min = min_idx
+            dim.max = col_idx - 1
+        else:
+            # No left part remains: remove the original grouped dimension.
+            del ws.column_dimensions[key]
+
+        # Create a dedicated dimension for the target column.
+        target_dim = ColumnDimension(ws, min=col_idx, max=col_idx, width=width)
+        target_dim.hidden = hidden
+        target_dim.bestFit = best_fit
+        target_dim.collapsed = collapsed
+        target_dim.outline_level = outline_level
+        if custom_width:
+            target_dim.width = width
+        ws.column_dimensions[target_letter] = target_dim
+
+        # Right part, if any, becomes its own grouped dimension.
+        if col_idx < max_idx:
+            right_start = col_idx + 1
+            right_letter = get_column_letter(right_start)
+            right_dim = ColumnDimension(ws, min=right_start, max=max_idx, width=width)
+            right_dim.hidden = hidden
+            right_dim.bestFit = best_fit
+            right_dim.collapsed = collapsed
+            right_dim.outline_level = outline_level
+            if custom_width:
+                right_dim.width = width
+            ws.column_dimensions[right_letter] = right_dim
+        return
+
+
 
 def prepare_denoising_pipeline(
     denoising_config_path: Path,
@@ -593,8 +665,10 @@ def build_output_row(
         filename=filename,
         basename=rec.basename,
         samples=int(rec.samples) if rec.samples is not None else None,
+        quality=None,
         tag=None,
         cmt=rec.cmt,
+        mark=None,
         rpk_cnt=int(rec.rpeaks_count),
         hN=int(rec.h_n_count),
         hS=int(rec.h_s_count),
@@ -686,6 +760,10 @@ def write_output_workbook(
     ]
     ws.append(headers)
 
+    # Optional: hide temporarely the columns if they exist
+    # hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac%", "mlS", "mlV", "mlU")
+    
+    
     for cell in ws[1]:
         cell.font = Font(bold=True)
 
@@ -752,6 +830,11 @@ def write_output_workbook(
         ws_params[cell_ref].font = Font(bold=True)
 
     auto_adjust_widths(ws_params)
+
+    ws_params = wb.create_sheet(title="Marks")
+    
+    ws_params = wb.create_sheet(title="Notes")
+    
 
     wb.save(out_path)
 
@@ -871,6 +954,9 @@ def main() -> None:
             )
         )
         processed += 1
+    
+    # Optional: hide temporarely the columns if they exist
+    # hide_columns_by_keys(ws, cols, "ml_nz_cnt", "ml_nz_len", "ml_nz_frac%", "mlS", "mlV", "mlU")
 
     out_path = args.out if args.out else src / "records_summary.xlsx"
     write_output_workbook(

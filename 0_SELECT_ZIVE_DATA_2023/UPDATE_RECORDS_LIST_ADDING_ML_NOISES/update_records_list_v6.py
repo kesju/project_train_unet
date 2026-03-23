@@ -29,8 +29,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension
 
 
-
-
 JsonLikeRef = Union[str, Path]
 
 # IMPORTANT: if your run_denoising_pipeline is in a different module, update the import below.
