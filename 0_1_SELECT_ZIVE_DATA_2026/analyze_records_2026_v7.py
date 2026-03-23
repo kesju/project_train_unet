@@ -44,8 +44,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from openpyxl import Workbook
-from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, Alignment
 
 from openpyxl.worksheet.dimensions import ColumnDimension
 from record_noise_stats import calc_noise_stats_from_denoised_result
@@ -842,17 +842,48 @@ def write_output_workbook(
 
     auto_adjust_widths(ws_params)
 
+    # Sheet "Marks" with instructions for annotators
     ws_marks = wb.create_sheet(title="Marks")
-    ws_marks["B2"] = "Pažymėti tag = 1111 , kurie tinka mokymui)"
-    ws_marks["B4"] = "Pažymėti tag = 2222,  kokybė nebloga, tačiau ant ribos, gal labiau  tinka triukšmų testavimui)"
-    ws_marks["B6"] = "Pažymėti tag = 3333, gana daug triukšmų, gali tikti triukšmų testavimui"
-    ws_marks["B8"] = "Pažymėti tag = 5555, ypatingi, 'keisti' atvejai"
-    ws_marks["B10"] = "Pažymėti tag = 9999, kurie niekam netinka"
-    ws_marks["B13"] = "N, J, Z"
-    ws_marks["C13"] = "Nika anotavo triukšmų intervalus, J - Jonas anotavo ekstrasistoles, Z - Žygimantas anotavo ekstrasistoles"
+
+    marks_text = {
+        "B3":  "Stulpelis tag:",
+        "B5":  "Pažymėti tag = 2222, kokybė nebloga, tačiau ant ribos, gal labiau tinka triukšmų testavimui",
+        "B6":  "Pažymėti tag = 22220, kurie yra pretendentai testavimui, bus patvirtinta po anotavimo",
+        "B8":  "Pažymėti tag = 3333, gana daug triukšmų, gali tikti triukšmų testavimui",
+        "B9":  "Pažymėti tag = 33330, gana daug triukšmų, gali pretenduoti triukšmų testavimui, bus patvirtinta po anotavimo",
+        "B11": "Pažymėti tag = 5555, ypatingi, 'keisti' atvejai",
+        "B13": "Pažymėti tag = 9999, kurie niekam netinka",
+        "B16": "N, J, Z",
+        "C16": "Nika anotavo triukšmų intervalus, J - Jonas anotavo ekstrasistoles, Z - Žygimantas anotavo ekstrasistoles",
+        "B19": "Stulpelis mark:",
+        "B20": "excl",
+        "C20": "eliminuojamas įrašas iš mokymo ir testinės imčių",
+        "B21": "ect8",
+        "C21": "sąrašas ektopinių dūžių anotavimui",
+        "B22": "nz8",
+        "C22": "sąrašas triukšmų žymėjimui",
+        "B23": "ect8.nz8",
+        "C23": "abu sąrašai",
+    }
+
+    for cell_ref, value in marks_text.items():
+        ws_marks[cell_ref] = value
+
+    for cell_ref in ("B3", "B16", "B19"):
+        ws_marks[cell_ref].font = Font(bold=True)
+
+    for row in ws_marks.iter_rows(min_row=1, max_row=30, min_col=2, max_col=3):
+        for cell in row:
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+    ws_marks.column_dimensions["A"].width = 4
+    ws_marks.column_dimensions["B"].width = 18
+    ws_marks.column_dimensions["C"].width = 110
+
+    for r in (16, 20, 21, 22, 23):
+        ws_marks.row_dimensions[r].height = 30
 
     wb.create_sheet(title="Notes")
-    
 
     wb.save(out_path)
 
