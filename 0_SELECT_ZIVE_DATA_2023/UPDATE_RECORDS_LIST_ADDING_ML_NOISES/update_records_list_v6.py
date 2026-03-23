@@ -741,6 +741,7 @@ def main() -> None:
     cols["basename"] = pick_col(hdr, "basename")
     cols["rec_id"] = pick_col(hdr, "rec_id", "recordingid", "recording_id", "recording id")
     cols["uid"] = pick_col(hdr, "uid", "user_id", "userid", "user id")
+    cols["tag"] = pick_col(hdr, "tag")
     cols["samples"] = pick_col(hdr, "samples", "sample_cnt", "sample_count")
     cols["cmt"] = pick_col(hdr, "cmt", "comment")
     cols["dur_s"] = pick_col(hdr, "dur_s", "duration_s", "duration", "dur")
@@ -844,7 +845,7 @@ def main() -> None:
         # PREPARE DENOISING PART 
     
     if (not args.denoising):
-        print("\nDenoising is disabled. Noise stats columns will be left empty.")
+        print("\nDenoising is disabled. Existing Excel values in out/rdr/noi/tp_pct and ectN/ectS/ectV/ectU will be kept unchanged.")
         MARKER = ""
         noise_stats = {}
         denoising_model_dir = "Not used"
@@ -918,80 +919,96 @@ def main() -> None:
             data_path, data_ext = data_info
             seq = infer_sequence_id_fs(jp, fallback=src.name or "dir")
 
-            noise_stats: Dict[str, Any] = {}
-            ectopy_stats: Dict[str, Any] = {"ectN": 0, "ectS": 0, "ectV": 0, "ectU": 0}
-            
-            if (args.denoising and denoising_pipe is not None):
-                try:
-                     # With activated motions stage:
-                    x = load_ecg_npy(data_path)
-                    
-                    # denoising and getting noise stats
-                    res_denoising = denoising_pipe.run(x, gaps_indices=[])
-                    noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
-                    print(f"Noise stats for {data_path.name}: out={noise_stats['out']}, rdr={noise_stats['rdr']}, noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f} with enabled detecting motions")
-                    print()
-                    
-                    # Without detecting motions stage (for comparison/debugging):
-                    x = load_ecg_npy(data_path)
-                    
-                    # denoising and getting noise stats
-                    res_denoising_disabled_motions = denoising_pipe_disabled_motions.run(x, gaps_indices=[])
-                    noise_stats_disabled_motions = calc_noise_stats_from_denoised_result(res_denoising_disabled_motions) or {}
-                    print(f"Noise stats for {data_path.name}: out={noise_stats_disabled_motions['out']}, rdr={noise_stats_disabled_motions['rdr']}, noi={noise_stats_disabled_motions['noi']}, tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} with disabled detecting motions")
-                    
-                    # detecting ectopies and getting ectopy stats (without  detecting motions):
-                    res_ectopy = ectopy_pipe.run(res_denoising_disabled_motions, fs=args.fs)
-                    # print(f"DEBUG: Ectopy stats for {data_path.name}: {res_ectopy}")
-                    ectopy_stats = compute_ectopy_stats(res_ectopy)
-                    print(f"ectopy_stats={ectopy_stats} with disabled detecting motions")
-                
-                except Exception as exc:
-                    print(f"WARN: failed denoising/stat extraction for {data_path.name}: {exc}")
-                    noise_stats = {}
-                    ectopy_stats = {"ectN": 0, "ectS": 0, "ectV": 0, "ectU": 0}
 
-            rec, _rec_dict = summarize_record(
-                sequenceId=seq,
-                basename=bn,
-                json_ref=jp,
-                data_ref=data_path,
-                data_ext=data_ext,
-                load_json_fn=load_json_fs,
-                file_size_fn=file_size_fs,
-                sample_count_fn=sample_count_fs,
-                fs=args.fs,
-            )
-            extracted = {
-                "rec_id": rec.recordingId,
-                "uid": rec.user_id,
-                "samples": int(rec.samples),
-                "cmt": rec.cmt,
-                "dur_s": float(rec.duration_s) if rec.duration_s is not None else None,
-                "rpk_cnt": int(rec.rpeaks_count),
-                "hN": int(rec.h_n_count),
-                "hS": int(rec.h_s_count),
-                "hV": int(rec.h_v_count),
-                "hU": int(rec.h_u_count),
-                "mlS": int(rec.ml_s_count),
-                "mlV": int(rec.ml_v_count),
-                "mlU": int(rec.ml_u_count),
-                "ectN": int(ectopy_stats.get("ectN", 0)),
-                "ectS": int(ectopy_stats.get("ectS", 0)),
-                "ectV": int(ectopy_stats.get("ectV", 0)),
-                "ectU": int(ectopy_stats.get("ectU", 0)),
-                "h_nz_cnt": int(rec.h_noises_count),
-                "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)),
-                "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,  # percent
-                "ml_nz_cnt": int(rec.ml_noises_count),
-                "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)),
-                "ml_nz_frac%": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,  # percent
-                "flags": _flags_to_cell_value(rec.flags or []),
-                "out": noise_stats.get("out"),
-                "rdr": noise_stats.get("rdr"),
-                "noi": noise_stats.get("noi"),
-                "tp_pct": noise_stats.get("tp_pct"),
-            }
+        noise_stats: Dict[str, Any] = {}
+        ectopy_stats: Optional[Dict[str, Any]] = None
+
+        if args.denoising and denoising_pipe is not None:
+            try:
+                # With activated motions stage:
+                x = load_ecg_npy(data_path)
+
+                # denoising and getting noise stats
+                res_denoising = denoising_pipe.run(x, gaps_indices=[])
+                noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
+                print(
+                    f"Noise stats for {data_path.name}: "
+                    f"out={noise_stats['out']}, rdr={noise_stats['rdr']}, "
+                    f"noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f} "
+                    f"with enabled detecting motions"
+                )
+                print()
+
+                # Without detecting motions stage (for comparison/debugging):
+                x = load_ecg_npy(data_path)
+
+                res_denoising_disabled_motions = denoising_pipe_disabled_motions.run(x, gaps_indices=[])
+                noise_stats_disabled_motions = calc_noise_stats_from_denoised_result(
+                    res_denoising_disabled_motions
+                ) or {}
+                print(
+                    f"Noise stats for {data_path.name}: "
+                    f"out={noise_stats_disabled_motions['out']}, "
+                    f"rdr={noise_stats_disabled_motions['rdr']}, "
+                    f"noi={noise_stats_disabled_motions['noi']}, "
+                    f"tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} "
+                    f"with disabled detecting motions"
+                )
+
+                # detecting ectopies and getting ectopy stats
+                res_ectopy = ectopy_pipe.run(res_denoising_disabled_motions, fs=args.fs)
+                ectopy_stats = compute_ectopy_stats(res_ectopy)
+                print(f"ectopy_stats={ectopy_stats} with disabled detecting motions")
+
+            except Exception as exc:
+                print(f"WARN: failed denoising/stat extraction for {data_path.name}: {exc}")
+                noise_stats = {}
+                ectopy_stats = None
+
+        rec, _rec_dict = summarize_record(
+            sequenceId=seq,
+            basename=bn,
+            json_ref=jp,
+            data_ref=data_path,
+            data_ext=data_ext,
+            load_json_fn=load_json_fs,
+            file_size_fn=file_size_fs,
+            sample_count_fn=sample_count_fs,
+            fs=args.fs,
+        )
+
+        extracted = {
+            "rec_id": rec.recordingId,
+            "uid": rec.user_id,
+            "samples": int(rec.samples),
+            "cmt": rec.cmt,
+            "dur_s": float(rec.duration_s) if rec.duration_s is not None else None,
+            "rpk_cnt": int(rec.rpeaks_count),
+            "hN": int(rec.h_n_count),
+            "hS": int(rec.h_s_count),
+            "hV": int(rec.h_v_count),
+            "hU": int(rec.h_u_count),
+            "mlS": int(rec.ml_s_count),
+            "mlV": int(rec.ml_v_count),
+            "mlU": int(rec.ml_u_count),
+            "h_nz_cnt": int(rec.h_noises_count),
+            "h_nz_len": int(_rec_dict.get("_h_noises_samples", 0)),
+            "h_nz_frac": float(rec.h_noises_fraction) if rec.h_noises_fraction is not None else None,
+            "ml_nz_cnt": int(rec.ml_noises_count),
+            "ml_nz_len": int(_rec_dict.get("_ml_noises_samples", 0)),
+            "ml_nz_frac%": float(rec.ml_noises_fraction) if rec.ml_noises_fraction is not None else None,
+            "flags": _flags_to_cell_value(rec.flags or []),
+            "out": noise_stats.get("out"),
+            "rdr": noise_stats.get("rdr"),
+            "noi": noise_stats.get("noi"),
+            "tp_pct": noise_stats.get("tp_pct"),
+        }
+
+        if ectopy_stats is not None:
+            extracted["ectN"] = int(ectopy_stats.get("ectN", 0))
+            extracted["ectS"] = int(ectopy_stats.get("ectS", 0))
+            extracted["ectV"] = int(ectopy_stats.get("ectV", 0))
+            extracted["ectU"] = int(ectopy_stats.get("ectU", 0))
 
         row_changed = False
         for k, v in extracted.items():
@@ -1020,6 +1037,15 @@ def main() -> None:
             col_letter = get_column_letter(col_idx)
             ws.column_dimensions[col_letter].hidden = False
             ws.column_dimensions[col_letter].width = 8
+
+    # Process tag column to ensure it's treated as text and commas are removed (if any)
+    tag_col = cols.get("tag")
+    if tag_col:
+        for r in range(2, ws.max_row + 1):
+            cell = ws.cell(row=r, column=int(tag_col))
+            if cell.value is not None:
+                cell.number_format = "@"
+                cell.value = str(cell.value).replace(",", "")
 
     # Save the updated workbook with a new name (original name + "_updated" + marker)
     out_path = args.out if args.out else args.excel.with_name(args.excel.stem + "_updated" + MARKER + ".xlsx")
