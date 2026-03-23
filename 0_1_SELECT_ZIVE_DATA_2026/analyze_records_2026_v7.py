@@ -729,8 +729,10 @@ def write_output_workbook(
         "filename",
         "basename",
         "samples",
+        "quality",
         "tag",
         "cmt",
+        "mark",
         "rpk_cnt",
         "hN",
         "hS",
@@ -832,6 +834,9 @@ def write_output_workbook(
     auto_adjust_widths(ws_params)
 
     ws_params = wb.create_sheet(title="Marks")
+    ws_params["B2"] = "Pažymėti tag = 1111 , kurie tinka mokymui (pradinis x)"
+    ws_params["B4"] = "Pažymėti tag = 2222,  kokybė nebloga, tačiau ant ribos, gal labiau  tinka triukšmų testavimui (pradinis xx)"
+    
     
     ws_params = wb.create_sheet(title="Notes")
     
