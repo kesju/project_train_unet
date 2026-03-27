@@ -284,10 +284,6 @@ def main() -> None:
     # Dabar turėtume turėti noise_stats ir ectopy_stats kiekvienam įrašui, kuriuos galime palyginti su metadata,
     # kad įvertintume ektoopinių dūžių aptikimo tikslumą. Galime patikrinti, ar aptikti ektoopiniai dūžiai sutampa su tais, kurie nurodyti metadata, ir apskaičiuoti tikslumą, jautrumą, specifiškumą ir pan.    
 
-
-
-if __name__ == "__main__":
-    main()
     
     
 """
@@ -394,8 +390,9 @@ if __name__ == "__main__":
     print("\nClassification results for binary case")
     evaluate_binary_classification(test_labels_bin, pred_labels_bin, positive_class=1)
 
-
-
-
 """
+
+if __name__ == "__main__":
+    main()
+
     

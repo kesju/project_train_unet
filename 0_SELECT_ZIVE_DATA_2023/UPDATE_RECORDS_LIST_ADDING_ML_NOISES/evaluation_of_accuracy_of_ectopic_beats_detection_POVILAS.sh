@@ -1,6 +1,6 @@
-# chmod +x evaluation_of_accuracy_of_ectopic_beats_detection.sh
+# chmod +x evaluation_of_accuracy_of_ectopic_beats_detection_POVILAS.sh
 
-# +++++++++++++++++++++++  GUNDAS +++++++++++++++++++++++
+# +++++++++++++++++++++++  POVILAS +++++++++++++++++++++++
 
 # # Testavimui
 python evaluation_of_accuracy_of_ectopic_beats_detection.py \
@@ -20,7 +20,7 @@ python evaluation_of_accuracy_of_ectopic_beats_detection.py \
 # VISI ANOTUOTI IRASAI
 # python evaluation_of_accuracy_of_ectopic_beats_detection.py \
 #   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys" \
-#   --exclude_files "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
+#   --exclude_files "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys/exclude_list.txt" \
 #   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
 #   --unet-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET \
 #   # --denoising \
