@@ -119,7 +119,6 @@ sys.path.append(str(PARALLEL_PATH))
 
 # Pakeitimai, kuriuos reikia padaryti
 order = 4
-highcut = 70.0
 
 # lowcut_filter
 def lowcut_filter(signal, fs=200, lowcut=0.5, method="butterworth", order=4):
