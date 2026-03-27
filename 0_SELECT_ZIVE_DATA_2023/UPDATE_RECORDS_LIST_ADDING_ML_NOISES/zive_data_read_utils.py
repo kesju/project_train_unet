@@ -130,7 +130,7 @@ def _normalize_exclude_token(token: str) -> str:
     return p.name
 
 
-def _load_excluded_basenames(exclude_file: Optional[Union[str, Path]]) -> set[str]:
+def _load_excluded_basenames(exclude_list: Optional[Union[str, Path]]) -> set[str]:
     """
     Load excluded filenames/basenames from text file.
 
@@ -140,10 +140,10 @@ def _load_excluded_basenames(exclude_file: Optional[Union[str, Path]]) -> set[st
     - mixed commas and line breaks
     - comments starting with '#'
     """
-    if exclude_file is None:
+    if exclude_list is None:
         return set()
 
-    exclude_path = Path(exclude_file)
+    exclude_path = Path(exclude_list)
     if not exclude_path.exists():
         raise FileNotFoundError(f"Exclude file not found: {exclude_path}")
     if not exclude_path.is_file():
@@ -175,7 +175,7 @@ def _load_excluded_basenames(exclude_file: Optional[Union[str, Path]]) -> set[st
 def list_ecg_records(
     folder: Union[str, Path],
     data_format: DataFormat = "auto",
-    exclude_file: Optional[Union[str, Path]] = None,
+    exclude_list: Optional[Union[str, Path]] = None,
 ) -> ECGRecordScanResult:
     """
     Scan folder and return ECG records with matching JSON metadata
@@ -206,7 +206,7 @@ def list_ecg_records(
             f"Unsupported data_format='{data_format}'. Allowed: {sorted(allowed_formats)}"
         )
 
-    excluded_basenames = _load_excluded_basenames(exclude_file)
+    excluded_basenames = _load_excluded_basenames(exclude_list)
 
     records: List[ECGRecordInfo] = []
     total_json = 0
@@ -281,13 +281,13 @@ def lowcut_filter(signal, fs=200, lowcut=0.5, method="butterworth", order=4):
 # folder = "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui"
 folder = "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test"
 
-exclude_file="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt"
+exclude_list="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt"
 
 
 scan_result = list_ecg_records(
     folder=folder,
     data_format="auto",
-    exclude_file=exclude_file,
+    exclude_list=exclude_list,
 )
 
 records = scan_result.records
