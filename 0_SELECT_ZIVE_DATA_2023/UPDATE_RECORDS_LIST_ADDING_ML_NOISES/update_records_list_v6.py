@@ -32,7 +32,6 @@ from openpyxl.worksheet.dimensions import ColumnDimension
 JsonLikeRef = Union[str, Path]
 
 # IMPORTANT: if your run_denoising_pipeline is in a different module, update the import below.
-from record_noise_stats import calc_noise_stats_from_denoised_result
 
 try:
     # <-- adjust this import to match your project structure if needed
