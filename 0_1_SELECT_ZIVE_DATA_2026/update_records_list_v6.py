@@ -764,7 +764,7 @@ def main() -> None:
     cols["h_nz_frac"] = pick_col(hdr, "h_nz_frac", "h_nz_frac%", "h_nz_frac %")
     cols["out"] = pick_col(hdr, "out")
     cols["rdr"] = pick_col(hdr, "rdr")
-    cols["noi"] = pick_col(hdr, "noi")
+    cols["mra"] = pick_col(hdr, "mra")
     cols["tp_pct"] = pick_col(hdr, "tp%", "tp %", "tp_pct", "tp")
     cols["ml_nz_cnt"] = pick_col(hdr, "ml_nz_cnt", "ml_nz_count")
     cols["ml_nz_len"] = pick_col(hdr, "ml_nz_len")
@@ -845,7 +845,7 @@ def main() -> None:
         # PREPARE DENOISING PART 
     
     if (not args.denoising):
-        print("\nDenoising is disabled. Existing Excel values in out/rdr/noi/tp_pct and ectN/ectS/ectV/ectU will be kept unchanged.")
+        print("\nDenoising is disabled. Existing Excel values in out/rdr/mra/tp_pct and ectN/ectS/ectV/ectU will be kept unchanged.")
         MARKER = ""
         noise_stats = {}
         denoising_model_dir = "Not used"
@@ -934,7 +934,7 @@ def main() -> None:
                 print(
                     f"Noise stats for {data_path.name}: "
                     f"out={noise_stats['out']}, rdr={noise_stats['rdr']}, "
-                    f"noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f} "
+                    f"mra={noise_stats['mra']}, tp_pct={noise_stats['tp_pct']:.1f} "
                     f"with enabled detecting motions"
                 )
                 print()
@@ -950,7 +950,7 @@ def main() -> None:
                     f"Noise stats for {data_path.name}: "
                     f"out={noise_stats_disabled_motions['out']}, "
                     f"rdr={noise_stats_disabled_motions['rdr']}, "
-                    f"noi={noise_stats_disabled_motions['noi']}, "
+                    f"mra={noise_stats_disabled_motions['mra']}, "
                     f"tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} "
                     f"with disabled detecting motions"
                 )
@@ -1000,7 +1000,7 @@ def main() -> None:
             "flags": _flags_to_cell_value(rec.flags or []),
             "out": noise_stats.get("out"),
             "rdr": noise_stats.get("rdr"),
-            "noi": noise_stats.get("noi"),
+            "mra": noise_stats.get("mra"),
             "tp_pct": noise_stats.get("tp_pct"),
         }
 

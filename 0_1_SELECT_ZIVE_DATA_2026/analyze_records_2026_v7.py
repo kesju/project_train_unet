@@ -20,7 +20,7 @@ Output
 A new .xlsx file with columns in this exact order:
 
 filename, basename, samples, tag, cmt, rpk_cnt, hN, hS, hV, hU,
-ectS, ectV, ectU, h_nz_cnt, h_nz_len, h_nz_frac%, out, rdr, noi, tp%,
+ectS, ectV, ectU, h_nz_cnt, h_nz_len, h_nz_frac%, out, rdr, mra, tp%,
 ml_nz_cnt, ml_nz_len, ml_nz_frac%, flags, recordingId, userId, notes
 
 Notes
@@ -154,7 +154,7 @@ class OutputRow:
     h_nz_frac_pct: Optional[float]
     out: Optional[int]
     rdr: Optional[int]
-    noi: Optional[int]
+    mra: Optional[int]
     tp_pct: Optional[float]
     ml_nz_cnt: Optional[int]
     ml_nz_len: Optional[int]
@@ -538,7 +538,7 @@ RECORD_COLUMNS: List[Tuple[str, str]] = [
     ("h_nz_frac%", "h_nz_frac_pct"),
     ("out", "out"),
     ("rdr", "rdr"),
-    ("noi", "noi"),
+    ("mra", "mra"),
     ("tp%", "tp_pct"),
     ("ml_nz_cnt", "ml_nz_cnt"),
     ("ml_nz_len", "ml_nz_len"),
@@ -748,7 +748,7 @@ def build_output_row(
         h_nz_frac_pct=round(float(rec.h_noises_fraction), 1) if rec.h_noises_fraction is not None else None,
         out=noise_stats.get("out"),
         rdr=noise_stats.get("rdr"),
-        noi=noise_stats.get("noi"),
+        mra=noise_stats.get("mra"),
         tp_pct=round(float(noise_stats.get("tp_pct")), 1) if noise_stats.get("tp_pct") is not None else None,
         ml_nz_cnt=int(rec.ml_noises_count),
         ml_nz_len=int(rec_dict.get("_ml_noises_samples", 0)),
