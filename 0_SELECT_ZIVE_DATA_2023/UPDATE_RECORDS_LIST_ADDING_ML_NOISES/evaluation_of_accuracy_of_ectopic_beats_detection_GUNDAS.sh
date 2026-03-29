@@ -2,7 +2,7 @@
 
 # +++++++++++++++++++++++  GUNDAS +++++++++++++++++++++++
 
-# # Testavimui
+# # Testavimui trumpam
 python evaluation_of_accuracy_of_ectopic_beats_detection_v1.py \
   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test" \
   --exclude-list "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
