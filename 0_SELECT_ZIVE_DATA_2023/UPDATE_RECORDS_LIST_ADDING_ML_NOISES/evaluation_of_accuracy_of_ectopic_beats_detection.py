@@ -137,11 +137,11 @@ def main() -> None:
     ap.add_argument("--exclude-list", type=Path, help="File containing list of ECG basenames to exclude (one basename per line, without extensions)")    
     ap.add_argument("--cfg-denoising", type=Path, required=True, help="Denoising config path")
     ap.add_argument("--unet-model-dir", type=Path, required=True, help="Model directory for denoising/motions")
-    ap.add_argument("--disable-motions", action="store_true", help="Disable motions stage in denoising pipeline")
     ap.add_argument("--cfg-ectopy", type=Path, required=True, help="Ectopy config path")
     ap.add_argument("--ectopy-model-dir", type=Path, required=True, help="Model directory for ectopy detection")
     ap.add_argument("--fs", type=int, default=200, help="Sampling frequency (Hz). Default: 200")
     ap.add_argument("--quiet", action="store_true", help="Silence stdout during denoising/stats")
+    ap.add_argument("--disable-motions", action="store_true", help="Disable motions stage in denoising pipeline")
     ap.add_argument("--denoising", action="store_true", help="Silence stdout during denoising/stats")
 
     args = ap.parse_args()
@@ -176,7 +176,7 @@ def main() -> None:
     #               ++++++++++++++++++++++++ PIPELINE PARENGIMAS
 
     if (not args.denoising):
-            print("\nDenoising is disabled. Existing Excel values in out/rdr/noi/tp_pct and ectN/ectS/ectV/ectU will be kept unchanged.")
+            print("\nDenoising is disabled. Existing Excel values in out/rdr/mra/tp_pct and ectN/ectS/ectV/ectU will be kept unchanged.")
             MARKER = ""
             noise_stats = {}
             denoising_model_dir = "Not used"
@@ -249,7 +249,7 @@ def main() -> None:
                 print(
                     f"Noise stats for {rec.ecg_path.name}: "
                     f"out={noise_stats['out']}, rdr={noise_stats['rdr']}, "
-                    f"noi={noise_stats['noi']}, tp_pct={noise_stats['tp_pct']:.1f} "
+                    f"mra={noise_stats['mra']}, tp_pct={noise_stats['tp_pct']:.1f} "
                     f"with enabled detecting motions"
                 )
                 print()
@@ -265,7 +265,7 @@ def main() -> None:
                     f"Noise stats for {rec.ecg_path.name}: "
                     f"out={noise_stats_disabled_motions['out']}, "
                     f"rdr={noise_stats_disabled_motions['rdr']}, "
-                    f"noi={noise_stats_disabled_motions['noi']}, "
+                    f"mra={noise_stats_disabled_motions['mra']}, "
                     f"tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} "
                     f"with disabled detecting motions"
                 )

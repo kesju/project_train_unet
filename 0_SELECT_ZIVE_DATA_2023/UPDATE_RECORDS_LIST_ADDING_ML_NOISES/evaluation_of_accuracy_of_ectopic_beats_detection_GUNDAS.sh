@@ -12,10 +12,18 @@ python evaluation_of_accuracy_of_ectopic_beats_detection.py \
   --cfg-ectopy "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
   --ectopy-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
   --fs 200 \
-#   --out "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
-#   # --quiet \
-# To make denoising == False, just do not include --denoising.
 
+# --disable-motions
+# --out "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
+# --quiet \ - kol kas nenaudojamas
+
+# Galimi 3 variantai:
+# 1) --denoising (įjungia visą denoising pipeline, įskaitant motions etapą, t.y. bus atliekamas triukšmo mažinimas
+#     ir judesių artefktų šalinimo operacijos)
+# 2) --denoising + --disable-motions (visiškai išjungia motions etapą, t.y. nebus atliekama jokių judesių artefktų 
+#     šalinimo operacijų, bet bus atliekamas triukšmo mažinimas)
+# 3) Nėra --denoising (visiškai išjungia denoising pipeline, t.y. nebus atliekamas nei triukšmo mažinimas,
+#     nei judesių artefktų šalinimo operacijos)  
 
 # VISI ANOTUOTI IRASAI
 # python evaluation_of_accuracy_of_ectopic_beats_detection.py \
