@@ -1,10 +1,10 @@
 
 """
-Calculate noise statistics on ecg_start intervals based on outliers, rdropouts, and motion
+Calculate mrase statistics on ecg_start intervals based on outliers, rdropouts, and motion
 
 https://chatgpt.com/c/69a30735-d4d4-8397-9da9-18003b3adf6f
 
-class DenoisingPipelineResult:
+class DemrasingPipelineResult:
     ecg_orig: np.ndarray
     ecg_start: np.ndarray
     ecg_denoised: np.ndarray
@@ -24,7 +24,7 @@ Usage:
 pipe = ECGDenoisingPipeline(cfg)
 res = pipe.run(x, gaps_indices=gaps_indices)
 stats = calc_noise_stats_from_result(res)
-print(stats["out"], stats["rdr"], stats["noi"], stats["tp_pct"])
+print(stats["out"], stats["rdr"], stats["mra"], stats["tp_pct"])
 
 """
 
@@ -138,7 +138,7 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
       {
         "out": <count outlier intervals on ecg_start>,
         "rdr": <count rdropout intervals projected to ecg_start>,
-        "noi": <count motion intervals projected to ecg_start>,
+        "mra": <count motion intervals projected to ecg_start>,
         "tp_pct": <percent of noisy samples in ecg_start (union of all types)>,
         "tp_samples": <union noisy samples count>,
         "n_start": <len(ecg_start)>,
@@ -148,7 +148,7 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
     n_start = len(getattr(res, "ecg_start"))
     if n_start <= 0:
         return {
-            "out": 0, "rdr": 0, "noi": 0,
+            "out": 0, "rdr": 0, "mra": 0,
             "tp_pct": 0.0, "tp_samples": 0, "n_start": 0,
             "union_intervals": [],
         }
@@ -161,7 +161,7 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
     # Try a few common key spellings to avoid “it works only on my version” issues.
     rdropouts_start_raw = _get_projected_to_start(res, ["rdropouts", "rdropouts", "dropouts", "rdr"])
     # print(f"Raw rdropouts projected to ecg_start: {rdropouts_start_raw}")
-    motions_start_raw   = _get_projected_to_start(res, ["motions", "motion", "noi", "noise_motions"])
+    motions_start_raw   = _get_projected_to_start(res, ["motions", "motion", "mra", "noise_motions"])
     # print(f"Raw motions projected to ecg_start: {motions_start_raw}")
 
     outliers_start = _clip_and_normalize(outliers_start_raw, n_start)
@@ -171,7 +171,7 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
     # Counts of intervals (not merged) as requested
     out_cnt = len(outliers_start)
     rdr_cnt = len(rdropouts_start)
-    noi_cnt = len(motions_start)
+    mra_cnt = len(motions_start)
 
     # Overall noise percent on ecg_start: union (overlaps counted once)
     all_intervals = outliers_start + rdropouts_start + motions_start
@@ -182,13 +182,13 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
     stats= {
         "out": out_cnt,
         "rdr": rdr_cnt,
-        "noi": noi_cnt,
+        "mra": mra_cnt,
         "tp_pct": tp_pct,
         "tp_samples": tp_samples,
         "n_start": n_start,
         "union_intervals": union,
     }
-    return {'out': stats['out'], 'rdr': stats['rdr'], 'noi': stats['noi'], 'tp_pct': stats['tp_pct']}
+    return {'out': stats['out'], 'rdr': stats['rdr'], 'mra': stats['mra'], 'tp_pct': stats['tp_pct']}
     
 
 def prepare_denoising_pipeline(
@@ -295,7 +295,7 @@ def print_detailed_denoising_results(res_denoising: DenoisingPipelineResult, cfg
 #     return {
 #         "out": out_cnt,
 #         "rdr": rdr_cnt,
-#         "noi": noi_cnt,
+#         "mra": mra_cnt,
 #         "tp_pct": tp_pct
 #     }
 
@@ -309,7 +309,7 @@ def denoise_and_calc_noise_stats_imitation(x: np.ndarray) -> Dict[str, Any]:
     # stats = calc_noise_stats_from_denoised_result(res_denoising) 
  
     return {
-            "out": 1, "rdr": 2, "noi": 3,
+            "out": 1, "rdr": 2, "mra": 3,
             "tp_pct": 0.5,
         } 
  
@@ -371,12 +371,12 @@ def main() -> None:  # run your main function that prepares the pipeline and pro
 
         print("\nCalculating noise stats from denoising results...")
         stats = calc_noise_stats_from_denoised_result(res_denoising)
-        # print(stats["out"], stats["rdr"], stats["noi"], stats["tp_pct"])
+        # print(stats["out"], stats["rdr"], stats["mra"], stats["tp_pct"])
         print(
             f"Noise stats → "
             f"\nOUT: {stats['out']}, "
             f"\nRDR: {stats['rdr']}, "
-            f"\nNOI: {stats['noi']}, "
+            f"\nNOI: {stats['mra']}, "
             f"\nTP%: {stats['tp_pct']:.1f}"
         )
         
