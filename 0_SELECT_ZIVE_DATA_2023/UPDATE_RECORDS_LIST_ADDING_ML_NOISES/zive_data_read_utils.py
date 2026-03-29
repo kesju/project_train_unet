@@ -275,44 +275,45 @@ def lowcut_filter(signal, fs=200, lowcut=0.5, method="butterworth", order=4):
     return np.asarray(filtered, dtype=float)
 
 
-
-
 # test
-# folder = "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui"
-folder = "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test"
 
-exclude_list="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt"
+def main() -> None:
 
+    folder = "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test"
+    exclude_list="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt"
 
-scan_result = list_ecg_records(
-    folder=folder,
-    data_format="auto",
-    exclude_list=exclude_list,
-)
+    scan_result = list_ecg_records(
+        folder=folder,
+        data_format="auto",
+        exclude_list=exclude_list,
+    )
 
-records = scan_result.records
-summary = scan_result.summary
+    records = scan_result.records
+    summary = scan_result.summary
 
-print(f"total_json     : {summary.total_json}")
-print(f"excluded       : {summary.excluded}")
-print(f"matched        : {summary.matched}")
-print(f"unmatched_json : {summary.unmatched_json}")
-print(f"records returned: {len(records)}")
+    print(f"total_json     : {summary.total_json}")
+    print(f"excluded       : {summary.excluded}")
+    print(f"matched        : {summary.matched}")
+    print(f"unmatched_json : {summary.unmatched_json}")
+    print(f"records returned: {len(records)}")
 
-# records = list_ecg_records(folder, data_format="auto")
+    # records = list_ecg_records(folder, data_format="auto")
 
-print(f"Found {len(records)} matched records")
-for rec in records[:5]:
-    print(rec.basename, rec.ecg_path.name, rec.json_path.name)
+    print(f"Found {len(records)} matched records")
+    for rec in records[:5]:
+        print(rec.basename, rec.ecg_path.name, rec.json_path.name)
+        
+        if rec.ecg_path is None:
+            msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
+            continue
+
+        metadata: Dict[str, Any] = {}
+        metadata = read_json_file(rec.json_path)
+        
+        signal = load_ecg_npy(rec.ecg_path)
+        n_samples = int(signal.shape[0])
+        print(rec.basename, signal.shape)
     
-    if rec.ecg_path is None:
-        msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
-        continue
 
-    metadata: Dict[str, Any] = {}
-    metadata = read_json_file(rec.json_path)
-    
-    signal = load_ecg_npy(rec.ecg_path)
-    n_samples = int(signal.shape[0])
-    print(rec.basename, signal.shape)
-    
+if __name__ == "__main__":
+    main()
