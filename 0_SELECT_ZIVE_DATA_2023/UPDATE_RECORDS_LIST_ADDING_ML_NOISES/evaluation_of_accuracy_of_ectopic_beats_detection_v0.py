@@ -1,3 +1,12 @@
+# Galimi 3 variantai:
+# 1) --denoising (įjungia visą denoising pipeline, įskaitant motions etapą, t.y. bus atliekamas triukšmo mažinimas
+#     ir judesių artefktų šalinimo operacijos)
+# 2) --denoising + --disable-motions (visiškai išjungia motions etapą, t.y. nebus atliekama jokių judesių artefktų 
+#     šalinimo operacijų, bet bus atliekamas triukšmo mažinimas)
+# 3) Nėra --denoising (visiškai išjungia denoising pipeline, t.y. nebus atliekamas nei triukšmo mažinimas,
+#     nei judesių artefktų šalinimo operacijos)  
+
+
 from typing import Any, Dict
 from pathlib import Path
 import argparse
@@ -49,9 +58,10 @@ except Exception as exc:
     ) from exc
 
 
-def prepare_denoising_pipeline(
+def prepare_denoising_pipeline_cfg(
     denoising_config_path: Path,
     denoising_model_dir: Path,
+    denoising: bool = True,
     disable_motions: bool = False,
 ) -> DenoisingPipelineConfig:
     if not denoising_config_path.exists():
@@ -63,8 +73,12 @@ def prepare_denoising_pipeline(
     if check_denoising_config is not None:
         check_denoising_config(cfg)
 
+
     cfg.motions.model_name = resolve_model_path(denoising_model_dir, cfg.motions.model_name)
     cfg.motions.enabled = not disable_motions
+    
+    
+    
     return cfg
 
 
@@ -79,7 +93,7 @@ def create_unet_marker(cfg_denoising: DenoisingPipelineConfig) -> str:
     return MARKER
 
 
-def prepare_ectopy_pipeline(
+def prepare_ectopy_pipeline_cfg(
     ectopy_config_path: Path,
     ectopy_model_dir: Path,
 ) -> EctopyPipelineConfig:
@@ -198,12 +212,12 @@ def main() -> None:
         print(f"\nDenoising config path: {cfg_denoising_path}")
         print(f"Denoising model directory: {denoising_model_dir}")
         
-        cfg_denoising = prepare_denoising_pipeline(cfg_denoising_path, denoising_model_dir)
+        cfg_denoising = prepare_denoising_pipeline_cfg(cfg_denoising_path, denoising_model_dir)
         MARKER = create_unet_marker(cfg_denoising)
         print(f"\nUNet marker: {MARKER}\n")
         denoising_pipe = ECGDenoisingPipeline(cfg_denoising)
         
-        cfg_denoising_disabled_motions = prepare_denoising_pipeline(
+        cfg_denoising_disabled_motions = prepare_denoising_pipeline_cfg(
         denoising_config_path=cfg_denoising_path,
         denoising_model_dir=denoising_model_dir,
         disable_motions=True,
@@ -213,7 +227,7 @@ def main() -> None:
         
         # PREPARE ECTOPY DETECTION PART 
         
-        cfg_ectopy = prepare_ectopy_pipeline(
+        cfg_ectopy = prepare_ectopy_pipeline_cfg(
             ectopy_config_path=args.cfg_ectopy,
             ectopy_model_dir=args.ectopy_model_dir
         )
@@ -221,6 +235,8 @@ def main() -> None:
         
         
     #               ++++++++++++++++++++++++ TRIUKŠMŲ VALYMAS IR EKTOPINIŲ DŪŽIŲ DETEKTAVIMAS
+
+
 
     print(f"Found {len(records)} matched records")
     for rec in records[:5]:
@@ -238,47 +254,62 @@ def main() -> None:
         # print(rec.basename, signal.shape)
         
         
-        if args.denoising and denoising_pipe is not None:
-            try:
-                # With activated motions stage:
-                x = load_ecg_npy(rec.ecg_path)
+        # 3 galimi darbo režimai:
+        # 1) --denoising
+        # 2) --denoising + --disable-motions
+        # 3) be --denoising
 
-                # denoising and getting noise stats
-                res_denoising = denoising_pipe.run(x, gaps_indices=[])
-                noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
-                print(
-                    f"Noise stats for {rec.ecg_path.name}: "
-                    f"out={noise_stats['out']}, rdr={noise_stats['rdr']}, "
-                    f"mra={noise_stats['mra']}, tp_pct={noise_stats['tp_pct']:.1f} "
-                    f"with enabled detecting motions"
-                )
-                print()
-
-                # Without detecting motions stage (for comparison/debugging):
-                x = load_ecg_npy(rec.ecg_path)
-
+        if args.denoising and not args.disable_motions:
+            print("CASE 1: denoising pipeline is ENABLED, including motions stage.")
+            x = load_ecg_npy(rec.ecg_path)
+            res_denoising = None
+            # denoising and getting noise stats
+            if denoising_pipe is not None:
+                    res_denoising = denoising_pipe.run(x, gaps_indices=[])
+            noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
+            print(
+                f"Noise stats for {rec.ecg_path.name}: "
+                f"out={noise_stats['out']}, rdr={noise_stats['rdr']}, "
+                f"mra={noise_stats['mra']}, tp_pct={noise_stats['tp_pct']:.1f} "
+                f"with enabled detecting motions"
+            )
+            print()
+            res_ectopy = ectopy_pipe.run(res_denoising, fs=args.fs)
+            ectopy_stats = compute_ectopy_stats(res_ectopy)
+            print(f"ectopy_stats={ectopy_stats} with enabled detecting motions")
+            
+        elif args.denoising and args.disable_motions:
+            print("CASE 2: denoising pipeline is ENABLED, but motions stage is DISABLED.")
+            x = load_ecg_npy(rec.ecg_path)
+            res_denoising_disabled_motions = None
+            # denoising and getting noise stats
+            if denoising_pipe_disabled_motions is not None:
                 res_denoising_disabled_motions = denoising_pipe_disabled_motions.run(x, gaps_indices=[])
-                noise_stats_disabled_motions = calc_noise_stats_from_denoised_result(
-                    res_denoising_disabled_motions
-                ) or {}
-                print(
-                    f"Noise stats for {rec.ecg_path.name}: "
-                    f"out={noise_stats_disabled_motions['out']}, "
-                    f"rdr={noise_stats_disabled_motions['rdr']}, "
-                    f"mra={noise_stats_disabled_motions['mra']}, "
-                    f"tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} "
-                    f"with disabled detecting motions"
-                )
+            noise_stats_disabled_motions = calc_noise_stats_from_denoised_result(
+                res_denoising_disabled_motions) or {}
+            print(
+                f"Noise stats for {rec.ecg_path.name}: "
+                f"out={noise_stats_disabled_motions['out']}, "
+                f"rdr={noise_stats_disabled_motions['rdr']}, "
+                f"mra={noise_stats_disabled_motions['mra']}, "
+                f"tp_pct={noise_stats_disabled_motions['tp_pct']:.1f} "
+                f"with disabled detecting motions"
+            )
+            res_ectopy = ectopy_pipe.run(res_denoising_disabled_motions, fs=args.fs)
+            ectopy_stats = compute_ectopy_stats(res_ectopy)
+            print(f"ectopy_stats={ectopy_stats} with disabled detecting motions")
+        
+        else:
+            print("CASE 3: denoising pipeline is DISABLED.")
+            x = load_ecg_npy(rec.ecg_path)
+        
+        
+                
 
-                # detecting ectopies and getting ectopy stats
-                res_ectopy = ectopy_pipe.run(res_denoising_disabled_motions, fs=args.fs)
-                ectopy_stats = compute_ectopy_stats(res_ectopy)
-                print(f"ectopy_stats={ectopy_stats} with disabled detecting motions")
-
-            except Exception as exc:
-                print(f"WARN: failed denoising/stat extraction for {rec.ecg_path.name}: {exc}")
-                noise_stats = {}
-                ectopy_stats = None
+            # except Exception as exc:
+            #     print(f"WARN: failed denoising/stat extraction for {rec.ecg_path.name}: {exc}")
+            #     noise_stats = {}
+            #     ectopy_stats = None
 
 
     # Dabar turėtume turėti noise_stats ir ectopy_stats kiekvienam įrašui, kuriuos galime palyginti su metadata,
