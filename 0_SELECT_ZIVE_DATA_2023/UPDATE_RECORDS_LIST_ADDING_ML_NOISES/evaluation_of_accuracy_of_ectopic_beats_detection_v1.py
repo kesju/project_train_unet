@@ -1,3 +1,6 @@
+# https://chatgpt.com/c/69c92b31-0418-8392-805d-ef5aa6e89d50
+
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
