@@ -22,7 +22,7 @@ try:
         load_denoising_config_yaml,
         DenoisingPipelineConfig,
         resolve_model_path,
-        read_df_annot,
+        read_df_annot_from_json
     )
 except Exception as exc:
     raise ImportError(
@@ -304,110 +304,6 @@ def compute_ectopy_stats(res_ectopy: EctopyPipelineResult | None) -> Dict[str, i
 
 
 
-def read_df_annot_from_json(json_path: Union[Path, str]) -> Optional[pd.DataFrame]:
-    """
-    Read and process annotations from a JSON file.
-
-    Expected JSON structure
-    -----------------------
-    The file is expected to contain key 'rpeaks', where each item has:
-    - 'sampleIndex'
-    - 'annotationValue'
-
-    Parameters
-    ----------
-    json_path : Path | str
-        Full path to the JSON annotation file.
-
-    Returns
-    -------
-    pd.DataFrame | None
-        DataFrame with columns ['rpeak', 'annot'],
-        or None if file does not exist.
-
-    Raises
-    ------
-    ValueError
-        If JSON structure is invalid or required fields are missing.
-    TypeError
-        If input data types are invalid.
-    RuntimeError
-        If JSON cannot be parsed.
-    """
-    all_beats = {'N': 0, 'S': 1, 'V': 2, 'U': 3}
-
-    file_path = Path(json_path).resolve()
-
-    if not file_path.exists():
-        return None
-
-    if not file_path.is_file():
-        raise ValueError(f"JSON path exists but is not a file: {file_path}")
-
-    try:
-        with open(file_path, 'r', encoding='UTF-8', errors='ignore') as f:
-            data = json.load(f)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"Failed to parse JSON file: {file_path}") from exc
-    except Exception as exc:
-        raise RuntimeError(f"Failed to read JSON file: {file_path}") from exc
-
-    if not isinstance(data, dict):
-        raise TypeError(
-            f"Top-level JSON object must be dict, got {type(data).__name__} in file {file_path}"
-        )
-
-    if "rpeaks" not in data:
-        raise ValueError(f"Key 'rpeaks' not found in JSON file: {file_path}")
-
-    rpeaks = data["rpeaks"]
-    if rpeaks is None:
-        raise ValueError(f"Key 'rpeaks' is None in JSON file: {file_path}")
-
-    if not isinstance(rpeaks, list):
-        raise TypeError(
-            f"Key 'rpeaks' must be a list, got {type(rpeaks).__name__} in file {file_path}"
-        )
-
-    if len(rpeaks) == 0:
-        return pd.DataFrame(columns=["rpeak", "annot"])
-
-    try:
-        norm = pd.json_normalize(rpeaks)
-        df_norm = cast(pd.DataFrame, norm)
-    except Exception as exc:
-        raise RuntimeError(f"pd.json_normalize failed for file: {file_path}") from exc
-
-    if df_norm.empty:
-        return pd.DataFrame(columns=["rpeak", "annot"])
-
-    required_cols = ["sampleIndex", "annotationValue"]
-    missing_cols = [col for col in required_cols if col not in df_norm.columns]
-    if missing_cols:
-        raise ValueError(
-            f"Missing required columns {missing_cols} in normalized rpeaks data from file: {file_path}"
-        )
-
-    try:
-        rpeak_series = pd.to_numeric(df_norm["sampleIndex"], errors="raise").astype(int)
-    except Exception as exc:
-        raise ValueError(
-            f"Column 'sampleIndex' contains non-numeric or invalid values in file: {file_path}"
-        ) from exc
-
-    try:
-        annot_mapped = df_norm["annotationValue"].map(all_beats).fillna(0).astype(int)
-    except Exception as exc:
-        raise ValueError(
-            f"Failed to map 'annotationValue' to numeric labels in file: {file_path}"
-        ) from exc
-
-    df_annot = pd.DataFrame({
-        "rpeak": rpeak_series,
-        "annot": annot_mapped,
-    })
-
-    return df_annot
 
 def evaluate_ectopy_classification_against_annotations(
     *,
