@@ -689,19 +689,19 @@ def print_aggregate_report(
     labels = multiclass["labels"]
     cm = multiclass["matrix"]
 
-    print("\nGLOBAL MULTICLASS CONFUSION MATRIX")
-    print("Labels:", labels.tolist())
-    print("Rows = true labels, Cols = predicted labels")
-    print(cm)
-
-    multiclass_metrics = compute_multiclass_metrics_from_cm(cm)
-
     print("\nGLOBAL MULTICLASS SUMMARY")
+    multiclass_metrics = compute_multiclass_metrics_from_cm(cm)
     print(f"Accuracy:  {multiclass_metrics['accuracy']:.4f}")
     print(f"Precision: {multiclass_metrics['precision_macro']:.4f}")
     print(f"Recall:    {multiclass_metrics['recall_macro']:.4f}")
     print(f"F1-score:  {multiclass_metrics['f1_macro']:.4f}")
+
     print("\nConfusion Matrix:")
+    print(cm)
+
+    print("\nGLOBAL MULTICLASS CONFUSION MATRIX")
+    print("Labels:", labels.tolist())
+    print("Rows = true labels, Cols = predicted labels")
     print(cm)
 
     print("\nGLOBAL MULTICLASS METRICS")
@@ -722,7 +722,8 @@ def print_aggregate_report(
             f"recall={multiclass_metrics['per_class_recall'][i]:.4f}, "
             f"f1={multiclass_metrics['per_class_f1'][i]:.4f}"
         )
-        
+
+
 # ======================================================================================
 #                               PIPELINE PARUOŠIMAS
 # ======================================================================================
@@ -762,6 +763,7 @@ def prepare_pipelines(args: argparse.Namespace) -> PipelineBundle:
         ectopy_config_path=args.cfg_ectopy,
         ectopy_model_dir=args.ectopy_model_dir,
     )
+    print(cfg_ectopy)
     ectopy_pipe = ECGEctopyPipeline(cfg_ectopy)
 
     return PipelineBundle(
@@ -811,7 +813,11 @@ def process_record(
     )
     print()
 
-    res_ectopy = bundle.ectopy_pipe.run(res_denoising, fs=fs)
+    res_ectopy = bundle.ectopy_pipe.run(
+        res_denoising,
+        fs=fs,
+        file_name=rec.ecg_path.name,
+    )
     ectopy_stats = compute_ectopy_stats(res_ectopy)
     print(f"ectopy_stats={ectopy_stats} {mode_suffix(bundle.mode)}")
 
@@ -904,6 +910,11 @@ def main() -> None:
         action="store_true",
         help="Process all records. By default only first 5 records are processed.",
     )
+    ap.add_argument(
+        "--global-binary-metrics",
+        action="store_true",
+        help="Print global binary confusion matrix and binary metrics.",
+    )
 
     args = ap.parse_args()
 
@@ -995,7 +1006,10 @@ def main() -> None:
             print(f"WARN: failed processing for {rec.ecg_path.name}: {exc}")
             continue
 
-    print_aggregate_report(agg)
+    print_aggregate_report(
+        agg,
+        global_binary_metrics=args.global_binary_metrics,
+    )
 
 
 if __name__ == "__main__":

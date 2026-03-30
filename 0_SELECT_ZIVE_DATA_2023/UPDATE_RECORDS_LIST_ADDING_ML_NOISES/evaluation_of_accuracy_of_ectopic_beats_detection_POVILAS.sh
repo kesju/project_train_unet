@@ -3,7 +3,7 @@
 # +++++++++++++++++++++++  POVILAS +++++++++++++++++++++++
 
 # # Testavimui ilgam
-python evaluation_of_accuracy_of_ectopic_beats_detection_v3.py \
+python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
   --dir "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui" \
   --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
   --unet-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET//MODEL_UNET \
