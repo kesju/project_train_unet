@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
+from typing import Optional, Union, cast
 from pathlib import Path
+import json
 from dataclasses import dataclass, field
 from enum import Enum
 import argparse
 import numpy as np
+import pandas as pd
+
 
 # naudosime funkcijas iš zive_data_read_utils.py
 from zive_data_read_utils import load_ecg_npy, list_ecg_records, read_json_file
@@ -298,12 +302,118 @@ def compute_ectopy_stats(res_ectopy: EctopyPipelineResult | None) -> Dict[str, i
 #                         KLASIFIKACIJOS VERTINIMAS PRIEŠ ANOTACIJAS
 # ======================================================================================
 
+
+
+def read_df_annot_from_json(json_path: Union[Path, str]) -> Optional[pd.DataFrame]:
+    """
+    Read and process annotations from a JSON file.
+
+    Expected JSON structure
+    -----------------------
+    The file is expected to contain key 'rpeaks', where each item has:
+    - 'sampleIndex'
+    - 'annotationValue'
+
+    Parameters
+    ----------
+    json_path : Path | str
+        Full path to the JSON annotation file.
+
+    Returns
+    -------
+    pd.DataFrame | None
+        DataFrame with columns ['rpeak', 'annot'],
+        or None if file does not exist.
+
+    Raises
+    ------
+    ValueError
+        If JSON structure is invalid or required fields are missing.
+    TypeError
+        If input data types are invalid.
+    RuntimeError
+        If JSON cannot be parsed.
+    """
+    all_beats = {'N': 0, 'S': 1, 'V': 2, 'U': 3}
+
+    file_path = Path(json_path).resolve()
+
+    if not file_path.exists():
+        return None
+
+    if not file_path.is_file():
+        raise ValueError(f"JSON path exists but is not a file: {file_path}")
+
+    try:
+        with open(file_path, 'r', encoding='UTF-8', errors='ignore') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Failed to parse JSON file: {file_path}") from exc
+    except Exception as exc:
+        raise RuntimeError(f"Failed to read JSON file: {file_path}") from exc
+
+    if not isinstance(data, dict):
+        raise TypeError(
+            f"Top-level JSON object must be dict, got {type(data).__name__} in file {file_path}"
+        )
+
+    if "rpeaks" not in data:
+        raise ValueError(f"Key 'rpeaks' not found in JSON file: {file_path}")
+
+    rpeaks = data["rpeaks"]
+    if rpeaks is None:
+        raise ValueError(f"Key 'rpeaks' is None in JSON file: {file_path}")
+
+    if not isinstance(rpeaks, list):
+        raise TypeError(
+            f"Key 'rpeaks' must be a list, got {type(rpeaks).__name__} in file {file_path}"
+        )
+
+    if len(rpeaks) == 0:
+        return pd.DataFrame(columns=["rpeak", "annot"])
+
+    try:
+        norm = pd.json_normalize(rpeaks)
+        df_norm = cast(pd.DataFrame, norm)
+    except Exception as exc:
+        raise RuntimeError(f"pd.json_normalize failed for file: {file_path}") from exc
+
+    if df_norm.empty:
+        return pd.DataFrame(columns=["rpeak", "annot"])
+
+    required_cols = ["sampleIndex", "annotationValue"]
+    missing_cols = [col for col in required_cols if col not in df_norm.columns]
+    if missing_cols:
+        raise ValueError(
+            f"Missing required columns {missing_cols} in normalized rpeaks data from file: {file_path}"
+        )
+
+    try:
+        rpeak_series = pd.to_numeric(df_norm["sampleIndex"], errors="raise").astype(int)
+    except Exception as exc:
+        raise ValueError(
+            f"Column 'sampleIndex' contains non-numeric or invalid values in file: {file_path}"
+        ) from exc
+
+    try:
+        annot_mapped = df_norm["annotationValue"].map(all_beats).fillna(0).astype(int)
+    except Exception as exc:
+        raise ValueError(
+            f"Failed to map 'annotationValue' to numeric labels in file: {file_path}"
+        ) from exc
+
+    df_annot = pd.DataFrame({
+        "rpeak": rpeak_series,
+        "annot": annot_mapped,
+    })
+
+    return df_annot
+
 def evaluate_ectopy_classification_against_annotations(
     *,
     res_denoising,
     res_ectopy,
-    data_dir: Path | str,
-    file_name: str,
+    json_path: Path | str,
     fs: int = 200,
     tolerance: int = 20,
     drop_annot_u: bool = True,
@@ -312,80 +422,232 @@ def evaluate_ectopy_classification_against_annotations(
     """
     Compare ectopy classification results against physician annotations.
 
-    Steps
-    -----
-    1. Take R-peaks detected on denoised signal.
-    2. Map R-peak indices back to original signal coordinates.
-    3. Read physician annotations from source data.
-    4. Match predicted R-peaks with annotated R-peaks using tolerance.
-    5. Optionally remove rows with annot == 3 (U class).
-    6. Print and return multiclass and binary classification information.
+    Parameters
+    ----------
+    res_denoising
+        Result object from denoising pipeline.
+    res_ectopy
+        Result object from ectopy pipeline.
+    json_path : Path | str
+        Full path to JSON annotation file.
+    fs : int
+        Sampling frequency.
+    tolerance : int
+        Matching tolerance in samples between predicted and annotated R-peaks.
+    drop_annot_u : bool
+        If True, remove rows with annot == 3 (U class) before evaluation.
+    verbose : bool
+        If True, print detailed debug information.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary with intermediate dataframes, labels, counts, and evaluation arrays.
     """
     if res_denoising is None:
         raise ValueError("res_denoising is None")
+
     if res_ectopy is None:
         raise ValueError("res_ectopy is None")
-    if getattr(res_ectopy, "rpeaks_on_denoised_df", None) is None:
+
+    rpeaks_df = getattr(res_ectopy, "rpeaks_on_denoised_df", None)
+    if rpeaks_df is None:
         raise ValueError("res_ectopy.rpeaks_on_denoised_df is None")
 
+    if not hasattr(rpeaks_df, "columns"):
+        raise TypeError("res_ectopy.rpeaks_on_denoised_df is not a DataFrame-like object")
+
+    if "rpeak" not in rpeaks_df.columns:
+        raise ValueError(
+            "res_ectopy.rpeaks_on_denoised_df does not contain required column 'rpeak'"
+        )
+
+    json_path = Path(json_path)
+
+    if verbose:
+        print("\n" + "." * 90)
+        print("EVALUATION AGAINST ANNOTATIONS")
+        print("." * 90)
+        print(f"DEBUG json_path   : {json_path}")
+        print(f"DEBUG tolerance   : {tolerance}")
+        print(f"DEBUG drop_annot_u: {drop_annot_u}")
+
+    # ------------------------------------------------------------------
     # 1. R-peaks from denoised coordinates
-    rpeaks_on_denoised = (
-        res_ectopy.rpeaks_on_denoised_df["rpeak"].astype(int).tolist()
-    )
+    # ------------------------------------------------------------------
+    try:
+        rpeaks_on_denoised = rpeaks_df["rpeak"].astype(int).tolist()
+    except Exception as exc:
+        raise ValueError(
+            "Failed to extract integer 'rpeak' values from "
+            "res_ectopy.rpeaks_on_denoised_df"
+        ) from exc
 
+    if verbose:
+        print(f"DEBUG len(rpeaks_on_denoised): {len(rpeaks_on_denoised)}")
+
+    # ------------------------------------------------------------------
     # 2. Map back to original signal coordinates
-    rpeaks_on_start, rpeaks_on_gap = map_mark_denoised_to_start(
-        rpeaks_on_denoised,
-        res_denoising,
-    )
-    rpeaks_on_start = np.array(rpeaks_on_start, dtype=int)
+    # ------------------------------------------------------------------
+    try:
+        rpeaks_on_start, rpeaks_on_gap = map_mark_denoised_to_start(
+            rpeaks_on_denoised,
+            res_denoising,
+        )
+    except Exception as exc:
+        raise RuntimeError("map_mark_denoised_to_start(...) failed") from exc
 
-    rpeaks_on_start_df = res_ectopy.rpeaks_on_denoised_df.copy()
+    if rpeaks_on_start is None:
+        raise ValueError("map_mark_denoised_to_start returned rpeaks_on_start=None")
+
+    rpeaks_on_start = np.asarray(rpeaks_on_start, dtype=int)
+
+    if verbose:
+        print(f"DEBUG len(rpeaks_on_start): {len(rpeaks_on_start)}")
+        if rpeaks_on_gap is None:
+            print("DEBUG rpeaks_on_gap: None")
+        else:
+            try:
+                print(f"DEBUG len(rpeaks_on_gap): {len(rpeaks_on_gap)}")
+            except Exception:
+                print(f"DEBUG rpeaks_on_gap type: {type(rpeaks_on_gap)}")
+
+    if len(rpeaks_on_start) != len(rpeaks_on_denoised):
+        raise ValueError(
+            "Mapped rpeaks length mismatch: "
+            f"len(rpeaks_on_denoised)={len(rpeaks_on_denoised)}, "
+            f"len(rpeaks_on_start)={len(rpeaks_on_start)}"
+        )
+
+    rpeaks_on_start_df = rpeaks_df.copy()
     rpeaks_on_start_df["rpeak"] = rpeaks_on_start
+
+    # backward-compatible alias
     rpeaks_df_start = rpeaks_on_start_df
 
     if verbose:
         print(f"Mapped {len(rpeaks_on_start_df)} R-peaks from final -> start")
+        print(f"DEBUG rpeaks_on_start_df columns: {list(rpeaks_on_start_df.columns)}")
 
+    # ------------------------------------------------------------------
     # 3. Read physician annotations
+    # ------------------------------------------------------------------
     if verbose:
-        print(f"\nfileName: {file_name}")
+        print(f"\nReading annotations from json_path={str(json_path)!r}")
 
-    annot_df = read_df_annot(data_dir, file_name)
+
+    try:
+        annot_df = read_df_annot_from_json(json_path)
+    except Exception as exc:
+        raise RuntimeError(
+            f"read_df_annot_from_json(json_path={str(json_path)!r}) failed"
+        ) from exc
+
+    if annot_df is None:
+        raise ValueError(
+            "read_df_annot_from_json returned None. "
+            f"Likely annotation file was not found: json_path={str(json_path)!r}"
+        )
+
+    if not hasattr(annot_df, "columns"):
+        raise TypeError(
+            "read_df_annot_from_json did not return a DataFrame-like object. "
+            f"Returned type: {type(annot_df)}"
+        )
 
     if verbose:
-        print(f"\nlen(annot_df): {len(annot_df)}")
-        print("\ntolerance:", tolerance)
+        print(f"DEBUG len(annot_df): {len(annot_df)}")
+        print(f"DEBUG annot_df columns: {list(annot_df.columns)}")
 
+    required_annot_cols = {"rpeak", "annot"}
+    missing_annot_cols = [c for c in required_annot_cols if c not in annot_df.columns]
+    if missing_annot_cols:
+        if verbose:
+            print(
+                "DEBUG: annotation dataframe does not contain standard columns "
+                f"{missing_annot_cols}. Continuing, because merge function may still handle it."
+            )
+
+    # ------------------------------------------------------------------
     # 4. Match predicted peaks with annotations
-    df_matched, df_unmatched, not_found_count, description = merge_rpeaks_with_annotations(
-        rpeaks_on_start_df,
-        annot_df,
-        tolerance=tolerance,
-    )
+    # ------------------------------------------------------------------
+    try:
+        df_matched, df_unmatched, not_found_count, description = merge_rpeaks_with_annotations(
+            rpeaks_on_start_df,
+            annot_df,
+            tolerance=tolerance,
+        )
+    except Exception as exc:
+        raise RuntimeError("merge_rpeaks_with_annotations(...) failed") from exc
+
+    if df_matched is None:
+        raise ValueError("merge_rpeaks_with_annotations returned df_matched=None")
+
+    if df_unmatched is None:
+        if verbose:
+            print("DEBUG: df_unmatched is None -> replacing with empty DataFrame")
+        df_unmatched = pd.DataFrame()
+
+    if description is None:
+        description = "No description returned by merge_rpeaks_with_annotations."
 
     if verbose:
         print(description)
         print(f"\nlen(df_matched): {len(df_matched)}")
-        print(f"\nlen(df_unmatched): {len(df_unmatched)}")
+        print(f"len(df_unmatched): {len(df_unmatched)}")
+        print(f"DEBUG not_found_count: {not_found_count}")
 
-    df_matched = df_matched.sort_values(by="diff", ascending=False).reset_index(drop=True)
+    if len(df_matched) == 0 and verbose:
+        print("DEBUG: df_matched is empty. Metrics will be computed on empty arrays.")
+
+    if "diff" in df_matched.columns:
+        df_matched = df_matched.sort_values(by="diff", ascending=False).reset_index(drop=True)
+    else:
+        df_matched = df_matched.reset_index(drop=True)
+        if verbose:
+            print("DEBUG: column 'diff' not found in df_matched, skipping sort")
 
     if len(df_unmatched) > 0:
         df_unmatched = df_unmatched.copy()
-        df_unmatched["rpeak_sec"] = df_unmatched["rpeak"] / fs
-        df_unmatched["closest_rpeak_annot_sec"] = (
-            df_unmatched["closest_rpeak_annot"] / fs
-        )
+        if "rpeak" in df_unmatched.columns:
+            df_unmatched["rpeak_sec"] = df_unmatched["rpeak"] / fs
+        else:
+            if verbose:
+                print("DEBUG: 'rpeak' column not found in df_unmatched, cannot create rpeak_sec")
 
+        if "closest_rpeak_annot" in df_unmatched.columns:
+            df_unmatched["closest_rpeak_annot_sec"] = df_unmatched["closest_rpeak_annot"] / fs
+        else:
+            if verbose:
+                print(
+                    "DEBUG: 'closest_rpeak_annot' column not found in df_unmatched, "
+                    "cannot create closest_rpeak_annot_sec"
+                )
+
+    # ------------------------------------------------------------------
     # 5. Optionally remove U class from evaluation
+    # ------------------------------------------------------------------
     removed_count = 0
-    if drop_annot_u and "annot" in df_matched.columns:
+    if drop_annot_u:
+        if "annot" not in df_matched.columns:
+            raise ValueError(
+                "drop_annot_u=True, but df_matched does not contain column 'annot'"
+            )
+
         removed_count = int((df_matched["annot"] == 3).sum())
         df_matched = df_matched[df_matched["annot"] != 3].reset_index(drop=True)
 
         if verbose:
             print(f"\nRemoved {removed_count} rows with annot == 3")
+
+    # ------------------------------------------------------------------
+    # 6. Label counts
+    # ------------------------------------------------------------------
+    if "annot" not in df_matched.columns:
+        raise ValueError("df_matched does not contain required column 'annot'")
+
+    if "pred" not in df_matched.columns:
+        raise ValueError("df_matched does not contain required column 'pred'")
 
     counts_annot_series = df_matched["annot"].value_counts(dropna=False)
     unique_labels_annot = counts_annot_series.index.to_numpy()
@@ -399,26 +661,43 @@ def evaluate_ectopy_classification_against_annotations(
         print("\nLabels for annot: ", unique_labels_annot, counts_annot, "Total:", counts_annot.sum())
         print("Labels for pred: ", unique_labels_pred, counts_pred, "Total:", counts_pred.sum())
 
-    # 6. Multiclass classification
+    # ------------------------------------------------------------------
+    # 7. Multiclass classification
+    # ------------------------------------------------------------------
+    test_labels = np.asarray(df_matched["annot"].values)
+    pred_labels = np.asarray(df_matched["pred"].values)
+
     comment = []
-    test_labels = df_matched["annot"].values
-    pred_labels = df_matched["pred"].values
 
     if verbose:
         print("\nKlasifikavimo tikslumas")
-        print_classification_results(test_labels, pred_labels, comment)
+        if len(test_labels) == 0:
+            print("DEBUG: no matched rows after filtering; multiclass metrics skipped for this record")
+        else:
+            try:
+                print_classification_results(test_labels, pred_labels, comment)
+            except Exception as exc:
+                print(f"DEBUG: print_classification_results(...) failed: {exc}")
 
-    # 7. Binary classification: N=0, S/V/U=1
+    # ------------------------------------------------------------------
+    # 8. Binary classification: N=0, S/V/U=1
+    # ------------------------------------------------------------------
     test_labels_bin = (np.asarray(test_labels) != 0).astype(int)
     pred_labels_bin = (np.asarray(pred_labels) != 0).astype(int)
 
     if verbose:
         print("\nClassification results for binary case")
-        evaluate_binary_classification(
-            test_labels_bin,
-            pred_labels_bin,
-            positive_class=1,
-        )
+        if len(test_labels_bin) == 0:
+            print("DEBUG: no matched rows after filtering; binary metrics skipped for this record")
+        else:
+            try:
+                evaluate_binary_classification(
+                    test_labels_bin,
+                    pred_labels_bin,
+                    positive_class=1,
+                )
+            except Exception as exc:
+                print(f"DEBUG: evaluate_binary_classification(...) failed: {exc}")
 
     return {
         "rpeaks_on_denoised": rpeaks_on_denoised,
@@ -442,7 +721,6 @@ def evaluate_ectopy_classification_against_annotations(
         "pred_labels_bin": pred_labels_bin,
         "comment": comment,
     }
-
 
 # ======================================================================================
 #                               AGREGUOTOS METRIKOS
@@ -763,7 +1041,6 @@ def prepare_pipelines(args: argparse.Namespace) -> PipelineBundle:
         ectopy_config_path=args.cfg_ectopy,
         ectopy_model_dir=args.ectopy_model_dir,
     )
-    print(cfg_ectopy)
     ectopy_pipe = ECGEctopyPipeline(cfg_ectopy)
 
     return PipelineBundle(
@@ -980,26 +1257,28 @@ def main() -> None:
 
             # Pritaikykite pagal tai, ko tikisi jūsų read_df_annot(...)
             # Jei reikia basename be plėtinio, keiskite į rec.basename
-            file_name = rec.ecg_path.name
+            file_name = rec.json_path.name
             data_dir = rec.ecg_path.parent
 
             eval_res = evaluate_ectopy_classification_against_annotations(
                 res_denoising=res_denoising,
                 res_ectopy=res_ectopy,
-                data_dir=data_dir,
-                file_name=file_name,
-                fs=args.fs,
-                tolerance=args.tolerance,
-                drop_annot_u=not args.keep_u_class,
-                verbose=not args.quiet,
+                json_path=rec.json_path,
+                fs=200,
+                tolerance=20,
+                drop_annot_u=True,
+                verbose=True,
             )
-
+            
             df_matched = eval_res["df_matched"]
             df_unmatched = eval_res["df_unmatched"]
 
             update_aggregate_metrics(agg, eval_res)
 
             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
+#             metadata, noise_stats, ectopy_stats, df_matched, df_unmatched jau turi kažkokias reikšmes
+#             jos sudedamos į vieną tuple, tuple priskiriamas _
+#           _ yra naudojamas, kad būtų aišku, jog šios reikšmės yra "naudojamos" (pvz. gali būti naudingos debugui ar tolimesnei analizei), bet šiuo metu nėra tiesiogiai naudojamos tolesniame kode. Tai gali būti naudinga, jei norite išlaikyti šias reikšmes atmintyje ar lengvai pasiekiamas, bet nenorite, kad jos trukdytų tolimesniam kodui, kuris šiuo metu yra fokusas.
 
         except Exception as exc:
             agg.n_records_failed_eval += 1
