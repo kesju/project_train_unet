@@ -1002,6 +1002,166 @@ def process_record(
         "ectopy_stats": ectopy_stats,
     }
 
+def read_df_annot_from_json(json_path: Union[Path, str]) -> Optional[pd.DataFrame]:
+    """
+    Read and process annotations from a JSON file.
+
+    Supported JSON formats
+    ----------------------
+    Old format:
+        {
+            ...
+            "rpeaks": [
+                {"sampleIndex": ..., "annotationValue": ...},
+                ...
+            ]
+        }
+
+    New format:
+        {
+            ...
+            "rpeaks": {
+                "__info": "...",
+                "human": [...],
+                "ml": [...],
+                "merged": [...]
+            }
+        }
+
+    For the new format, this function uses:
+        rpeaks["merged"]
+
+    Parameters
+    ----------
+    json_path : Path | str
+        Full path to the JSON annotation file.
+
+    Returns
+    -------
+    pd.DataFrame | None
+        DataFrame with columns ['rpeak', 'annot'],
+        or None if file does not exist.
+
+    Raises
+    ------
+    ValueError
+        If JSON structure is invalid or required fields are missing.
+    TypeError
+        If input data types are invalid.
+    RuntimeError
+        If JSON cannot be parsed or normalized.
+    """
+    all_beats = {'N': 0, 'S': 1, 'V': 2, 'U': 3}
+
+    file_path = Path(json_path).expanduser().resolve()
+
+    if not file_path.exists():
+        return None
+
+    if not file_path.is_file():
+        raise ValueError(f"JSON path exists but is not a file: {file_path}")
+
+    try:
+        with open(file_path, "r", encoding="UTF-8", errors="ignore") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Failed to parse JSON file: {file_path}") from exc
+    except Exception as exc:
+        raise RuntimeError(f"Failed to read JSON file: {file_path}") from exc
+
+    if not isinstance(data, dict):
+        raise TypeError(
+            f"Top-level JSON object must be dict, got {type(data).__name__} in file {file_path}"
+        )
+
+    if "rpeaks" not in data:
+        raise ValueError(f"Key 'rpeaks' not found in JSON file: {file_path}")
+
+    rpeaks_raw = data["rpeaks"]
+
+    if rpeaks_raw is None:
+        raise ValueError(f"Key 'rpeaks' is None in JSON file: {file_path}")
+
+    # ------------------------------------------------------------------
+    # Support both formats:
+    # 1) old: rpeaks is a list
+    # 2) new: rpeaks is a dict with keys: human, ml, merged
+    # ------------------------------------------------------------------
+    if isinstance(rpeaks_raw, list):
+        rpeaks = rpeaks_raw
+
+    elif isinstance(rpeaks_raw, dict):
+        if "merged" not in rpeaks_raw:
+            raise ValueError(
+                f"New-format JSON detected, but key 'rpeaks[\"merged\"]' not found in file: {file_path}"
+            )
+
+        rpeaks = rpeaks_raw["merged"]
+
+        if rpeaks is None:
+            raise ValueError(
+                f"Key 'rpeaks[\"merged\"]' is None in JSON file: {file_path}"
+            )
+
+        if not isinstance(rpeaks, list):
+            raise TypeError(
+                f"Key 'rpeaks[\"merged\"]' must be a list, got {type(rpeaks).__name__} in file {file_path}"
+            )
+
+    else:
+        raise TypeError(
+            f"Key 'rpeaks' must be either list (old format) or dict (new format), "
+            f"got {type(rpeaks_raw).__name__} in file {file_path}"
+        )
+
+    if len(rpeaks) == 0:
+        return pd.DataFrame(columns=["rpeak", "annot"])
+
+    try:
+        norm = pd.json_normalize(rpeaks)
+        df_norm = cast(pd.DataFrame, norm)
+    except Exception as exc:
+        raise RuntimeError(f"pd.json_normalize failed for file: {file_path}") from exc
+
+    if df_norm.empty:
+        return pd.DataFrame(columns=["rpeak", "annot"])
+
+    required_cols = ["sampleIndex", "annotationValue"]
+    missing_cols = [col for col in required_cols if col not in df_norm.columns]
+    if missing_cols:
+        raise ValueError(
+            f"Missing required columns {missing_cols} in normalized rpeaks data from file: {file_path}"
+        )
+
+    try:
+        rpeak_series = pd.to_numeric(df_norm["sampleIndex"], errors="raise").astype(int)
+    except Exception as exc:
+        raise ValueError(
+            f"Column 'sampleIndex' contains non-numeric or invalid values in file: {file_path}"
+        ) from exc
+
+    try:
+        annot_series = (
+            df_norm["annotationValue"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            .map(all_beats)
+            .fillna(0)
+            .astype(int)
+        )
+    except Exception as exc:
+        raise ValueError(
+            f"Failed to map 'annotationValue' to numeric labels in file: {file_path}"
+        ) from exc
+
+    df_annot = pd.DataFrame({
+        "rpeak": rpeak_series,
+        "annot": annot_series,
+    })
+
+    return df_annot
+
 
 # ======================================================================================
 #                                        MAIN
