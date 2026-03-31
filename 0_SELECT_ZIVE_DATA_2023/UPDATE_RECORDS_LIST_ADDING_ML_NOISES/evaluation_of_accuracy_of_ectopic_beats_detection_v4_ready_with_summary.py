@@ -1350,13 +1350,15 @@ def main() -> None:
             print(
                 f"{record_nr}/{len(records_to_process)} | "
                 f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
-                f"elapsed: {elapsed_from_start_min}"
+                f"elapsed: {elapsed_from_start_min}",
+                flush=True,
             )
         else:
             print(
                 f"{record_nr}/{len(records_to_process)} | "
                 f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
-                f"elapsed: {elapsed_from_start_min}"
+                f"elapsed: {elapsed_from_start_min}",
+                flush=True,
             )
 
         if rec.ecg_path is None:
