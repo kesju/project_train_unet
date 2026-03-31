@@ -11,6 +11,7 @@ python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
   --cfg-ectopy "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
   --ectopy-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
   --fs 200 \
+  --quiet \
 
   # --exclude-list "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
 
