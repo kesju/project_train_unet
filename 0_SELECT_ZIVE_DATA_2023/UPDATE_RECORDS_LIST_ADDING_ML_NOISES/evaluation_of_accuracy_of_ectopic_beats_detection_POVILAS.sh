@@ -3,15 +3,15 @@
 # +++++++++++++++++++++++  POVILAS +++++++++++++++++++++++
 
 # # Testavimui ilgam
-python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
-  --dir "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui" \
-  --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
-  --unet-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET//MODEL_UNET \
-  --denoising \
-  --cfg-ectopy "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
-  --ectopy-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
-  --fs 200 \
-  --quiet \
+# python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
+#   --dir "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui" \
+#   --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
+#   --unet-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET//MODEL_UNET \
+#   --denoising \
+#   --cfg-ectopy "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
+#   --ectopy-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
+#   --fs 200 \
+#   --quiet \
 
   # --exclude-list "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
 
@@ -44,15 +44,17 @@ python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
 
 
 # VISI ANOTUOTI IRASAI
-# python evaluation_of_accuracy_of_ectopic_beats_detection.py \
-#   --dir "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys" \
-#   --exclude_files "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys/exclude_list.txt" \
-#   --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
-#   --unet-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET \
-#   # --denoising \
-# --cfg-ectopy "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
-# --ectopy-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
-# --fs 200 \
+python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
+  --dir "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys" \
+  --exclude_files "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys/exclude_list.txt" \
+  --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
+  --unet-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET \
+  --denoising \
+  --disable-motions \
+  --cfg-ectopy "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
+  --ectopy-model-dir /home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
+  --fs 200 \
+  --quiet \
 #   # --out "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
 #   # --quiet \
 
