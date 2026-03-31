@@ -24,7 +24,7 @@ python -u evaluation_of_accuracy_of_ectopic_beats_detection_v4_ready_with_summar
   --all-records \
   --quiet \
   --summary-out "$SUMMARY_FILE" \
-  > 2>&1 | tee "$LOG_FILE"
+ 2>&1 | tee "$LOG_FILE"
 
 echo "Done."
 echo "Full log    : $LOG_FILE"
