@@ -31,6 +31,9 @@
 # --disable-motions
 # --out "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
 # --quiet \ - kol kas nenaudojamas
+# --all-records \
+# action="store_true",
+# help="Process all records. By default only first 5 records are processed.",
 
 # Galimi 3 variantai:
 # 1) --denoising (įjungia visą denoising pipeline, įskaitant motions etapą, t.y. bus atliekamas triukšmo mažinimas

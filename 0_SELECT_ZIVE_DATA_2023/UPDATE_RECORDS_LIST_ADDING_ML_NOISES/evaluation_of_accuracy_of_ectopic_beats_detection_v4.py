@@ -1151,12 +1151,7 @@ def main() -> None:
             ectopy_stats = results["ectopy_stats"]
             res_denoising = results["res_denoising"]
             res_ectopy = results["res_ectopy"]
-
-            # Pritaikykite pagal tai, ko tikisi jūsų read_df_annot(...)
-            # Jei reikia basename be plėtinio, keiskite į rec.basename
-            file_name = rec.json_path.name
-            data_dir = rec.ecg_path.parent
-
+            
             eval_res = evaluate_ectopy_classification_against_annotations(
                 res_denoising=res_denoising,
                 res_ectopy=res_ectopy,
