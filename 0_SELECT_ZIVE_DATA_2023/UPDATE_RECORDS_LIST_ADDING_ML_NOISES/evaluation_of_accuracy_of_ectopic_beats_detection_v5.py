@@ -9,6 +9,7 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 import argparse
+import time
 import numpy as np
 import pandas as pd
 
@@ -144,25 +145,26 @@ def get_denoising_mode(denoising: bool, disable_motions: bool) -> DenoisingMode:
 
 def print_denoising_case(mode: DenoisingMode) -> None:
     if mode == DenoisingMode.FULL:
-        print("CASE 1: denoising pipeline is ENABLED, including motions stage.")
+        print("CASE 1: denoising pipeline is ENABLED, including motions detection.")
     elif mode == DenoisingMode.NO_MOTIONS:
-        print("CASE 2: denoising pipeline is ENABLED, but motions stage is DISABLED.")
+        print("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
     else:
         print("CASE 3: denoising pipeline is DISABLED.")
         print(
-            "        Safe mode: pipeline will still run with outliers/rdropouts/motions disabled,"
+            "        Safe mode: the pipeline will still run with outliers, rdropouts, "
+            "and motions detection disabled,"
         )
         print(
-            "        so ectopy pipeline receives the same type of input object."
+            "        so the ectopy pipeline receives the same type of input object."
         )
 
 
 def mode_suffix(mode: DenoisingMode) -> str:
     if mode == DenoisingMode.FULL:
-        return "with enabled detecting motions"
+        return "with motions detection enabled"
     if mode == DenoisingMode.NO_MOTIONS:
-        return "with disabled detecting motions"
-    return "with disabled denoising"
+        return "with motions detection disabled"
+    return "with denoising disabled"
 
 
 def safe_mean(values: List[float]) -> float:
@@ -1005,98 +1007,200 @@ def process_record(
 
 
 # ======================================================================================
-#                                        MAIN
+#                                        CLI
 # ======================================================================================
 
-def main() -> None:
+def build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
-        description="Evaluate accuracy of ectopic beat detection on ZIVE data"
+        description=(
+            "Evaluate the accuracy of ectopic beat detection on ECG records "
+            "with optional denoising and optional motions detection."
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+
     ap.add_argument(
         "--dir",
         type=Path,
         required=True,
-        help="Directory containing ECG .npy files and corresponding JSON metadata",
+        metavar="DIR",
+        help="Directory containing ECG files and corresponding JSON metadata files.",
     )
     ap.add_argument(
         "--exclude-list",
+        "--exclude_files",
+        dest="exclude_list",
         type=Path,
-        help="File containing list of ECG basenames to exclude (one basename per line, without extensions)",
+        metavar="FILE",
+        help=(
+            "Optional text file with ECG basenames to exclude, one basename per line "
+            "(without extensions)."
+        ),
     )
     ap.add_argument(
         "--cfg-denoising",
         type=Path,
         required=True,
-        help="Denoising config path",
+        metavar="FILE",
+        help="Path to denoising pipeline YAML config.",
     )
     ap.add_argument(
         "--unet-model-dir",
         type=Path,
         required=True,
-        help="Model directory for denoising/motions",
+        metavar="DIR",
+        help="Directory containing denoising / motions model files.",
     )
     ap.add_argument(
         "--cfg-ectopy",
         type=Path,
         required=True,
-        help="Ectopy config path",
+        metavar="FILE",
+        help="Path to ectopy pipeline YAML config.",
     )
     ap.add_argument(
         "--ectopy-model-dir",
         type=Path,
         required=True,
-        help="Model directory for ectopy detection",
+        metavar="DIR",
+        help="Directory containing ectopy model and scaler files.",
     )
     ap.add_argument(
         "--fs",
         type=int,
         default=200,
-        help="Sampling frequency (Hz). Default: 200",
-    )
-    ap.add_argument(
-        "--quiet",
-        action="store_true",
-        help="Silence stdout during denoising/stats",
-    )
-    ap.add_argument(
-        "--disable-motions",
-        action="store_true",
-        help="Disable motions stage in denoising pipeline",
-    )
-    ap.add_argument(
-        "--denoising",
-        action="store_true",
-        help="Enable denoising pipeline",
+        metavar="HZ",
+        help="Sampling frequency in Hz.",
     )
     ap.add_argument(
         "--tolerance",
         type=int,
         default=20,
-        help="Tolerance in samples for matching predicted and annotated R-peaks. Default: 20",
+        metavar="SAMPLES",
+        help="Tolerance in samples for matching predicted and annotated R-peaks.",
+    )
+    ap.add_argument(
+        "--denoising",
+        action="store_true",
+        help="Enable the denoising pipeline.",
+    )
+    ap.add_argument(
+        "--disable-motions",
+        action="store_true",
+        help=(
+            "Disable only the motions detection stage inside the denoising pipeline. "
+            "This flag has effect only when --denoising is enabled."
+        ),
     )
     ap.add_argument(
         "--keep-u-class",
         action="store_true",
-        help="Keep annot == 3 (U class) in evaluation. By default it is removed.",
+        help="Keep annotation class U (annot == 3) in evaluation.",
     )
     ap.add_argument(
         "--all-records",
         action="store_true",
-        help="Process all records. By default only first 5 records are processed.",
+        help="Process all matched records. By default only the first 5 are processed.",
     )
     ap.add_argument(
         "--global-binary-metrics",
         action="store_true",
-        help="Print global binary confusion matrix and binary metrics.",
+        help="Print global binary confusion matrix and binary classification metrics.",
+    )
+    ap.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Reduce verbose diagnostic output during evaluation.",
     )
 
-    args = ap.parse_args()
+    return ap
+
+
+def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> argparse.Namespace:
+    args.dir = Path(args.dir).expanduser().resolve()
+    args.cfg_denoising = Path(args.cfg_denoising).expanduser().resolve()
+    args.unet_model_dir = Path(args.unet_model_dir).expanduser().resolve()
+    args.cfg_ectopy = Path(args.cfg_ectopy).expanduser().resolve()
+    args.ectopy_model_dir = Path(args.ectopy_model_dir).expanduser().resolve()
+
+    if args.exclude_list is not None:
+        args.exclude_list = Path(args.exclude_list).expanduser().resolve()
+
+    if not args.dir.exists() or not args.dir.is_dir():
+        parser.error(f"--dir must be an existing directory: {args.dir}")
+
+    if args.exclude_list is not None and not args.exclude_list.exists():
+        parser.error(f"--exclude-list file not found: {args.exclude_list}")
+
+    if not args.cfg_denoising.exists() or not args.cfg_denoising.is_file():
+        parser.error(f"--cfg-denoising must be an existing file: {args.cfg_denoising}")
+
+    if not args.unet_model_dir.exists() or not args.unet_model_dir.is_dir():
+        parser.error(f"--unet-model-dir must be an existing directory: {args.unet_model_dir}")
+
+    if not args.cfg_ectopy.exists() or not args.cfg_ectopy.is_file():
+        parser.error(f"--cfg-ectopy must be an existing file: {args.cfg_ectopy}")
+
+    if not args.ectopy_model_dir.exists() or not args.ectopy_model_dir.is_dir():
+        parser.error(f"--ectopy-model-dir must be an existing directory: {args.ectopy_model_dir}")
+
+    if args.fs <= 0:
+        parser.error(f"--fs must be > 0. Got: {args.fs}")
+
+    if args.tolerance < 0:
+        parser.error(f"--tolerance must be >= 0. Got: {args.tolerance}")
+
+    if args.disable_motions and not args.denoising:
+        print(
+            "WARNING: --disable-motions was provided without --denoising. "
+            "It will have no effect because denoising mode is OFF."
+        )
+
+    return args
+
+
+def format_elapsed_hhmm(seconds: float) -> str:
+    total_seconds = max(0, int(round(seconds)))
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def format_elapsed_minutes(seconds: float) -> str:
+    minutes = seconds / 60.0
+    return f"{minutes:.1f} min"
+
+
+# ======================================================================================
+#                                        MAIN
+# ======================================================================================
+
+def main() -> None:
+    parser = build_arg_parser()
+    args = validate_args(parser.parse_args(), parser)
+
+    mode = get_denoising_mode(args.denoising, args.disable_motions)
+
+    print("=" * 90)
+    print("ECTOPIC BEAT DETECTION EVALUATION")
+    print("=" * 90)
+    print(f"Input directory          : {args.dir}")
+    print(f"Exclude list             : {args.exclude_list}")
+    print(f"Denoising config         : {args.cfg_denoising}")
+    print(f"UNet model directory     : {args.unet_model_dir}")
+    print(f"Ectopy config            : {args.cfg_ectopy}")
+    print(f"Ectopy model directory   : {args.ectopy_model_dir}")
+    print(f"Sampling frequency       : {args.fs} Hz")
+    print(f"Matching tolerance       : {args.tolerance} samples")
+    print(f"Keep U class             : {args.keep_u_class}")
+    print(f"Process all records      : {args.all_records}")
+    print(f"Quiet mode               : {args.quiet}")
+    print(f"Global binary metrics    : {args.global_binary_metrics}")
+    print(f"Denoising mode           : {mode.value}")
+    print_denoising_case(mode)
+    print("=" * 90)
 
     src = args.dir
-    if not src.exists() or not src.is_dir():
-        raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
-
-    #               ++++++++++++++++++++++++ ANALIZUOJAMŲ ĮRAŠŲ SĄRAŠAS
 
     scan_result = list_ecg_records(
         folder=src,
@@ -1113,28 +1217,36 @@ def main() -> None:
     print(f"unmatched_json   : {summary.unmatched_json}")
     print(f"records returned : {len(records)}")
 
-    #               ++++++++++++++++++++++++ PIPELINE PARENGIMAS
-
     bundle = prepare_pipelines(args)
     agg = AggregateMetrics()
-
-    #               ++++++++++++++++++++++++ TRIUKŠMŲ VALYMAS IR EKTOPINIŲ DŪŽIŲ DETEKTAVIMAS
 
     records_to_process = records if args.all_records else records[:5]
 
     print(f"\nFound {len(records)} matched records")
     print(f"Processing {len(records_to_process)} record(s)")
 
+    total_cycle_start = time.perf_counter()
     record_nr = 0
 
     for rec in records_to_process:
         print("\n" + "-" * 90)
         record_nr += 1
 
+        elapsed_from_start_s = time.perf_counter() - total_cycle_start
+        elapsed_from_start_min = format_elapsed_minutes(elapsed_from_start_s)
+
         if rec.ecg_path is not None:
-            print(record_nr, rec.basename, rec.ecg_path.name, rec.json_path.name)
+            print(
+                f"{record_nr}/{len(records_to_process)} | "
+                f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
+                f"elapsed: {elapsed_from_start_min}"
+            )
         else:
-            print(record_nr, rec.basename, "<missing ecg>", rec.json_path.name)
+            print(
+                f"{record_nr}/{len(records_to_process)} | "
+                f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
+                f"elapsed: {elapsed_from_start_min}"
+            )
 
         if rec.ecg_path is None:
             msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
@@ -1154,31 +1266,33 @@ def main() -> None:
             ectopy_stats = results["ectopy_stats"]
             res_denoising = results["res_denoising"]
             res_ectopy = results["res_ectopy"]
-            
+
             eval_res = evaluate_ectopy_classification_against_annotations(
                 res_denoising=res_denoising,
                 res_ectopy=res_ectopy,
                 json_path=rec.json_path,
-                fs=200,
-                tolerance=20,
-                drop_annot_u=True,
+                fs=args.fs,
+                tolerance=args.tolerance,
+                drop_annot_u=not args.keep_u_class,
                 verbose=not args.quiet,
             )
-            
+
             df_matched = eval_res["df_matched"]
             df_unmatched = eval_res["df_unmatched"]
 
             update_aggregate_metrics(agg, eval_res)
 
             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
-#             metadata, noise_stats, ectopy_stats, df_matched, df_unmatched jau turi kažkokias reikšmes
-#             jos sudedamos į vieną tuple, tuple priskiriamas _
-#           _ yra naudojamas, kad būtų aišku, jog šios reikšmės yra "naudojamos" (pvz. gali būti naudingos debugui ar tolimesnei analizei), bet šiuo metu nėra tiesiogiai naudojamos tolesniame kode. Tai gali būti naudinga, jei norite išlaikyti šias reikšmes atmintyje ar lengvai pasiekiamas, bet nenorite, kad jos trukdytų tolimesniam kodui, kuris šiuo metu yra fokusas.
 
         except Exception as exc:
             agg.n_records_failed_eval += 1
             print(f"WARN: failed processing for {rec.ecg_path.name}: {exc}")
             continue
+
+    total_cycle_elapsed_s = time.perf_counter() - total_cycle_start
+    print("\n" + "=" * 90)
+    print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
+    print("=" * 90)
 
     print_aggregate_report(
         agg,
