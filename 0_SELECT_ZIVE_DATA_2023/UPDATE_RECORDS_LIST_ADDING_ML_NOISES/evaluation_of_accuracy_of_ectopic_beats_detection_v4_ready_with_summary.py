@@ -1222,6 +1222,58 @@ def format_elapsed_minutes(seconds: float) -> str:
     return f"{minutes:.1f} min"
 
 
+
+def build_summary_header_text(
+    args: argparse.Namespace,
+    mode: DenoisingMode,
+    scan_summary: Any,
+    n_records_returned: int,
+) -> str:
+    """
+    Build the initial parameter block for the clean summary file.
+    """
+    lines: List[str] = []
+
+    lines.append("ECTOPIC BEAT DETECTION EVALUATION")
+    lines.append("=" * 90)
+    lines.append(f"Input directory          : {args.dir}")
+    lines.append(f"Exclude list             : {args.exclude_list}")
+    lines.append(f"Denoising config         : {args.cfg_denoising}")
+    lines.append(f"UNet model directory     : {args.unet_model_dir}")
+    lines.append(f"Ectopy config            : {args.cfg_ectopy}")
+    lines.append(f"Ectopy model directory   : {args.ectopy_model_dir}")
+    lines.append(f"Sampling frequency       : {args.fs} Hz")
+    lines.append(f"Matching tolerance       : {args.tolerance} samples")
+    lines.append(f"Keep U class             : {args.keep_u_class}")
+    lines.append(f"Process all records      : {args.all_records}")
+    lines.append(f"Quiet mode               : {args.quiet}")
+    lines.append(f"Global binary metrics    : {args.global_binary_metrics}")
+    lines.append(f"Summary output           : {args.summary_out}")
+    lines.append(f"Denoising mode           : {mode.value}")
+
+    if mode == DenoisingMode.FULL:
+        lines.append("CASE 1: denoising pipeline is ENABLED, including motions detection.")
+    elif mode == DenoisingMode.NO_MOTIONS:
+        lines.append("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
+    else:
+        lines.append("CASE 3: denoising pipeline is DISABLED.")
+        lines.append(
+            "        Safe mode: the pipeline will still run with outliers, rdropouts, "
+            "and motions detection disabled,"
+        )
+        lines.append(
+            "        so the ectopy pipeline receives the same type of input object."
+        )
+
+    lines.append("=" * 90)
+    lines.append(f"total_json       : {scan_summary.total_json}")
+    lines.append(f"excluded         : {scan_summary.excluded}")
+    lines.append(f"matched          : {scan_summary.matched}")
+    lines.append(f"unmatched_json   : {scan_summary.unmatched_json}")
+    lines.append(f"records returned : {n_records_returned}")
+
+    return "\n".join(lines)
+
 # ======================================================================================
 #                                        MAIN
 # ======================================================================================
@@ -1268,6 +1320,13 @@ def main() -> None:
     print(f"matched          : {summary.matched}")
     print(f"unmatched_json   : {summary.unmatched_json}")
     print(f"records returned : {len(records)}")
+
+    summary_header_text = build_summary_header_text(
+        args=args,
+        mode=mode,
+        scan_summary=summary,
+        n_records_returned=len(records),
+    )
 
     bundle = prepare_pipelines(args)
     agg = AggregateMetrics()
@@ -1351,9 +1410,143 @@ def main() -> None:
         global_binary_metrics=args.global_binary_metrics,
     )
 
+    full_summary_text = summary_header_text + "\n" + report_text
+
     if args.summary_out is not None:
-        write_summary_text(args.summary_out, report_text)
+        write_summary_text(args.summary_out, full_summary_text)
 
 
 if __name__ == "__main__":
     main()
+    
+# def main() -> None:
+#     parser = build_arg_parser()
+#     args = validate_args(parser.parse_args(), parser)
+
+#     mode = get_denoising_mode(args.denoising, args.disable_motions)
+
+#     print("=" * 90)
+#     print("ECTOPIC BEAT DETECTION EVALUATION")
+#     print("=" * 90)
+#     print(f"Input directory          : {args.dir}")
+#     print(f"Exclude list             : {args.exclude_list}")
+#     print(f"Denoising config         : {args.cfg_denoising}")
+#     print(f"UNet model directory     : {args.unet_model_dir}")
+#     print(f"Ectopy config            : {args.cfg_ectopy}")
+#     print(f"Ectopy model directory   : {args.ectopy_model_dir}")
+#     print(f"Sampling frequency       : {args.fs} Hz")
+#     print(f"Matching tolerance       : {args.tolerance} samples")
+#     print(f"Keep U class             : {args.keep_u_class}")
+#     print(f"Process all records      : {args.all_records}")
+#     print(f"Quiet mode               : {args.quiet}")
+#     print(f"Global binary metrics    : {args.global_binary_metrics}")
+#     print(f"Summary output           : {args.summary_out}")
+#     print(f"Denoising mode           : {mode.value}")
+#     print_denoising_case(mode)
+#     print("=" * 90)
+
+#     src = args.dir
+
+#     scan_result = list_ecg_records(
+#         folder=src,
+#         data_format="auto",
+#         exclude_list=args.exclude_list,
+#     )
+
+#     records = scan_result.records
+#     summary = scan_result.summary
+
+#     print(f"total_json       : {summary.total_json}")
+#     print(f"excluded         : {summary.excluded}")
+#     print(f"matched          : {summary.matched}")
+#     print(f"unmatched_json   : {summary.unmatched_json}")
+#     print(f"records returned : {len(records)}")
+
+#     bundle = prepare_pipelines(args)
+#     agg = AggregateMetrics()
+
+#     records_to_process = records if args.all_records else records[:5]
+
+#     print(f"\nFound {len(records)} matched records")
+#     print(f"Processing {len(records_to_process)} record(s)")
+
+#     total_cycle_start = time.perf_counter()
+#     record_nr = 0
+
+#     for rec in records_to_process:
+#         print("\n" + "-" * 90)
+#         record_nr += 1
+
+#         elapsed_from_start_s = time.perf_counter() - total_cycle_start
+#         elapsed_from_start_min = format_elapsed_minutes(elapsed_from_start_s)
+
+#         if rec.ecg_path is not None:
+#             print(
+#                 f"{record_nr}/{len(records_to_process)} | "
+#                 f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
+#                 f"elapsed: {elapsed_from_start_min}"
+#             )
+#         else:
+#             print(
+#                 f"{record_nr}/{len(records_to_process)} | "
+#                 f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
+#                 f"elapsed: {elapsed_from_start_min}"
+#             )
+
+#         if rec.ecg_path is None:
+#             msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
+#             print(msg)
+#             continue
+
+#         metadata: Dict[str, Any] = read_json_file(rec.json_path)
+
+#         try:
+#             results = process_record(
+#                 rec=rec,
+#                 bundle=bundle,
+#                 fs=args.fs,
+#             )
+
+#             noise_stats = results["noise_stats"]
+#             ectopy_stats = results["ectopy_stats"]
+#             res_denoising = results["res_denoising"]
+#             res_ectopy = results["res_ectopy"]
+
+#             eval_res = evaluate_ectopy_classification_against_annotations(
+#                 res_denoising=res_denoising,
+#                 res_ectopy=res_ectopy,
+#                 json_path=rec.json_path,
+#                 fs=args.fs,
+#                 tolerance=args.tolerance,
+#                 drop_annot_u=not args.keep_u_class,
+#                 verbose=not args.quiet,
+#             )
+
+#             df_matched = eval_res["df_matched"]
+#             df_unmatched = eval_res["df_unmatched"]
+
+#             update_aggregate_metrics(agg, eval_res)
+
+#             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
+
+#         except Exception as exc:
+#             agg.n_records_failed_eval += 1
+#             print(f"WARN: failed processing for {rec.ecg_path.name}: {exc}")
+#             continue
+
+#     total_cycle_elapsed_s = time.perf_counter() - total_cycle_start
+#     print("\n" + "=" * 90)
+#     print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
+#     print("=" * 90)
+
+#     report_text = print_aggregate_report(
+#         agg,
+#         global_binary_metrics=args.global_binary_metrics,
+#     )
+
+#     if args.summary_out is not None:
+#         write_summary_text(args.summary_out, report_text)
+
+
+# if __name__ == "__main__":
+#     main()
