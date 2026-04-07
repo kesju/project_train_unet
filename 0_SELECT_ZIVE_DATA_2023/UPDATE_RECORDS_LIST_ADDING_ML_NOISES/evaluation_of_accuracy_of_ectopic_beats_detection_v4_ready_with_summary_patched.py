@@ -117,14 +117,6 @@ class AggregateMetrics:
     total_unmatched_rows: int = 0
     total_removed_u_rows: int = 0
 
-    # Global noise statistics
-    total_out: int = 0
-    total_rdr: int = 0
-    total_mra: int = 0
-    total_noise_samples: int = 0
-    total_samples: int = 0
-    per_record_tp_pct: List[float] = field(default_factory=list)
-
     # Global multiclass labels (po visų sujungimo)
     all_test_labels: List[int] = field(default_factory=list)
     all_pred_labels: List[int] = field(default_factory=list)
@@ -137,6 +129,13 @@ class AggregateMetrics:
     per_record_accuracy: List[float] = field(default_factory=list)
     per_record_sensitivity: List[float] = field(default_factory=list)
     per_record_specificity: List[float] = field(default_factory=list)
+
+    # Global noise statistics
+    total_out: int = 0
+    total_rdr: int = 0
+    total_mra: int = 0
+    total_noise_samples: int = 0
+    total_samples: int = 0
 
 
 # ======================================================================================
@@ -783,7 +782,7 @@ def update_aggregate_metrics(
     n_samples: Optional[int] = None,
 ) -> None:
     """
-    Update global accumulator with one record's evaluation and noise results.
+    Update global accumulator with one record's evaluation results.
     """
     df_matched = eval_res["df_matched"]
     df_unmatched = eval_res["df_unmatched"]
@@ -794,27 +793,10 @@ def update_aggregate_metrics(
     test_labels_bin = np.asarray(eval_res["test_labels_bin"]).astype(int)
     pred_labels_bin = np.asarray(eval_res["pred_labels_bin"]).astype(int)
 
-    noise_stats = noise_stats or {}
-    out = int(noise_stats.get("out", 0) or 0)
-    rdr = int(noise_stats.get("rdr", 0) or 0)
-    mra = int(noise_stats.get("mra", 0) or 0)
-    total_noise_samples = out + rdr + mra
-
     agg.n_records_evaluated += 1
     agg.total_matched_rows += int(len(df_matched))
     agg.total_unmatched_rows += int(len(df_unmatched))
     agg.total_removed_u_rows += removed_count
-
-    agg.total_out += out
-    agg.total_rdr += rdr
-    agg.total_mra += mra
-    agg.total_noise_samples += total_noise_samples
-
-    if n_samples is not None and int(n_samples) > 0:
-        agg.total_samples += int(n_samples)
-        agg.per_record_tp_pct.append((total_noise_samples / int(n_samples)) * 100.0)
-    else:
-        agg.per_record_tp_pct.append(float("nan"))
 
     agg.all_test_labels.extend(test_labels.tolist())
     agg.all_pred_labels.extend(pred_labels.tolist())
@@ -830,117 +812,168 @@ def update_aggregate_metrics(
     agg.per_record_sensitivity.append(binary_metrics["sensitivity"])
     agg.per_record_specificity.append(binary_metrics["specificity"])
 
+    noise_stats = noise_stats or {}
+    out = int(noise_stats.get("out", 0) or 0)
+    rdr = int(noise_stats.get("rdr", 0) or 0)
+    mra = int(noise_stats.get("mra", 0) or 0)
+    total_noise = out + rdr + mra
 
-def print_aggregate_report(
+    agg.total_out += out
+    agg.total_rdr += rdr
+    agg.total_mra += mra
+    agg.total_noise_samples += total_noise
+    agg.total_samples += int(n_samples or 0)
+
+
+def fmt_float(x: float) -> str:
+    if x is None:
+        return "nan"
+    try:
+        if np.isnan(x):
+            return "nan"
+    except Exception:
+        pass
+    return f"{x:.4f}"
+
+
+def build_aggregate_report_text(
     agg: AggregateMetrics,
     global_binary_metrics: bool = False,
-) -> None:
+) -> str:
     """
-    Print final global and averaged evaluation report.
+    Build final global and averaged evaluation report as a clean text block.
     """
-    print("\n" + "=" * 90)
-    print("BENDRA VERTINIMO SUVESTINĖ")
-    print("=" * 90)
+    lines: List[str] = []
 
-    print(f"Evaluated records          : {agg.n_records_evaluated}")
-    print(f"Failed evaluation records  : {agg.n_records_failed_eval}")
-    print(f"Total matched rows         : {agg.total_matched_rows}")
-    print(f"Total unmatched rows       : {agg.total_unmatched_rows}")
-    print(f"Total removed annot==3     : {agg.total_removed_u_rows}")
+    lines.append("")
+    lines.append("=" * 90)
+    lines.append("BENDRA VERTINIMO SUVESTINĖ")
+    lines.append("=" * 90)
 
-    global_tp_pct = (
-        (agg.total_noise_samples / agg.total_samples) * 100.0
-        if agg.total_samples > 0
-        else float("nan")
+    lines.append(f"Evaluated records          : {agg.n_records_evaluated}")
+    lines.append(f"Failed evaluation records  : {agg.n_records_failed_eval}")
+    lines.append(f"Total matched rows         : {agg.total_matched_rows}")
+    lines.append(f"Total unmatched rows       : {agg.total_unmatched_rows}")
+    lines.append(f"Total removed annot==3     : {agg.total_removed_u_rows}")
+
+    tp_pct = (
+        100.0 * agg.total_noise_samples / agg.total_samples
+        if agg.total_samples > 0 else float("nan")
     )
-    mean_tp_pct = safe_mean(agg.per_record_tp_pct)
 
-    print("\nNOISE STATISTICS")
-    print(f"Total out                 : {agg.total_out}")
-    print(f"Total rdr                 : {agg.total_rdr}")
-    print(f"Total mra                 : {agg.total_mra}")
-    print(f"Total noise samples       : {agg.total_noise_samples}")
-    print(f"Total samples             : {agg.total_samples}")
-    print(f"tp_pct global (%)         : {global_tp_pct:.4f}")
-    print(f"tp_pct mean per record (%) : {mean_tp_pct:.4f}")
+    lines.append("")
+    lines.append("NOISE STATISTICS")
+    lines.append(f"out                       : {agg.total_out}")
+    lines.append(f"rdr                       : {agg.total_rdr}")
+    lines.append(f"mra                       : {agg.total_mra}")
+    lines.append(f"all noise samples         : {agg.total_noise_samples}")
+    lines.append(f"all samples               : {agg.total_samples}")
+    lines.append(f"tp_pct                    : {fmt_float(tp_pct)}")
 
-    # ---------------------------
-    # Global binary metrics
-    # ---------------------------
     if global_binary_metrics:
         global_binary = compute_binary_confusion_and_metrics(
             test_labels_bin=np.asarray(agg.all_test_labels_bin, dtype=int),
             pred_labels_bin=np.asarray(agg.all_pred_labels_bin, dtype=int),
         )
 
-        print("\nGLOBAL BINARY CONFUSION MATRIX")
-        print("Rows = true labels, Cols = predicted labels")
-        print("          Pred 0     Pred 1")
-        print(f"True 0    {global_binary['tn']:8d}   {global_binary['fp']:8d}")
-        print(f"True 1    {global_binary['fn']:8d}   {global_binary['tp']:8d}")
+        lines.append("")
+        lines.append("GLOBAL BINARY CONFUSION MATRIX")
+        lines.append("Rows = true labels, Cols = predicted labels")
+        lines.append("          Pred 0     Pred 1")
+        lines.append(f"True 0    {global_binary['tn']:8d}   {global_binary['fp']:8d}")
+        lines.append(f"True 1    {global_binary['fn']:8d}   {global_binary['tp']:8d}")
 
-        print("\nGLOBAL BINARY METRICS")
-        print(f"Accuracy    : {global_binary['accuracy']:.4f}")
-        print(f"Sensitivity : {global_binary['sensitivity']:.4f}")
-        print(f"Specificity : {global_binary['specificity']:.4f}")
-        print(f"Precision   : {global_binary['precision']:.4f}")
+        lines.append("")
+        lines.append("GLOBAL BINARY METRICS")
+        lines.append(f"Accuracy    : {fmt_float(global_binary['accuracy'])}")
+        lines.append(f"Sensitivity : {fmt_float(global_binary['sensitivity'])}")
+        lines.append(f"Specificity : {fmt_float(global_binary['specificity'])}")
+        lines.append(f"Precision   : {fmt_float(global_binary['precision'])}")
 
-    # ---------------------------
-    # Mean per-record binary metrics
-    # ---------------------------
     mean_acc = safe_mean(agg.per_record_accuracy)
     mean_sens = safe_mean(agg.per_record_sensitivity)
     mean_spec = safe_mean(agg.per_record_specificity)
 
-    print("\nMEAN PER-RECORD BINARY METRICS")
-    print(f"Mean accuracy    : {mean_acc:.4f}")
-    print(f"Mean sensitivity : {mean_sens:.4f}")
-    print(f"Mean specificity : {mean_spec:.4f}")
+    lines.append("")
+    lines.append("MEAN PER-RECORD BINARY METRICS")
+    lines.append(f"Mean accuracy    : {fmt_float(mean_acc)}")
+    lines.append(f"Mean sensitivity : {fmt_float(mean_sens)}")
+    lines.append(f"Mean specificity : {fmt_float(mean_spec)}")
 
-    # ---------------------------
-    # Global multiclass confusion matrix
-    # ---------------------------
     multiclass = build_multiclass_confusion_matrix(
         test_labels=np.asarray(agg.all_test_labels, dtype=int),
         pred_labels=np.asarray(agg.all_pred_labels, dtype=int),
-        labels=[0, 1, 2],   # po annot==3 pašalinimo dažniausiai lieka N,S,V
+        labels=[0, 1, 2],
     )
     labels = multiclass["labels"]
     cm = multiclass["matrix"]
-
-    print("\nGLOBAL MULTICLASS SUMMARY")
     multiclass_metrics = compute_multiclass_metrics_from_cm(cm)
-    print(f"Accuracy:  {multiclass_metrics['accuracy']:.4f}")
-    print(f"Precision: {multiclass_metrics['precision_macro']:.4f}")
-    print(f"Recall:    {multiclass_metrics['recall_macro']:.4f}")
-    print(f"F1-score:  {multiclass_metrics['f1_macro']:.4f}")
 
-    print("\nConfusion Matrix:")
-    print(cm)
+    lines.append("")
+    lines.append("GLOBAL MULTICLASS SUMMARY")
+    lines.append(f"Accuracy:  {fmt_float(multiclass_metrics['accuracy'])}")
+    lines.append(f"Precision: {fmt_float(multiclass_metrics['precision_macro'])}")
+    lines.append(f"Recall:    {fmt_float(multiclass_metrics['recall_macro'])}")
+    lines.append(f"F1-score:  {fmt_float(multiclass_metrics['f1_macro'])}")
 
-    print("\nGLOBAL MULTICLASS CONFUSION MATRIX")
-    print("Labels:", labels.tolist())
-    print("Rows = true labels, Cols = predicted labels")
-    print(cm)
+    lines.append("")
+    lines.append("Confusion Matrix:")
+    lines.append(str(cm))
 
-    print("\nGLOBAL MULTICLASS METRICS")
-    print(f"Accuracy            : {multiclass_metrics['accuracy']:.4f}")
-    print(f"Precision (macro)   : {multiclass_metrics['precision_macro']:.4f}")
-    print(f"Recall (macro)      : {multiclass_metrics['recall_macro']:.4f}")
-    print(f"F1-score (macro)    : {multiclass_metrics['f1_macro']:.4f}")
-    print(f"Precision (weighted): {multiclass_metrics['precision_weighted']:.4f}")
-    print(f"Recall (weighted)   : {multiclass_metrics['recall_weighted']:.4f}")
-    print(f"F1-score (weighted) : {multiclass_metrics['f1_weighted']:.4f}")
+    lines.append("")
+    lines.append("GLOBAL MULTICLASS CONFUSION MATRIX")
+    lines.append(f"Labels: {labels.tolist()}")
+    lines.append("Rows = true labels, Cols = predicted labels")
+    lines.append(str(cm))
 
-    print("\nPER-CLASS MULTICLASS METRICS")
+    lines.append("")
+    lines.append("GLOBAL MULTICLASS METRICS")
+    lines.append(f"Accuracy            : {fmt_float(multiclass_metrics['accuracy'])}")
+    lines.append(f"Precision (macro)   : {fmt_float(multiclass_metrics['precision_macro'])}")
+    lines.append(f"Recall (macro)      : {fmt_float(multiclass_metrics['recall_macro'])}")
+    lines.append(f"F1-score (macro)    : {fmt_float(multiclass_metrics['f1_macro'])}")
+    lines.append(f"Precision (weighted): {fmt_float(multiclass_metrics['precision_weighted'])}")
+    lines.append(f"Recall (weighted)   : {fmt_float(multiclass_metrics['recall_weighted'])}")
+    lines.append(f"F1-score (weighted) : {fmt_float(multiclass_metrics['f1_weighted'])}")
+
+    lines.append("")
+    lines.append("PER-CLASS MULTICLASS METRICS")
     for i, lab in enumerate(labels):
-        print(
+        lines.append(
             f"Class {lab}: "
             f"support={int(multiclass_metrics['support'][i])}, "
-            f"precision={multiclass_metrics['per_class_precision'][i]:.4f}, "
-            f"recall={multiclass_metrics['per_class_recall'][i]:.4f}, "
-            f"f1={multiclass_metrics['per_class_f1'][i]:.4f}"
+            f"precision={fmt_float(multiclass_metrics['per_class_precision'][i])}, "
+            f"recall={fmt_float(multiclass_metrics['per_class_recall'][i])}, "
+            f"f1={fmt_float(multiclass_metrics['per_class_f1'][i])}"
         )
+
+    return "\n".join(lines)
+
+
+def print_aggregate_report(
+    agg: AggregateMetrics,
+    global_binary_metrics: bool = False,
+) -> str:
+    """
+    Print final global and averaged evaluation report and also return it as text.
+    """
+    report_text = build_aggregate_report_text(
+        agg=agg,
+        global_binary_metrics=global_binary_metrics,
+    )
+    print(report_text)
+    return report_text
+
+
+def write_summary_text(summary_path: Path, report_text: str) -> None:
+    summary_path = Path(summary_path).expanduser().resolve()
+    if summary_path.parent and not summary_path.parent.exists():
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(report_text.rstrip() + "\n")
+
+    print(f"\nClean summary written to: {summary_path}")
 
 
 # ======================================================================================
@@ -1019,28 +1052,28 @@ def process_record(
     # tik OFF režime jo etapai išjungti config'e.
     res_denoising = bundle.denoising_pipe.run(x, gaps_indices=[])
 
-    noise_stats = dict(calc_noise_stats_from_denoised_result(res_denoising) or {})
-
-    out = int(noise_stats.get("out", 0) or 0)
-    rdr = int(noise_stats.get("rdr", 0) or 0)
-    mra = int(noise_stats.get("mra", 0) or 0)
+    raw_noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
     n_samples = int(np.asarray(x).size)
+    out = int(raw_noise_stats.get("out", 0) or 0)
+    rdr = int(raw_noise_stats.get("rdr", 0) or 0)
+    mra = int(raw_noise_stats.get("mra", 0) or 0)
     total_noise_samples = out + rdr + mra
-    tp_pct = (total_noise_samples / n_samples * 100.0) if n_samples > 0 else 0.0
+    tp_pct = (100.0 * total_noise_samples / n_samples) if n_samples > 0 else 0.0
 
+    noise_stats = dict(raw_noise_stats)
     noise_stats["out"] = out
     noise_stats["rdr"] = rdr
     noise_stats["mra"] = mra
+    noise_stats["tp_pct"] = tp_pct
     noise_stats["total_noise_samples"] = total_noise_samples
     noise_stats["n_samples"] = n_samples
-    noise_stats["tp_pct"] = tp_pct
 
     print(
         f"Noise stats for {rec.ecg_path.name}: "
-        f"out={out}, "
-        f"rdr={rdr}, "
-        f"mra={mra}, "
-        f"tp_pct={tp_pct:.1f} "
+        f"out={noise_stats.get('out')}, "
+        f"rdr={noise_stats.get('rdr')}, "
+        f"mra={noise_stats.get('mra')}, "
+        f"tp_pct={noise_stats.get('tp_pct', 0.0):.1f} "
         f"{mode_suffix(bundle.mode)}"
     )
     print()
@@ -1170,6 +1203,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Reduce verbose diagnostic output during evaluation.",
     )
+    ap.add_argument(
+        "--summary-out",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Optional path to a clean summary text file.",
+    )
 
     return ap
 
@@ -1183,6 +1223,9 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
 
     if args.exclude_list is not None:
         args.exclude_list = Path(args.exclude_list).expanduser().resolve()
+
+    if args.summary_out is not None:
+        args.summary_out = Path(args.summary_out).expanduser().resolve()
 
     if not args.dir.exists() or not args.dir.is_dir():
         parser.error(f"--dir must be an existing directory: {args.dir}")
@@ -1229,6 +1272,58 @@ def format_elapsed_minutes(seconds: float) -> str:
     return f"{minutes:.1f} min"
 
 
+
+def build_summary_header_text(
+    args: argparse.Namespace,
+    mode: DenoisingMode,
+    scan_summary: Any,
+    n_records_returned: int,
+) -> str:
+    """
+    Build the initial parameter block for the clean summary file.
+    """
+    lines: List[str] = []
+
+    lines.append("ECTOPIC BEAT DETECTION EVALUATION")
+    lines.append("=" * 90)
+    lines.append(f"Input directory          : {args.dir}")
+    lines.append(f"Exclude list             : {args.exclude_list}")
+    lines.append(f"Denoising config         : {args.cfg_denoising}")
+    lines.append(f"UNet model directory     : {args.unet_model_dir}")
+    lines.append(f"Ectopy config            : {args.cfg_ectopy}")
+    lines.append(f"Ectopy model directory   : {args.ectopy_model_dir}")
+    lines.append(f"Sampling frequency       : {args.fs} Hz")
+    lines.append(f"Matching tolerance       : {args.tolerance} samples")
+    lines.append(f"Keep U class             : {args.keep_u_class}")
+    lines.append(f"Process all records      : {args.all_records}")
+    lines.append(f"Quiet mode               : {args.quiet}")
+    lines.append(f"Global binary metrics    : {args.global_binary_metrics}")
+    lines.append(f"Summary output           : {args.summary_out}")
+    lines.append(f"Denoising mode           : {mode.value}")
+
+    if mode == DenoisingMode.FULL:
+        lines.append("CASE 3: denoising pipeline is ENABLED, including motions detection.")
+    elif mode == DenoisingMode.NO_MOTIONS:
+        lines.append("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
+    else:
+        lines.append("CASE 1: denoising pipeline is DISABLED.")
+        lines.append(
+            "        Safe mode: the pipeline will still run with outliers, rdropouts, "
+            "and motions detection disabled,"
+        )
+        lines.append(
+            "        so the ectopy pipeline receives the same type of input object."
+        )
+
+    lines.append("=" * 90)
+    lines.append(f"total_json       : {scan_summary.total_json}")
+    lines.append(f"excluded         : {scan_summary.excluded}")
+    lines.append(f"matched          : {scan_summary.matched}")
+    lines.append(f"unmatched_json   : {scan_summary.unmatched_json}")
+    lines.append(f"records returned : {n_records_returned}")
+
+    return "\n".join(lines)
+
 # ======================================================================================
 #                                        MAIN
 # ======================================================================================
@@ -1254,6 +1349,7 @@ def main() -> None:
     print(f"Process all records      : {args.all_records}")
     print(f"Quiet mode               : {args.quiet}")
     print(f"Global binary metrics    : {args.global_binary_metrics}")
+    print(f"Summary output           : {args.summary_out}")
     print(f"Denoising mode           : {mode.value}")
     print_denoising_case(mode)
     print("=" * 90)
@@ -1274,6 +1370,13 @@ def main() -> None:
     print(f"matched          : {summary.matched}")
     print(f"unmatched_json   : {summary.unmatched_json}")
     print(f"records returned : {len(records)}")
+
+    summary_header_text = build_summary_header_text(
+        args=args,
+        mode=mode,
+        scan_summary=summary,
+        n_records_returned=len(records),
+    )
 
     bundle = prepare_pipelines(args)
     agg = AggregateMetrics()
@@ -1297,13 +1400,15 @@ def main() -> None:
             print(
                 f"{record_nr}/{len(records_to_process)} | "
                 f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
-                f"elapsed: {elapsed_from_start_min}"
+                f"elapsed: {elapsed_from_start_min}",
+                flush=True,
             )
         else:
             print(
                 f"{record_nr}/{len(records_to_process)} | "
                 f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
-                f"elapsed: {elapsed_from_start_min}"
+                f"elapsed: {elapsed_from_start_min}",
+                flush=True,
             )
 
         if rec.ecg_path is None:
@@ -1321,8 +1426,8 @@ def main() -> None:
             )
 
             noise_stats = results["noise_stats"]
+            n_samples = int(results.get("n_samples", 0) or 0)
             ectopy_stats = results["ectopy_stats"]
-            n_samples = int(results["n_samples"])
             res_denoising = results["res_denoising"]
             res_ectopy = results["res_ectopy"]
 
@@ -1358,11 +1463,148 @@ def main() -> None:
     print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
     print("=" * 90)
 
-    print_aggregate_report(
+    report_text = print_aggregate_report(
         agg,
         global_binary_metrics=args.global_binary_metrics,
     )
 
+    full_summary_text = summary_header_text + "\n" + report_text
+
+    if args.summary_out is not None:
+        write_summary_text(args.summary_out, full_summary_text)
+
 
 if __name__ == "__main__":
     main()
+    
+# def main() -> None:
+#     parser = build_arg_parser()
+#     args = validate_args(parser.parse_args(), parser)
+
+#     mode = get_denoising_mode(args.denoising, args.disable_motions)
+
+#     print("=" * 90)
+#     print("ECTOPIC BEAT DETECTION EVALUATION")
+#     print("=" * 90)
+#     print(f"Input directory          : {args.dir}")
+#     print(f"Exclude list             : {args.exclude_list}")
+#     print(f"Denoising config         : {args.cfg_denoising}")
+#     print(f"UNet model directory     : {args.unet_model_dir}")
+#     print(f"Ectopy config            : {args.cfg_ectopy}")
+#     print(f"Ectopy model directory   : {args.ectopy_model_dir}")
+#     print(f"Sampling frequency       : {args.fs} Hz")
+#     print(f"Matching tolerance       : {args.tolerance} samples")
+#     print(f"Keep U class             : {args.keep_u_class}")
+#     print(f"Process all records      : {args.all_records}")
+#     print(f"Quiet mode               : {args.quiet}")
+#     print(f"Global binary metrics    : {args.global_binary_metrics}")
+#     print(f"Summary output           : {args.summary_out}")
+#     print(f"Denoising mode           : {mode.value}")
+#     print_denoising_case(mode)
+#     print("=" * 90)
+
+#     src = args.dir
+
+#     scan_result = list_ecg_records(
+#         folder=src,
+#         data_format="auto",
+#         exclude_list=args.exclude_list,
+#     )
+
+#     records = scan_result.records
+#     summary = scan_result.summary
+
+#     print(f"total_json       : {summary.total_json}")
+#     print(f"excluded         : {summary.excluded}")
+#     print(f"matched          : {summary.matched}")
+#     print(f"unmatched_json   : {summary.unmatched_json}")
+#     print(f"records returned : {len(records)}")
+
+#     bundle = prepare_pipelines(args)
+#     agg = AggregateMetrics()
+
+#     records_to_process = records if args.all_records else records[:5]
+
+#     print(f"\nFound {len(records)} matched records")
+#     print(f"Processing {len(records_to_process)} record(s)")
+
+#     total_cycle_start = time.perf_counter()
+#     record_nr = 0
+
+#     for rec in records_to_process:
+#         print("\n" + "-" * 90)
+#         record_nr += 1
+
+#         elapsed_from_start_s = time.perf_counter() - total_cycle_start
+#         elapsed_from_start_min = format_elapsed_minutes(elapsed_from_start_s)
+
+#         if rec.ecg_path is not None:
+#             print(
+#                 f"{record_nr}/{len(records_to_process)} | "
+#                 f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
+#                 f"elapsed: {elapsed_from_start_min}"
+#             )
+#         else:
+#             print(
+#                 f"{record_nr}/{len(records_to_process)} | "
+#                 f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
+#                 f"elapsed: {elapsed_from_start_min}"
+#             )
+
+#         if rec.ecg_path is None:
+#             msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
+#             print(msg)
+#             continue
+
+#         metadata: Dict[str, Any] = read_json_file(rec.json_path)
+
+#         try:
+#             results = process_record(
+#                 rec=rec,
+#                 bundle=bundle,
+#                 fs=args.fs,
+#             )
+
+#             noise_stats = results["noise_stats"]
+#             ectopy_stats = results["ectopy_stats"]
+#             res_denoising = results["res_denoising"]
+#             res_ectopy = results["res_ectopy"]
+
+#             eval_res = evaluate_ectopy_classification_against_annotations(
+#                 res_denoising=res_denoising,
+#                 res_ectopy=res_ectopy,
+#                 json_path=rec.json_path,
+#                 fs=args.fs,
+#                 tolerance=args.tolerance,
+#                 drop_annot_u=not args.keep_u_class,
+#                 verbose=not args.quiet,
+#             )
+
+#             df_matched = eval_res["df_matched"]
+#             df_unmatched = eval_res["df_unmatched"]
+
+#             update_aggregate_metrics(agg, eval_res)
+
+#             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
+
+#         except Exception as exc:
+#             agg.n_records_failed_eval += 1
+#             print(f"WARN: failed processing for {rec.ecg_path.name}: {exc}")
+#             continue
+
+#     total_cycle_elapsed_s = time.perf_counter() - total_cycle_start
+#     print("\n" + "=" * 90)
+#     print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
+#     print("=" * 90)
+
+#     report_text = print_aggregate_report(
+#         agg,
+#         global_binary_metrics=args.global_binary_metrics,
+#     )
+
+#     if args.summary_out is not None:
+#         write_summary_text(args.summary_out, report_text)
+
+
+# if __name__ == "__main__":
+#     main()

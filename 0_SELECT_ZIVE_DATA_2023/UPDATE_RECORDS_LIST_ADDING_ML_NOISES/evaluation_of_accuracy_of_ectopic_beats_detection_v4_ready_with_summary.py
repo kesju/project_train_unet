@@ -145,11 +145,11 @@ def get_denoising_mode(denoising: bool, disable_motions: bool) -> DenoisingMode:
 
 def print_denoising_case(mode: DenoisingMode) -> None:
     if mode == DenoisingMode.FULL:
-        print("CASE 1: denoising pipeline is ENABLED, including motions detection.")
+        print("CASE 3: denoising pipeline is ENABLED, including motions detection.")
     elif mode == DenoisingMode.NO_MOTIONS:
         print("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
     else:
-        print("CASE 3: denoising pipeline is DISABLED.")
+        print("CASE 1: denoising pipeline is DISABLED.")
         print(
             "        Safe mode: the pipeline will still run with outliers, rdropouts, "
             "and motions detection disabled,"
@@ -1252,11 +1252,11 @@ def build_summary_header_text(
     lines.append(f"Denoising mode           : {mode.value}")
 
     if mode == DenoisingMode.FULL:
-        lines.append("CASE 1: denoising pipeline is ENABLED, including motions detection.")
+        lines.append("CASE 3: denoising pipeline is ENABLED, including motions detection.")
     elif mode == DenoisingMode.NO_MOTIONS:
         lines.append("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
     else:
-        lines.append("CASE 3: denoising pipeline is DISABLED.")
+        lines.append("CASE 1: denoising pipeline is DISABLED.")
         lines.append(
             "        Safe mode: the pipeline will still run with outliers, rdropouts, "
             "and motions detection disabled,"
