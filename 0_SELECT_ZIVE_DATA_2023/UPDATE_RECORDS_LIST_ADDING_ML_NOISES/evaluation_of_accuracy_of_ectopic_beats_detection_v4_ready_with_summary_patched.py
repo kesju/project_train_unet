@@ -130,12 +130,17 @@ class AggregateMetrics:
     per_record_sensitivity: List[float] = field(default_factory=list)
     per_record_specificity: List[float] = field(default_factory=list)
 
-    # Global noise statistics
+    # Noise statistics aggregated across records
     total_out: int = 0
     total_rdr: int = 0
     total_mra: int = 0
+
+    total_out_samples: int = 0
+    total_rdr_samples: int = 0
+    total_mra_samples: int = 0
     total_noise_samples: int = 0
     total_samples: int = 0
+    per_record_tp_pct: List[float] = field(default_factory=list)
 
 
 # ======================================================================================
@@ -179,6 +184,183 @@ def safe_mean(values: List[float]) -> float:
     if not vals:
         return float("nan")
     return float(np.mean(vals))
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except Exception:
+        return default
+
+
+def _intervals_total_samples(intervals: Any) -> int:
+    """
+    Sum interval lengths in samples from many possible interval representations.
+
+    Supported forms include:
+    - [(start, end), ...]
+    - [{'start': s, 'end': e}, ...]
+    - [{'startIndex': s, 'endIndex': e}, ...]
+    - DataFrame with start/end-like columns
+
+    Length is treated as inclusive: end - start + 1.
+    Invalid intervals are skipped.
+    """
+    if intervals is None:
+        return 0
+
+    if isinstance(intervals, pd.DataFrame):
+        candidate_pairs = [
+            ("start", "end"),
+            ("start_idx", "end_idx"),
+            ("startIndex", "endIndex"),
+            ("from", "to"),
+            ("begin", "finish"),
+        ]
+        for c_start, c_end in candidate_pairs:
+            if c_start in intervals.columns and c_end in intervals.columns:
+                total = 0
+                for s, e in zip(intervals[c_start].tolist(), intervals[c_end].tolist()):
+                    try:
+                        s_i = int(s)
+                        e_i = int(e)
+                    except Exception:
+                        continue
+                    if e_i >= s_i:
+                        total += e_i - s_i + 1
+                return total
+        return 0
+
+    if not isinstance(intervals, (list, tuple)):
+        return 0
+
+    total = 0
+    for item in intervals:
+        start = end = None
+        if isinstance(item, dict):
+            for s_key, e_key in [
+                ("start", "end"),
+                ("start_idx", "end_idx"),
+                ("startIndex", "endIndex"),
+                ("from", "to"),
+                ("begin", "finish"),
+            ]:
+                if s_key in item and e_key in item:
+                    start = item[s_key]
+                    end = item[e_key]
+                    break
+        elif isinstance(item, (list, tuple)) and len(item) >= 2:
+            start, end = item[0], item[1]
+
+        if start is None or end is None:
+            continue
+        try:
+            s_i = int(start)
+            e_i = int(end)
+        except Exception:
+            continue
+        if e_i >= s_i:
+            total += e_i - s_i + 1
+    return total
+
+
+def normalize_noise_stats(noise_stats_raw: Dict[str, Any], all_samples: int) -> Dict[str, Any]:
+    """
+    Normalize noise stats while keeping interval counts separate from sample counts.
+
+    Conventions after normalization:
+    - out, rdr, mra -> interval counts
+    - out_samples, rdr_samples, mra_samples -> sample counts
+    - tp_pct -> percent of noisy samples among all samples
+    """
+    stats = dict(noise_stats_raw or {})
+
+    def pick_interval_count(prefix: str) -> int:
+        explicit_keys = [
+            prefix,
+            f"{prefix}_count",
+            f"{prefix}_cnt",
+            f"{prefix}_interval_count",
+            f"{prefix}_intervals_count",
+        ]
+        for key in explicit_keys:
+            value = stats.get(key)
+            if value is not None and not isinstance(value, (list, tuple, pd.DataFrame, dict)):
+                return _safe_int(value, 0)
+
+        interval_keys = [
+            f"{prefix}_intervals",
+            f"{prefix}_ranges",
+            f"{prefix}_segments",
+            f"{prefix}_marks",
+        ]
+        for key in interval_keys:
+            value = stats.get(key)
+            if isinstance(value, (list, tuple, pd.DataFrame)):
+                return len(value)
+        return 0
+
+    def pick_sample_count(prefix: str) -> int:
+        explicit_keys = [
+            f"{prefix}_samples",
+            f"{prefix}_sample",
+            f"{prefix}_sample_count",
+            f"{prefix}_len",
+            f"{prefix}_length",
+            f"{prefix}_n_samples",
+        ]
+        for key in explicit_keys:
+            value = stats.get(key)
+            if value is not None and not isinstance(value, (list, tuple, pd.DataFrame, dict)):
+                return _safe_int(value, 0)
+
+        interval_keys = [
+            f"{prefix}_intervals",
+            f"{prefix}_ranges",
+            f"{prefix}_segments",
+            f"{prefix}_marks",
+        ]
+        for key in interval_keys:
+            value = stats.get(key)
+            if isinstance(value, (list, tuple, pd.DataFrame)):
+                total = _intervals_total_samples(value)
+                if total > 0:
+                    return total
+        return 0
+
+    out = pick_interval_count("out")
+    rdr = pick_interval_count("rdr")
+    mra = pick_interval_count("mra")
+
+    out_samples = pick_sample_count("out")
+    rdr_samples = pick_sample_count("rdr")
+    mra_samples = pick_sample_count("mra")
+
+    all_noise_samples = out_samples + rdr_samples + mra_samples
+
+    tp_samples = stats.get("tp_samples", None)
+    if tp_samples is not None:
+        all_noise_samples = _safe_int(tp_samples, all_noise_samples)
+
+    n_start = stats.get("n_start", None)
+    if n_start is not None and int(n_start) > 0:
+        all_samples = int(n_start)
+
+    tp_pct = (100.0 * all_noise_samples / all_samples) if all_samples > 0 else 0.0
+
+    stats["out"] = out
+    stats["rdr"] = rdr
+    stats["mra"] = mra
+    stats["out_samples"] = out_samples
+    stats["rdr_samples"] = rdr_samples
+    stats["rdr_sample"] = rdr_samples
+    stats["mra_samples"] = mra_samples
+    stats["all_noise_samples"] = all_noise_samples
+    stats["all_samples"] = int(all_samples)
+    stats["tp_pct"] = float(tp_pct)
+    return stats
 
 
 # ======================================================================================
@@ -779,7 +961,6 @@ def update_aggregate_metrics(
     agg: AggregateMetrics,
     eval_res: Dict[str, Any],
     noise_stats: Optional[Dict[str, Any]] = None,
-    n_samples: Optional[int] = None,
 ) -> None:
     """
     Update global accumulator with one record's evaluation results.
@@ -812,17 +993,33 @@ def update_aggregate_metrics(
     agg.per_record_sensitivity.append(binary_metrics["sensitivity"])
     agg.per_record_specificity.append(binary_metrics["specificity"])
 
-    noise_stats = noise_stats or {}
-    out = int(noise_stats.get("out", 0) or 0)
-    rdr = int(noise_stats.get("rdr", 0) or 0)
-    mra = int(noise_stats.get("mra", 0) or 0)
-    total_noise = out + rdr + mra
+    if noise_stats is not None:
+        out = _safe_int(noise_stats.get("out"), 0)
+        rdr = _safe_int(noise_stats.get("rdr"), 0)
+        mra = _safe_int(noise_stats.get("mra"), 0)
+        out_samples = _safe_int(noise_stats.get("out_samples"), 0)
+        rdr_samples = _safe_int(noise_stats.get("rdr_samples", noise_stats.get("rdr_sample")), 0)
+        mra_samples = _safe_int(noise_stats.get("mra_samples"), 0)
+        total_noise_samples = _safe_int(
+            noise_stats.get("all_noise_samples"),
+            out_samples + rdr_samples + mra_samples,
+        )
+        total_samples = _safe_int(noise_stats.get("all_samples"), 0)
+        tp_pct = noise_stats.get("tp_pct", float("nan"))
+        try:
+            tp_pct = float(tp_pct)
+        except Exception:
+            tp_pct = float("nan")
 
-    agg.total_out += out
-    agg.total_rdr += rdr
-    agg.total_mra += mra
-    agg.total_noise_samples += total_noise
-    agg.total_samples += int(n_samples or 0)
+        agg.total_out += out
+        agg.total_rdr += rdr
+        agg.total_mra += mra
+        agg.total_out_samples += out_samples
+        agg.total_rdr_samples += rdr_samples
+        agg.total_mra_samples += mra_samples
+        agg.total_noise_samples += total_noise_samples
+        agg.total_samples += total_samples
+        agg.per_record_tp_pct.append(tp_pct)
 
 
 def fmt_float(x: float) -> str:
@@ -855,20 +1052,6 @@ def build_aggregate_report_text(
     lines.append(f"Total matched rows         : {agg.total_matched_rows}")
     lines.append(f"Total unmatched rows       : {agg.total_unmatched_rows}")
     lines.append(f"Total removed annot==3     : {agg.total_removed_u_rows}")
-
-    tp_pct = (
-        100.0 * agg.total_noise_samples / agg.total_samples
-        if agg.total_samples > 0 else float("nan")
-    )
-
-    lines.append("")
-    lines.append("NOISE STATISTICS")
-    lines.append(f"out                       : {agg.total_out}")
-    lines.append(f"rdr                       : {agg.total_rdr}")
-    lines.append(f"mra                       : {agg.total_mra}")
-    lines.append(f"all noise samples         : {agg.total_noise_samples}")
-    lines.append(f"all samples               : {agg.total_samples}")
-    lines.append(f"tp_pct                    : {fmt_float(tp_pct)}")
 
     if global_binary_metrics:
         global_binary = compute_binary_confusion_and_metrics(
@@ -946,6 +1129,25 @@ def build_aggregate_report_text(
             f"recall={fmt_float(multiclass_metrics['per_class_recall'][i])}, "
             f"f1={fmt_float(multiclass_metrics['per_class_f1'][i])}"
         )
+
+    global_tp_pct = (
+        100.0 * agg.total_noise_samples / agg.total_samples
+        if agg.total_samples > 0 else float("nan")
+    )
+    mean_tp_pct = safe_mean(agg.per_record_tp_pct)
+
+    lines.append("")
+    lines.append("NOISE STATISTICS")
+    lines.append(f"Total out intervals      : {agg.total_out}")
+    lines.append(f"Total rdr intervals      : {agg.total_rdr}")
+    lines.append(f"Total mra intervals      : {agg.total_mra}")
+    lines.append(f"Total out samples        : {agg.total_out_samples}")
+    lines.append(f"Total rdr samples        : {agg.total_rdr_samples}")
+    lines.append(f"Total mra samples        : {agg.total_mra_samples}")
+    lines.append(f"Total noise samples      : {agg.total_noise_samples}")
+    lines.append(f"Total samples            : {agg.total_samples}")
+    lines.append(f"tp_pct global (%)        : {fmt_float(global_tp_pct)}")
+    lines.append(f"tp_pct mean per record   : {fmt_float(mean_tp_pct)}")
 
     return "\n".join(lines)
 
@@ -1052,27 +1254,18 @@ def process_record(
     # tik OFF režime jo etapai išjungti config'e.
     res_denoising = bundle.denoising_pipe.run(x, gaps_indices=[])
 
-    raw_noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
-    n_samples = int(np.asarray(x).size)
-    out = int(raw_noise_stats.get("out", 0) or 0)
-    rdr = int(raw_noise_stats.get("rdr", 0) or 0)
-    mra = int(raw_noise_stats.get("mra", 0) or 0)
-    total_noise_samples = out + rdr + mra
-    tp_pct = (100.0 * total_noise_samples / n_samples) if n_samples > 0 else 0.0
-
-    noise_stats = dict(raw_noise_stats)
-    noise_stats["out"] = out
-    noise_stats["rdr"] = rdr
-    noise_stats["mra"] = mra
-    noise_stats["tp_pct"] = tp_pct
-    noise_stats["total_noise_samples"] = total_noise_samples
-    noise_stats["n_samples"] = n_samples
+    noise_stats_raw = calc_noise_stats_from_denoised_result(res_denoising) or {}
+    all_samples = int(np.asarray(x).size)
+    noise_stats = normalize_noise_stats(noise_stats_raw, all_samples=all_samples)
 
     print(
         f"Noise stats for {rec.ecg_path.name}: "
         f"out={noise_stats.get('out')}, "
         f"rdr={noise_stats.get('rdr')}, "
         f"mra={noise_stats.get('mra')}, "
+        f"out_samples={noise_stats.get('out_samples')}, "
+        f"rdr_samples={noise_stats.get('rdr_samples')}, "
+        f"mra_samples={noise_stats.get('mra_samples')}, "
         f"tp_pct={noise_stats.get('tp_pct', 0.0):.1f} "
         f"{mode_suffix(bundle.mode)}"
     )
@@ -1088,7 +1281,7 @@ def process_record(
 
     return {
         "signal": x,
-        "n_samples": n_samples,
+        "n_samples": all_samples,
         "res_denoising": res_denoising,
         "noise_stats": noise_stats,
         "res_ectopy": res_ectopy,
@@ -1426,7 +1619,6 @@ def main() -> None:
             )
 
             noise_stats = results["noise_stats"]
-            n_samples = int(results.get("n_samples", 0) or 0)
             ectopy_stats = results["ectopy_stats"]
             res_denoising = results["res_denoising"]
             res_ectopy = results["res_ectopy"]
@@ -1444,12 +1636,7 @@ def main() -> None:
             df_matched = eval_res["df_matched"]
             df_unmatched = eval_res["df_unmatched"]
 
-            update_aggregate_metrics(
-                agg,
-                eval_res,
-                noise_stats=noise_stats,
-                n_samples=n_samples,
-            )
+            update_aggregate_metrics(agg, eval_res, noise_stats=noise_stats)
 
             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
 
@@ -1583,7 +1770,7 @@ if __name__ == "__main__":
 #             df_matched = eval_res["df_matched"]
 #             df_unmatched = eval_res["df_unmatched"]
 
-#             update_aggregate_metrics(agg, eval_res)
+#             update_aggregate_metrics(agg, eval_res, noise_stats=noise_stats)
 
 #             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
 
