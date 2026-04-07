@@ -1,64 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# chmod +x evaluation_of_accuracy_of_ectopic_beats_detection_GUNDAS.sh
 
-# +++++++++++++++++++++++  GUNDAS +++++++++++++++++++++++
-# Never leave \ on the last active argument line !!!.
+# This script evaluates the accuracy of ectopic beat detection using the GUNDAS method, 
+# with logs and a summary output.
+# chmod +x evaluation_of_accuracy_of_ectopic_beats_detection_GUNDAS_with_logs.sh
 
+export TF_CPP_MIN_LOG_LEVEL=2
 
-# # Testavimui trumpam
-# python evaluation_of_accuracy_of_ectopic_beats_detection_v5.py \
-#   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test" \
-#   --exclude-list "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
-#   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
-#   --unet-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET//MODEL_UNET \
-#   --denoising \
-#   --cfg-ectopy "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
-#   --ectopy-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
-#   --fs 200
+RESULTS_DIR="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/results"
+mkdir -p "$RESULTS_DIR"
 
-# --disable-motions
-# --out "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
-# --quiet \ - kol kas nenaudojamas
-# --all-records \
-# action="store_true",
-# help="Process all records. By default only first 5 records are processed.",
+STAMP="$(date +%Y%m%d_%H%M%S)"
+LOG_FILE="$RESULTS_DIR/evaluation_GUNDAS_${STAMP}.log"
+SUMMARY_FILE="$RESULTS_DIR/evaluation_GUNDAS_${STAMP}_summary.txt"
 
-# Galimi 3 variantai:
-# 1) --denoising (įjungia visą denoising pipeline, įskaitant motions etapą, t.y. bus atliekamas triukšmo mažinimas
-#     ir judesių artefktų šalinimo operacijos)
-# 2) --denoising + --disable-motions (visiškai išjungia motions etapą, t.y. nebus atliekama jokių judesių artefktų 
-#     šalinimo operacijų, bet bus atliekamas triukšmo mažinimas)
-# 3) Nėra --denoising (visiškai išjungia denoising pipeline, t.y. nebus atliekamas nei triukšmo mažinimas,
-#     nei judesių artefktų šalinimo operacijos)  
-
-
-# Testavimui ilgam
-python evaluation_of_accuracy_of_ectopic_beats_detection_v5.py \
+python evaluation_of_accuracy_of_ectopic_beats_detection_v4.py \
   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui" \
   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
-  --unet-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET//MODEL_UNET \
+  --unet-model-dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET" \
   --denoising \
   --disable-motions \
   --cfg-ectopy "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
-  --ectopy-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
+  --ectopy-model-dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN" \
   --fs 200 \
-  --quiet
+  --quiet \
+  --summary-out "$SUMMARY_FILE"
+  > 2>&1 | tee "$LOG_FILE"
+  
+echo "Done."
+echo "Full log    : $LOG_FILE"
+echo "Clean summary: $SUMMARY_FILE"
 
-  # --exclude-list "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
-
-
-
-# VISI ANOTUOTI IRASAI
-# python evaluation_of_accuracy_of_ectopic_beats_detection_v5.py \
-#   --dir "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys" \
-#   ----exclude-list "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/2_TRAIN_UNET/ecg_selected_for_test/exclude_list.txt" \
-#   --cfg-denoising "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \
-#   --unet-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_UNET \
-#   # --denoising \
-# --cfg-ectopy "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/ectopy_config.yaml" \
-# --ectopy-model-dir /home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/MODEL_VU_CNN \
-# --fs 200 \
-#   # --out "/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/DuomenysTestui/zive_irasai_testui_added_ml_noise.xlsx"  
-#   # --quiet
-
+  # --all-records \
+  # --global-binary-metrics

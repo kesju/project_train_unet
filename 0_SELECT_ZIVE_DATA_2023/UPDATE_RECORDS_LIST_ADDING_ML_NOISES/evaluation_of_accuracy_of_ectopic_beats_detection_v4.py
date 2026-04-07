@@ -9,6 +9,7 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 import argparse
+import time
 import numpy as np
 import pandas as pd
 
@@ -36,7 +37,7 @@ try:
 except Exception:
     check_denoising_config = None
 
-from record_noise_stats import calc_noise_stats_from_denoised_result
+from record_noise_stats_v1 import calc_noise_stats_from_denoised_result
 
 try:
     from ecg_ectopy_pipeline import (
@@ -129,6 +130,18 @@ class AggregateMetrics:
     per_record_sensitivity: List[float] = field(default_factory=list)
     per_record_specificity: List[float] = field(default_factory=list)
 
+    # Noise statistics aggregated across records
+    total_out: int = 0
+    total_rdr: int = 0
+    total_mra: int = 0
+
+    total_out_samples: int = 0
+    total_rdr_samples: int = 0
+    total_mra_samples: int = 0
+    total_noise_samples: int = 0
+    total_samples: int = 0
+    per_record_tp_pct: List[float] = field(default_factory=list)
+
 
 # ======================================================================================
 #                              PAGALBINĖS FUNKCIJOS
@@ -144,25 +157,26 @@ def get_denoising_mode(denoising: bool, disable_motions: bool) -> DenoisingMode:
 
 def print_denoising_case(mode: DenoisingMode) -> None:
     if mode == DenoisingMode.FULL:
-        print("CASE 1: denoising pipeline is ENABLED, including motions stage.")
+        print("CASE 3: denoising pipeline is ENABLED, including motions detection.")
     elif mode == DenoisingMode.NO_MOTIONS:
-        print("CASE 2: denoising pipeline is ENABLED, but motions stage is DISABLED.")
+        print("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
     else:
-        print("CASE 3: denoising pipeline is DISABLED.")
+        print("CASE 1: denoising pipeline is DISABLED.")
         print(
-            "        Safe mode: pipeline will still run with outliers/rdropouts/motions disabled,"
+            "        Safe mode: the pipeline will still run with outliers, rdropouts, "
+            "and motions detection disabled,"
         )
         print(
-            "        so ectopy pipeline receives the same type of input object."
+            "        so the ectopy pipeline receives the same type of input object."
         )
 
 
 def mode_suffix(mode: DenoisingMode) -> str:
     if mode == DenoisingMode.FULL:
-        return "with enabled detecting motions"
+        return "with motions detection enabled"
     if mode == DenoisingMode.NO_MOTIONS:
-        return "with disabled detecting motions"
-    return "with disabled denoising"
+        return "with motions detection disabled"
+    return "with denoising disabled"
 
 
 def safe_mean(values: List[float]) -> float:
@@ -170,6 +184,183 @@ def safe_mean(values: List[float]) -> float:
     if not vals:
         return float("nan")
     return float(np.mean(vals))
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except Exception:
+        return default
+
+
+def _intervals_total_samples(intervals: Any) -> int:
+    """
+    Sum interval lengths in samples from many possible interval representations.
+
+    Supported forms include:
+    - [(start, end), ...]
+    - [{'start': s, 'end': e}, ...]
+    - [{'startIndex': s, 'endIndex': e}, ...]
+    - DataFrame with start/end-like columns
+
+    Length is treated as inclusive: end - start + 1.
+    Invalid intervals are skipped.
+    """
+    if intervals is None:
+        return 0
+
+    if isinstance(intervals, pd.DataFrame):
+        candidate_pairs = [
+            ("start", "end"),
+            ("start_idx", "end_idx"),
+            ("startIndex", "endIndex"),
+            ("from", "to"),
+            ("begin", "finish"),
+        ]
+        for c_start, c_end in candidate_pairs:
+            if c_start in intervals.columns and c_end in intervals.columns:
+                total = 0
+                for s, e in zip(intervals[c_start].tolist(), intervals[c_end].tolist()):
+                    try:
+                        s_i = int(s)
+                        e_i = int(e)
+                    except Exception:
+                        continue
+                    if e_i >= s_i:
+                        total += e_i - s_i + 1
+                return total
+        return 0
+
+    if not isinstance(intervals, (list, tuple)):
+        return 0
+
+    total = 0
+    for item in intervals:
+        start = end = None
+        if isinstance(item, dict):
+            for s_key, e_key in [
+                ("start", "end"),
+                ("start_idx", "end_idx"),
+                ("startIndex", "endIndex"),
+                ("from", "to"),
+                ("begin", "finish"),
+            ]:
+                if s_key in item and e_key in item:
+                    start = item[s_key]
+                    end = item[e_key]
+                    break
+        elif isinstance(item, (list, tuple)) and len(item) >= 2:
+            start, end = item[0], item[1]
+
+        if start is None or end is None:
+            continue
+        try:
+            s_i = int(start)
+            e_i = int(end)
+        except Exception:
+            continue
+        if e_i >= s_i:
+            total += e_i - s_i + 1
+    return total
+
+
+def normalize_noise_stats(noise_stats_raw: Dict[str, Any], all_samples: int) -> Dict[str, Any]:
+    """
+    Normalize noise stats while keeping interval counts separate from sample counts.
+
+    Conventions after normalization:
+    - out, rdr, mra -> interval counts
+    - out_samples, rdr_samples, mra_samples -> sample counts
+    - tp_pct -> percent of noisy samples among all samples
+    """
+    stats = dict(noise_stats_raw or {})
+
+    def pick_interval_count(prefix: str) -> int:
+        explicit_keys = [
+            prefix,
+            f"{prefix}_count",
+            f"{prefix}_cnt",
+            f"{prefix}_interval_count",
+            f"{prefix}_intervals_count",
+        ]
+        for key in explicit_keys:
+            value = stats.get(key)
+            if value is not None and not isinstance(value, (list, tuple, pd.DataFrame, dict)):
+                return _safe_int(value, 0)
+
+        interval_keys = [
+            f"{prefix}_intervals",
+            f"{prefix}_ranges",
+            f"{prefix}_segments",
+            f"{prefix}_marks",
+        ]
+        for key in interval_keys:
+            value = stats.get(key)
+            if isinstance(value, (list, tuple, pd.DataFrame)):
+                return len(value)
+        return 0
+
+    def pick_sample_count(prefix: str) -> int:
+        explicit_keys = [
+            f"{prefix}_samples",
+            f"{prefix}_sample",
+            f"{prefix}_sample_count",
+            f"{prefix}_len",
+            f"{prefix}_length",
+            f"{prefix}_n_samples",
+        ]
+        for key in explicit_keys:
+            value = stats.get(key)
+            if value is not None and not isinstance(value, (list, tuple, pd.DataFrame, dict)):
+                return _safe_int(value, 0)
+
+        interval_keys = [
+            f"{prefix}_intervals",
+            f"{prefix}_ranges",
+            f"{prefix}_segments",
+            f"{prefix}_marks",
+        ]
+        for key in interval_keys:
+            value = stats.get(key)
+            if isinstance(value, (list, tuple, pd.DataFrame)):
+                total = _intervals_total_samples(value)
+                if total > 0:
+                    return total
+        return 0
+
+    out = pick_interval_count("out")
+    rdr = pick_interval_count("rdr")
+    mra = pick_interval_count("mra")
+
+    out_samples = pick_sample_count("out")
+    rdr_samples = pick_sample_count("rdr")
+    mra_samples = pick_sample_count("mra")
+
+    all_noise_samples = out_samples + rdr_samples + mra_samples
+
+    tp_samples = stats.get("tp_samples", None)
+    if tp_samples is not None:
+        all_noise_samples = _safe_int(tp_samples, all_noise_samples)
+
+    n_start = stats.get("n_start", None)
+    if n_start is not None and int(n_start) > 0:
+        all_samples = int(n_start)
+
+    tp_pct = (100.0 * all_noise_samples / all_samples) if all_samples > 0 else 0.0
+
+    stats["out"] = out
+    stats["rdr"] = rdr
+    stats["mra"] = mra
+    stats["out_samples"] = out_samples
+    stats["rdr_samples"] = rdr_samples
+    stats["rdr_sample"] = rdr_samples
+    stats["mra_samples"] = mra_samples
+    stats["all_noise_samples"] = all_noise_samples
+    stats["all_samples"] = int(all_samples)
+    stats["tp_pct"] = float(tp_pct)
+    return stats
 
 
 # ======================================================================================
@@ -769,6 +960,7 @@ def compute_multiclass_metrics_from_cm(cm: np.ndarray) -> Dict[str, Any]:
 def update_aggregate_metrics(
     agg: AggregateMetrics,
     eval_res: Dict[str, Any],
+    noise_stats: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Update global accumulator with one record's evaluation results.
@@ -801,101 +993,189 @@ def update_aggregate_metrics(
     agg.per_record_sensitivity.append(binary_metrics["sensitivity"])
     agg.per_record_specificity.append(binary_metrics["specificity"])
 
+    if noise_stats is not None:
+        out = _safe_int(noise_stats.get("out"), 0)
+        rdr = _safe_int(noise_stats.get("rdr"), 0)
+        mra = _safe_int(noise_stats.get("mra"), 0)
+        out_samples = _safe_int(noise_stats.get("out_samples"), 0)
+        rdr_samples = _safe_int(noise_stats.get("rdr_samples", noise_stats.get("rdr_sample")), 0)
+        mra_samples = _safe_int(noise_stats.get("mra_samples"), 0)
+        total_noise_samples = _safe_int(
+            noise_stats.get("all_noise_samples"),
+            out_samples + rdr_samples + mra_samples,
+        )
+        total_samples = _safe_int(noise_stats.get("all_samples"), 0)
+        tp_pct = noise_stats.get("tp_pct", float("nan"))
+        try:
+            tp_pct = float(tp_pct)
+        except Exception:
+            tp_pct = float("nan")
 
-def print_aggregate_report(
+        agg.total_out += out
+        agg.total_rdr += rdr
+        agg.total_mra += mra
+        agg.total_out_samples += out_samples
+        agg.total_rdr_samples += rdr_samples
+        agg.total_mra_samples += mra_samples
+        agg.total_noise_samples += total_noise_samples
+        agg.total_samples += total_samples
+        agg.per_record_tp_pct.append(tp_pct)
+
+
+def fmt_float(x: float) -> str:
+    if x is None:
+        return "nan"
+    try:
+        if np.isnan(x):
+            return "nan"
+    except Exception:
+        pass
+    return f"{x:.4f}"
+
+
+def build_aggregate_report_text(
     agg: AggregateMetrics,
     global_binary_metrics: bool = False,
-) -> None:
+) -> str:
     """
-    Print final global and averaged evaluation report.
+    Build final global and averaged evaluation report as a clean text block.
     """
-    print("\n" + "=" * 90)
-    print("BENDRA VERTINIMO SUVESTINĖ")
-    print("=" * 90)
+    lines: List[str] = []
 
-    print(f"Evaluated records          : {agg.n_records_evaluated}")
-    print(f"Failed evaluation records  : {agg.n_records_failed_eval}")
-    print(f"Total matched rows         : {agg.total_matched_rows}")
-    print(f"Total unmatched rows       : {agg.total_unmatched_rows}")
-    print(f"Total removed annot==3     : {agg.total_removed_u_rows}")
+    lines.append("")
+    lines.append("=" * 90)
+    lines.append("BENDRA VERTINIMO SUVESTINĖ")
+    lines.append("=" * 90)
 
-    # ---------------------------
-    # Global binary metrics
-    # ---------------------------
+    lines.append(f"Evaluated records          : {agg.n_records_evaluated}")
+    lines.append(f"Failed evaluation records  : {agg.n_records_failed_eval}")
+    lines.append(f"Total matched rows         : {agg.total_matched_rows}")
+    lines.append(f"Total unmatched rows       : {agg.total_unmatched_rows}")
+    lines.append(f"Total removed annot==3     : {agg.total_removed_u_rows}")
+
     if global_binary_metrics:
         global_binary = compute_binary_confusion_and_metrics(
             test_labels_bin=np.asarray(agg.all_test_labels_bin, dtype=int),
             pred_labels_bin=np.asarray(agg.all_pred_labels_bin, dtype=int),
         )
 
-        print("\nGLOBAL BINARY CONFUSION MATRIX")
-        print("Rows = true labels, Cols = predicted labels")
-        print("          Pred 0     Pred 1")
-        print(f"True 0    {global_binary['tn']:8d}   {global_binary['fp']:8d}")
-        print(f"True 1    {global_binary['fn']:8d}   {global_binary['tp']:8d}")
+        lines.append("")
+        lines.append("GLOBAL BINARY CONFUSION MATRIX")
+        lines.append("Rows = true labels, Cols = predicted labels")
+        lines.append("          Pred 0     Pred 1")
+        lines.append(f"True 0    {global_binary['tn']:8d}   {global_binary['fp']:8d}")
+        lines.append(f"True 1    {global_binary['fn']:8d}   {global_binary['tp']:8d}")
 
-        print("\nGLOBAL BINARY METRICS")
-        print(f"Accuracy    : {global_binary['accuracy']:.4f}")
-        print(f"Sensitivity : {global_binary['sensitivity']:.4f}")
-        print(f"Specificity : {global_binary['specificity']:.4f}")
-        print(f"Precision   : {global_binary['precision']:.4f}")
+        lines.append("")
+        lines.append("GLOBAL BINARY METRICS")
+        lines.append(f"Accuracy    : {fmt_float(global_binary['accuracy'])}")
+        lines.append(f"Sensitivity : {fmt_float(global_binary['sensitivity'])}")
+        lines.append(f"Specificity : {fmt_float(global_binary['specificity'])}")
+        lines.append(f"Precision   : {fmt_float(global_binary['precision'])}")
 
-    # ---------------------------
-    # Mean per-record binary metrics
-    # ---------------------------
     mean_acc = safe_mean(agg.per_record_accuracy)
     mean_sens = safe_mean(agg.per_record_sensitivity)
     mean_spec = safe_mean(agg.per_record_specificity)
 
-    print("\nMEAN PER-RECORD BINARY METRICS")
-    print(f"Mean accuracy    : {mean_acc:.4f}")
-    print(f"Mean sensitivity : {mean_sens:.4f}")
-    print(f"Mean specificity : {mean_spec:.4f}")
+    lines.append("")
+    lines.append("MEAN PER-RECORD BINARY METRICS")
+    lines.append(f"Mean accuracy    : {fmt_float(mean_acc)}")
+    lines.append(f"Mean sensitivity : {fmt_float(mean_sens)}")
+    lines.append(f"Mean specificity : {fmt_float(mean_spec)}")
 
-    # ---------------------------
-    # Global multiclass confusion matrix
-    # ---------------------------
     multiclass = build_multiclass_confusion_matrix(
         test_labels=np.asarray(agg.all_test_labels, dtype=int),
         pred_labels=np.asarray(agg.all_pred_labels, dtype=int),
-        labels=[0, 1, 2],   # po annot==3 pašalinimo dažniausiai lieka N,S,V
+        labels=[0, 1, 2],
     )
     labels = multiclass["labels"]
     cm = multiclass["matrix"]
-
-    print("\nGLOBAL MULTICLASS SUMMARY")
     multiclass_metrics = compute_multiclass_metrics_from_cm(cm)
-    print(f"Accuracy:  {multiclass_metrics['accuracy']:.4f}")
-    print(f"Precision: {multiclass_metrics['precision_macro']:.4f}")
-    print(f"Recall:    {multiclass_metrics['recall_macro']:.4f}")
-    print(f"F1-score:  {multiclass_metrics['f1_macro']:.4f}")
 
-    print("\nConfusion Matrix:")
-    print(cm)
+    lines.append("")
+    lines.append("GLOBAL MULTICLASS SUMMARY")
+    lines.append(f"Accuracy:  {fmt_float(multiclass_metrics['accuracy'])}")
+    lines.append(f"Precision: {fmt_float(multiclass_metrics['precision_macro'])}")
+    lines.append(f"Recall:    {fmt_float(multiclass_metrics['recall_macro'])}")
+    lines.append(f"F1-score:  {fmt_float(multiclass_metrics['f1_macro'])}")
 
-    print("\nGLOBAL MULTICLASS CONFUSION MATRIX")
-    print("Labels:", labels.tolist())
-    print("Rows = true labels, Cols = predicted labels")
-    print(cm)
+    lines.append("")
+    lines.append("Confusion Matrix:")
+    lines.append(str(cm))
 
-    print("\nGLOBAL MULTICLASS METRICS")
-    print(f"Accuracy            : {multiclass_metrics['accuracy']:.4f}")
-    print(f"Precision (macro)   : {multiclass_metrics['precision_macro']:.4f}")
-    print(f"Recall (macro)      : {multiclass_metrics['recall_macro']:.4f}")
-    print(f"F1-score (macro)    : {multiclass_metrics['f1_macro']:.4f}")
-    print(f"Precision (weighted): {multiclass_metrics['precision_weighted']:.4f}")
-    print(f"Recall (weighted)   : {multiclass_metrics['recall_weighted']:.4f}")
-    print(f"F1-score (weighted) : {multiclass_metrics['f1_weighted']:.4f}")
+    lines.append("")
+    lines.append("GLOBAL MULTICLASS CONFUSION MATRIX")
+    lines.append(f"Labels: {labels.tolist()}")
+    lines.append("Rows = true labels, Cols = predicted labels")
+    lines.append(str(cm))
 
-    print("\nPER-CLASS MULTICLASS METRICS")
+    lines.append("")
+    lines.append("GLOBAL MULTICLASS METRICS")
+    lines.append(f"Accuracy            : {fmt_float(multiclass_metrics['accuracy'])}")
+    lines.append(f"Precision (macro)   : {fmt_float(multiclass_metrics['precision_macro'])}")
+    lines.append(f"Recall (macro)      : {fmt_float(multiclass_metrics['recall_macro'])}")
+    lines.append(f"F1-score (macro)    : {fmt_float(multiclass_metrics['f1_macro'])}")
+    lines.append(f"Precision (weighted): {fmt_float(multiclass_metrics['precision_weighted'])}")
+    lines.append(f"Recall (weighted)   : {fmt_float(multiclass_metrics['recall_weighted'])}")
+    lines.append(f"F1-score (weighted) : {fmt_float(multiclass_metrics['f1_weighted'])}")
+
+    lines.append("")
+    lines.append("PER-CLASS MULTICLASS METRICS")
     for i, lab in enumerate(labels):
-        print(
+        lines.append(
             f"Class {lab}: "
             f"support={int(multiclass_metrics['support'][i])}, "
-            f"precision={multiclass_metrics['per_class_precision'][i]:.4f}, "
-            f"recall={multiclass_metrics['per_class_recall'][i]:.4f}, "
-            f"f1={multiclass_metrics['per_class_f1'][i]:.4f}"
+            f"precision={fmt_float(multiclass_metrics['per_class_precision'][i])}, "
+            f"recall={fmt_float(multiclass_metrics['per_class_recall'][i])}, "
+            f"f1={fmt_float(multiclass_metrics['per_class_f1'][i])}"
         )
+
+    global_tp_pct = (
+        100.0 * agg.total_noise_samples / agg.total_samples
+        if agg.total_samples > 0 else float("nan")
+    )
+    mean_tp_pct = safe_mean(agg.per_record_tp_pct)
+
+    lines.append("")
+    lines.append("NOISE STATISTICS")
+    lines.append(f"Total out intervals      : {agg.total_out}")
+    lines.append(f"Total rdr intervals      : {agg.total_rdr}")
+    lines.append(f"Total mra intervals      : {agg.total_mra}")
+    lines.append(f"Total out samples        : {agg.total_out_samples}")
+    lines.append(f"Total rdr samples        : {agg.total_rdr_samples}")
+    lines.append(f"Total mra samples        : {agg.total_mra_samples}")
+    lines.append(f"Total noise samples      : {agg.total_noise_samples}")
+    lines.append(f"Total samples            : {agg.total_samples}")
+    lines.append(f"tp_pct global (%)        : {fmt_float(global_tp_pct)}")
+    lines.append(f"tp_pct mean per record   : {fmt_float(mean_tp_pct)}")
+
+    return "\n".join(lines)
+
+
+def print_aggregate_report(
+    agg: AggregateMetrics,
+    global_binary_metrics: bool = False,
+) -> str:
+    """
+    Print final global and averaged evaluation report and also return it as text.
+    """
+    report_text = build_aggregate_report_text(
+        agg=agg,
+        global_binary_metrics=global_binary_metrics,
+    )
+    print(report_text)
+    return report_text
+
+
+def write_summary_text(summary_path: Path, report_text: str) -> None:
+    summary_path = Path(summary_path).expanduser().resolve()
+    if summary_path.parent and not summary_path.parent.exists():
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(report_text.rstrip() + "\n")
+
+    print(f"\nClean summary written to: {summary_path}")
 
 
 # ======================================================================================
@@ -974,13 +1254,18 @@ def process_record(
     # tik OFF režime jo etapai išjungti config'e.
     res_denoising = bundle.denoising_pipe.run(x, gaps_indices=[])
 
-    noise_stats = calc_noise_stats_from_denoised_result(res_denoising) or {}
+    noise_stats_raw = calc_noise_stats_from_denoised_result(res_denoising) or {}
+    all_samples = int(np.asarray(x).size)
+    noise_stats = normalize_noise_stats(noise_stats_raw, all_samples=all_samples)
 
     print(
         f"Noise stats for {rec.ecg_path.name}: "
         f"out={noise_stats.get('out')}, "
         f"rdr={noise_stats.get('rdr')}, "
         f"mra={noise_stats.get('mra')}, "
+        f"out_samples={noise_stats.get('out_samples')}, "
+        f"rdr_samples={noise_stats.get('rdr_samples')}, "
+        f"mra_samples={noise_stats.get('mra_samples')}, "
         f"tp_pct={noise_stats.get('tp_pct', 0.0):.1f} "
         f"{mode_suffix(bundle.mode)}"
     )
@@ -996,6 +1281,7 @@ def process_record(
 
     return {
         "signal": x,
+        "n_samples": all_samples,
         "res_denoising": res_denoising,
         "noise_stats": noise_stats,
         "res_ectopy": res_ectopy,
@@ -1005,98 +1291,263 @@ def process_record(
 
 
 # ======================================================================================
-#                                        MAIN
+#                                        CLI
 # ======================================================================================
 
-def main() -> None:
+def build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
-        description="Evaluate accuracy of ectopic beat detection on ZIVE data"
+        description=(
+            "Evaluate the accuracy of ectopic beat detection on ECG records "
+            "with optional denoising and optional motions detection."
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+
     ap.add_argument(
         "--dir",
         type=Path,
         required=True,
-        help="Directory containing ECG .npy files and corresponding JSON metadata",
+        metavar="DIR",
+        help="Directory containing ECG files and corresponding JSON metadata files.",
     )
     ap.add_argument(
         "--exclude-list",
+        "--exclude_files",
+        dest="exclude_list",
         type=Path,
-        help="File containing list of ECG basenames to exclude (one basename per line, without extensions)",
+        metavar="FILE",
+        help=(
+            "Optional text file with ECG basenames to exclude, one basename per line "
+            "(without extensions)."
+        ),
     )
     ap.add_argument(
         "--cfg-denoising",
         type=Path,
         required=True,
-        help="Denoising config path",
+        metavar="FILE",
+        help="Path to denoising pipeline YAML config.",
     )
     ap.add_argument(
         "--unet-model-dir",
         type=Path,
         required=True,
-        help="Model directory for denoising/motions",
+        metavar="DIR",
+        help="Directory containing denoising / motions model files.",
     )
     ap.add_argument(
         "--cfg-ectopy",
         type=Path,
         required=True,
-        help="Ectopy config path",
+        metavar="FILE",
+        help="Path to ectopy pipeline YAML config.",
     )
     ap.add_argument(
         "--ectopy-model-dir",
         type=Path,
         required=True,
-        help="Model directory for ectopy detection",
+        metavar="DIR",
+        help="Directory containing ectopy model and scaler files.",
     )
     ap.add_argument(
         "--fs",
         type=int,
         default=200,
-        help="Sampling frequency (Hz). Default: 200",
-    )
-    ap.add_argument(
-        "--quiet",
-        action="store_true",
-        help="Silence stdout during denoising/stats",
-    )
-    ap.add_argument(
-        "--disable-motions",
-        action="store_true",
-        help="Disable motions stage in denoising pipeline",
-    )
-    ap.add_argument(
-        "--denoising",
-        action="store_true",
-        help="Enable denoising pipeline",
+        metavar="HZ",
+        help="Sampling frequency in Hz.",
     )
     ap.add_argument(
         "--tolerance",
         type=int,
         default=20,
-        help="Tolerance in samples for matching predicted and annotated R-peaks. Default: 20",
+        metavar="SAMPLES",
+        help="Tolerance in samples for matching predicted and annotated R-peaks.",
+    )
+    ap.add_argument(
+        "--denoising",
+        action="store_true",
+        help="Enable the denoising pipeline.",
+    )
+    ap.add_argument(
+        "--disable-motions",
+        action="store_true",
+        help=(
+            "Disable only the motions detection stage inside the denoising pipeline. "
+            "This flag has effect only when --denoising is enabled."
+        ),
     )
     ap.add_argument(
         "--keep-u-class",
         action="store_true",
-        help="Keep annot == 3 (U class) in evaluation. By default it is removed.",
+        help="Keep annotation class U (annot == 3) in evaluation.",
     )
     ap.add_argument(
         "--all-records",
         action="store_true",
-        help="Process all records. By default only first 5 records are processed.",
+        help="Process all matched records. By default only the first 5 are processed.",
     )
     ap.add_argument(
         "--global-binary-metrics",
         action="store_true",
-        help="Print global binary confusion matrix and binary metrics.",
+        help="Print global binary confusion matrix and binary classification metrics.",
+    )
+    ap.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Reduce verbose diagnostic output during evaluation.",
+    )
+    ap.add_argument(
+        "--summary-out",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Optional path to a clean summary text file.",
     )
 
-    args = ap.parse_args()
+    return ap
+
+
+def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> argparse.Namespace:
+    args.dir = Path(args.dir).expanduser().resolve()
+    args.cfg_denoising = Path(args.cfg_denoising).expanduser().resolve()
+    args.unet_model_dir = Path(args.unet_model_dir).expanduser().resolve()
+    args.cfg_ectopy = Path(args.cfg_ectopy).expanduser().resolve()
+    args.ectopy_model_dir = Path(args.ectopy_model_dir).expanduser().resolve()
+
+    if args.exclude_list is not None:
+        args.exclude_list = Path(args.exclude_list).expanduser().resolve()
+
+    if args.summary_out is not None:
+        args.summary_out = Path(args.summary_out).expanduser().resolve()
+
+    if not args.dir.exists() or not args.dir.is_dir():
+        parser.error(f"--dir must be an existing directory: {args.dir}")
+
+    if args.exclude_list is not None and not args.exclude_list.exists():
+        parser.error(f"--exclude-list file not found: {args.exclude_list}")
+
+    if not args.cfg_denoising.exists() or not args.cfg_denoising.is_file():
+        parser.error(f"--cfg-denoising must be an existing file: {args.cfg_denoising}")
+
+    if not args.unet_model_dir.exists() or not args.unet_model_dir.is_dir():
+        parser.error(f"--unet-model-dir must be an existing directory: {args.unet_model_dir}")
+
+    if not args.cfg_ectopy.exists() or not args.cfg_ectopy.is_file():
+        parser.error(f"--cfg-ectopy must be an existing file: {args.cfg_ectopy}")
+
+    if not args.ectopy_model_dir.exists() or not args.ectopy_model_dir.is_dir():
+        parser.error(f"--ectopy-model-dir must be an existing directory: {args.ectopy_model_dir}")
+
+    if args.fs <= 0:
+        parser.error(f"--fs must be > 0. Got: {args.fs}")
+
+    if args.tolerance < 0:
+        parser.error(f"--tolerance must be >= 0. Got: {args.tolerance}")
+
+    if args.disable_motions and not args.denoising:
+        print(
+            "WARNING: --disable-motions was provided without --denoising. "
+            "It will have no effect because denoising mode is OFF."
+        )
+
+    return args
+
+
+def format_elapsed_hhmm(seconds: float) -> str:
+    total_seconds = max(0, int(round(seconds)))
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def format_elapsed_minutes(seconds: float) -> str:
+    minutes = seconds / 60.0
+    return f"{minutes:.1f} min"
+
+
+
+def build_summary_header_text(
+    args: argparse.Namespace,
+    mode: DenoisingMode,
+    scan_summary: Any,
+    n_records_returned: int,
+) -> str:
+    """
+    Build the initial parameter block for the clean summary file.
+    """
+    lines: List[str] = []
+
+    lines.append("ECTOPIC BEAT DETECTION EVALUATION")
+    lines.append("=" * 90)
+    lines.append(f"Input directory          : {args.dir}")
+    lines.append(f"Exclude list             : {args.exclude_list}")
+    lines.append(f"Denoising config         : {args.cfg_denoising}")
+    lines.append(f"UNet model directory     : {args.unet_model_dir}")
+    lines.append(f"Ectopy config            : {args.cfg_ectopy}")
+    lines.append(f"Ectopy model directory   : {args.ectopy_model_dir}")
+    lines.append(f"Sampling frequency       : {args.fs} Hz")
+    lines.append(f"Matching tolerance       : {args.tolerance} samples")
+    lines.append(f"Keep U class             : {args.keep_u_class}")
+    lines.append(f"Process all records      : {args.all_records}")
+    lines.append(f"Quiet mode               : {args.quiet}")
+    lines.append(f"Global binary metrics    : {args.global_binary_metrics}")
+    lines.append(f"Summary output           : {args.summary_out}")
+    lines.append(f"Denoising mode           : {mode.value}")
+
+    if mode == DenoisingMode.FULL:
+        lines.append("CASE 3: denoising pipeline is ENABLED, including motions detection.")
+    elif mode == DenoisingMode.NO_MOTIONS:
+        lines.append("CASE 2: denoising pipeline is ENABLED, but motions detection is DISABLED.")
+    else:
+        lines.append("CASE 1: denoising pipeline is DISABLED.")
+        lines.append(
+            "        Safe mode: the pipeline will still run with outliers, rdropouts, "
+            "and motions detection disabled,"
+        )
+        lines.append(
+            "        so the ectopy pipeline receives the same type of input object."
+        )
+
+    lines.append("=" * 90)
+    lines.append(f"total_json       : {scan_summary.total_json}")
+    lines.append(f"excluded         : {scan_summary.excluded}")
+    lines.append(f"matched          : {scan_summary.matched}")
+    lines.append(f"unmatched_json   : {scan_summary.unmatched_json}")
+    lines.append(f"records returned : {n_records_returned}")
+
+    return "\n".join(lines)
+
+# ======================================================================================
+#                                        MAIN
+# ======================================================================================
+
+def main() -> None:
+    parser = build_arg_parser()
+    args = validate_args(parser.parse_args(), parser)
+
+    mode = get_denoising_mode(args.denoising, args.disable_motions)
+
+    print("=" * 90)
+    print("ECTOPIC BEAT DETECTION EVALUATION")
+    print("=" * 90)
+    print(f"Input directory          : {args.dir}")
+    print(f"Exclude list             : {args.exclude_list}")
+    print(f"Denoising config         : {args.cfg_denoising}")
+    print(f"UNet model directory     : {args.unet_model_dir}")
+    print(f"Ectopy config            : {args.cfg_ectopy}")
+    print(f"Ectopy model directory   : {args.ectopy_model_dir}")
+    print(f"Sampling frequency       : {args.fs} Hz")
+    print(f"Matching tolerance       : {args.tolerance} samples")
+    print(f"Keep U class             : {args.keep_u_class}")
+    print(f"Process all records      : {args.all_records}")
+    print(f"Quiet mode               : {args.quiet}")
+    print(f"Global binary metrics    : {args.global_binary_metrics}")
+    print(f"Summary output           : {args.summary_out}")
+    print(f"Denoising mode           : {mode.value}")
+    print_denoising_case(mode)
+    print("=" * 90)
 
     src = args.dir
-    if not src.exists() or not src.is_dir():
-        raise FileNotFoundError(f"--dir must be an existing directory. Got: {src}")
-
-    #               ++++++++++++++++++++++++ ANALIZUOJAMŲ ĮRAŠŲ SĄRAŠAS
 
     scan_result = list_ecg_records(
         folder=src,
@@ -1113,28 +1564,45 @@ def main() -> None:
     print(f"unmatched_json   : {summary.unmatched_json}")
     print(f"records returned : {len(records)}")
 
-    #               ++++++++++++++++++++++++ PIPELINE PARENGIMAS
+    summary_header_text = build_summary_header_text(
+        args=args,
+        mode=mode,
+        scan_summary=summary,
+        n_records_returned=len(records),
+    )
 
     bundle = prepare_pipelines(args)
     agg = AggregateMetrics()
-
-    #               ++++++++++++++++++++++++ TRIUKŠMŲ VALYMAS IR EKTOPINIŲ DŪŽIŲ DETEKTAVIMAS
 
     records_to_process = records if args.all_records else records[:5]
 
     print(f"\nFound {len(records)} matched records")
     print(f"Processing {len(records_to_process)} record(s)")
 
+    total_cycle_start = time.perf_counter()
     record_nr = 0
 
     for rec in records_to_process:
         print("\n" + "-" * 90)
         record_nr += 1
 
+        elapsed_from_start_s = time.perf_counter() - total_cycle_start
+        elapsed_from_start_min = format_elapsed_minutes(elapsed_from_start_s)
+
         if rec.ecg_path is not None:
-            print(record_nr, rec.basename, rec.ecg_path.name, rec.json_path.name)
+            print(
+                f"{record_nr}/{len(records_to_process)} | "
+                f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
+                f"elapsed: {elapsed_from_start_min}",
+                flush=True,
+            )
         else:
-            print(record_nr, rec.basename, "<missing ecg>", rec.json_path.name)
+            print(
+                f"{record_nr}/{len(records_to_process)} | "
+                f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
+                f"elapsed: {elapsed_from_start_min}",
+                flush=True,
+            )
 
         if rec.ecg_path is None:
             msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
@@ -1154,37 +1622,176 @@ def main() -> None:
             ectopy_stats = results["ectopy_stats"]
             res_denoising = results["res_denoising"]
             res_ectopy = results["res_ectopy"]
-            
+
             eval_res = evaluate_ectopy_classification_against_annotations(
                 res_denoising=res_denoising,
                 res_ectopy=res_ectopy,
                 json_path=rec.json_path,
-                fs=200,
-                tolerance=20,
-                drop_annot_u=True,
+                fs=args.fs,
+                tolerance=args.tolerance,
+                drop_annot_u=not args.keep_u_class,
                 verbose=not args.quiet,
             )
-            
+
             df_matched = eval_res["df_matched"]
             df_unmatched = eval_res["df_unmatched"]
 
-            update_aggregate_metrics(agg, eval_res)
+            update_aggregate_metrics(agg, eval_res, noise_stats=noise_stats)
 
             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
-#             metadata, noise_stats, ectopy_stats, df_matched, df_unmatched jau turi kažkokias reikšmes
-#             jos sudedamos į vieną tuple, tuple priskiriamas _
-#           _ yra naudojamas, kad būtų aišku, jog šios reikšmės yra "naudojamos" (pvz. gali būti naudingos debugui ar tolimesnei analizei), bet šiuo metu nėra tiesiogiai naudojamos tolesniame kode. Tai gali būti naudinga, jei norite išlaikyti šias reikšmes atmintyje ar lengvai pasiekiamas, bet nenorite, kad jos trukdytų tolimesniam kodui, kuris šiuo metu yra fokusas.
 
         except Exception as exc:
             agg.n_records_failed_eval += 1
             print(f"WARN: failed processing for {rec.ecg_path.name}: {exc}")
             continue
 
-    print_aggregate_report(
+    total_cycle_elapsed_s = time.perf_counter() - total_cycle_start
+    print("\n" + "=" * 90)
+    print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
+    print("=" * 90)
+
+    report_text = print_aggregate_report(
         agg,
         global_binary_metrics=args.global_binary_metrics,
     )
 
+    full_summary_text = summary_header_text + "\n" + report_text
+
+    if args.summary_out is not None:
+        write_summary_text(args.summary_out, full_summary_text)
+
 
 if __name__ == "__main__":
     main()
+    
+# def main() -> None:
+#     parser = build_arg_parser()
+#     args = validate_args(parser.parse_args(), parser)
+
+#     mode = get_denoising_mode(args.denoising, args.disable_motions)
+
+#     print("=" * 90)
+#     print("ECTOPIC BEAT DETECTION EVALUATION")
+#     print("=" * 90)
+#     print(f"Input directory          : {args.dir}")
+#     print(f"Exclude list             : {args.exclude_list}")
+#     print(f"Denoising config         : {args.cfg_denoising}")
+#     print(f"UNet model directory     : {args.unet_model_dir}")
+#     print(f"Ectopy config            : {args.cfg_ectopy}")
+#     print(f"Ectopy model directory   : {args.ectopy_model_dir}")
+#     print(f"Sampling frequency       : {args.fs} Hz")
+#     print(f"Matching tolerance       : {args.tolerance} samples")
+#     print(f"Keep U class             : {args.keep_u_class}")
+#     print(f"Process all records      : {args.all_records}")
+#     print(f"Quiet mode               : {args.quiet}")
+#     print(f"Global binary metrics    : {args.global_binary_metrics}")
+#     print(f"Summary output           : {args.summary_out}")
+#     print(f"Denoising mode           : {mode.value}")
+#     print_denoising_case(mode)
+#     print("=" * 90)
+
+#     src = args.dir
+
+#     scan_result = list_ecg_records(
+#         folder=src,
+#         data_format="auto",
+#         exclude_list=args.exclude_list,
+#     )
+
+#     records = scan_result.records
+#     summary = scan_result.summary
+
+#     print(f"total_json       : {summary.total_json}")
+#     print(f"excluded         : {summary.excluded}")
+#     print(f"matched          : {summary.matched}")
+#     print(f"unmatched_json   : {summary.unmatched_json}")
+#     print(f"records returned : {len(records)}")
+
+#     bundle = prepare_pipelines(args)
+#     agg = AggregateMetrics()
+
+#     records_to_process = records if args.all_records else records[:5]
+
+#     print(f"\nFound {len(records)} matched records")
+#     print(f"Processing {len(records_to_process)} record(s)")
+
+#     total_cycle_start = time.perf_counter()
+#     record_nr = 0
+
+#     for rec in records_to_process:
+#         print("\n" + "-" * 90)
+#         record_nr += 1
+
+#         elapsed_from_start_s = time.perf_counter() - total_cycle_start
+#         elapsed_from_start_min = format_elapsed_minutes(elapsed_from_start_s)
+
+#         if rec.ecg_path is not None:
+#             print(
+#                 f"{record_nr}/{len(records_to_process)} | "
+#                 f"{rec.basename} | {rec.ecg_path.name} | {rec.json_path.name} | "
+#                 f"elapsed: {elapsed_from_start_min}"
+#             )
+#         else:
+#             print(
+#                 f"{record_nr}/{len(records_to_process)} | "
+#                 f"{rec.basename} | <missing ecg> | {rec.json_path.name} | "
+#                 f"elapsed: {elapsed_from_start_min}"
+#             )
+
+#         if rec.ecg_path is None:
+#             msg = f"No matching ECG file for JSON '{rec.json_path.name}'"
+#             print(msg)
+#             continue
+
+#         metadata: Dict[str, Any] = read_json_file(rec.json_path)
+
+#         try:
+#             results = process_record(
+#                 rec=rec,
+#                 bundle=bundle,
+#                 fs=args.fs,
+#             )
+
+#             noise_stats = results["noise_stats"]
+#             ectopy_stats = results["ectopy_stats"]
+#             res_denoising = results["res_denoising"]
+#             res_ectopy = results["res_ectopy"]
+
+#             eval_res = evaluate_ectopy_classification_against_annotations(
+#                 res_denoising=res_denoising,
+#                 res_ectopy=res_ectopy,
+#                 json_path=rec.json_path,
+#                 fs=args.fs,
+#                 tolerance=args.tolerance,
+#                 drop_annot_u=not args.keep_u_class,
+#                 verbose=not args.quiet,
+#             )
+
+#             df_matched = eval_res["df_matched"]
+#             df_unmatched = eval_res["df_unmatched"]
+
+#             update_aggregate_metrics(agg, eval_res, noise_stats=noise_stats)
+
+#             _ = metadata, noise_stats, ectopy_stats, df_matched, df_unmatched
+
+#         except Exception as exc:
+#             agg.n_records_failed_eval += 1
+#             print(f"WARN: failed processing for {rec.ecg_path.name}: {exc}")
+#             continue
+
+#     total_cycle_elapsed_s = time.perf_counter() - total_cycle_start
+#     print("\n" + "=" * 90)
+#     print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
+#     print("=" * 90)
+
+#     report_text = print_aggregate_report(
+#         agg,
+#         global_binary_metrics=args.global_binary_metrics,
+#     )
+
+#     if args.summary_out is not None:
+#         write_summary_text(args.summary_out, report_text)
+
+
+# if __name__ == "__main__":
+#     main()

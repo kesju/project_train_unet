@@ -139,9 +139,6 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
         "out": <count outlier intervals on ecg_start>,
         "rdr": <count rdropout intervals projected to ecg_start>,
         "mra": <count motion intervals projected to ecg_start>,
-        "out_samples": <outlier samples on ecg_start>,
-        "rdr_samples": <rdropout samples on ecg_start>,
-        "mra_samples": <motion samples on ecg_start>,
         "tp_pct": <percent of noisy samples in ecg_start (union of all types)>,
         "tp_samples": <union noisy samples count>,
         "n_start": <len(ecg_start)>,
@@ -182,27 +179,17 @@ def calc_noise_stats_from_denoised_result(res: Any) -> Dict[str, Any]:
     tp_samples = _total_len(union)
     tp_pct = 100.0 * tp_samples / n_start
 
-    out_samples = _total_len(outliers_start)
-    rdr_samples = _total_len(rdropouts_start)
-    mra_samples = _total_len(motions_start)
-
-    stats = {
+    stats= {
         "out": out_cnt,
         "rdr": rdr_cnt,
         "mra": mra_cnt,
-        "out_samples": out_samples,
-        "rdr_samples": rdr_samples,
-        "rdr_sample": rdr_samples,
-        "mra_samples": mra_samples,
         "tp_pct": tp_pct,
         "tp_samples": tp_samples,
-        "all_noise_samples": tp_samples,
         "n_start": n_start,
-        "all_samples": n_start,
         "union_intervals": union,
     }
-    return stats
-
+    return {'out': stats['out'], 'rdr': stats['rdr'], 'mra': stats['mra'], 'tp_pct': stats['tp_pct']}
+    
 
 def prepare_denoising_pipeline(
     config_path: Path,
