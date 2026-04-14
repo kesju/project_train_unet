@@ -1,0 +1,3377 @@
+{
+    "recordingId": "616b029811601508ccc28437",
+    "channelCount": 1,
+    "userId": "616b00a811601579e9c2816c",
+    "flags": [
+        "FULLY_ANNOTATED_PROFESSIONALLY"
+    ],
+    "noises": [],
+    "noises_annotated": [
+        {
+            "startIndex": 9300,
+            "endIndex": 11877
+        },
+        {
+            "startIndex": 33313,
+            "endIndex": 36860
+        },
+        {
+            "startIndex": 71579,
+            "endIndex": 74921
+        },
+        {
+            "startIndex": 121512,
+            "endIndex": 122735
+        }
+    ],
+    "rpeakAnnotationCounts": {
+        "__info": "human=manual changes, ml=ML abnormal only (S/V/F/U), merged=all peaks with human overrides",
+        "human": {
+            "V": 32,
+            "U": 1
+        },
+        "ml": {
+            "U": 6,
+            "S": 15,
+            "V": 9
+        },
+        "merged": {
+            "N": 735,
+            "V": 32,
+            "U": 1
+        }
+    },
+    "rpeaks": {
+        "__info": "human=only explicit changes, ml=only ML abnormal beats (no N stored), merged=all peaks",
+        "human": [
+            {
+                "sampleIndex": 26941,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 27430,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 27909,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 34762,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 35254,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 35608,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 35938,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 68468,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 68954,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 69414,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 69871,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 70340,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 70968,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 71443,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 72038,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 72943,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 73385,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 73833,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 74281,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 74733,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 75188,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 75645,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 76101,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77156,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77631,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77941,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 119467,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 119778,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 120400,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 120866,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 126729,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 127227,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 127724,
+                "annotationValue": "V"
+            }
+        ],
+        "ml": [
+            {
+                "sampleIndex": 62,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 22006,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 26941,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 27430,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 27909,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 35254,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 49949,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 68468,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 69871,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 70340,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 71443,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 72038,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 72500,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 72943,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 73833,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 74281,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 74733,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 75188,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 76101,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 77156,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77631,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 77941,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 109264,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 114287,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 119467,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 119778,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 126729,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 127227,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 127724,
+                "annotationValue": "S"
+            },
+            {
+                "sampleIndex": 127932,
+                "annotationValue": "U"
+            }
+        ],
+        "merged": [
+            {
+                "sampleIndex": 62,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 245,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 431,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 616,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 797,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 977,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 1156,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 1333,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 1510,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 1684,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 1857,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 2036,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 2214,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 2391,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 2566,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 2745,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 2921,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 3102,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 3283,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 3465,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 3645,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 3831,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 4011,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 4199,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 4378,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 4564,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 4754,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 4947,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 5138,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 5323,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 5512,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 5704,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 5895,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 6091,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 6285,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 6485,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 6686,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 6883,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 7081,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 7273,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 7460,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 7644,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 7830,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 8007,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 8186,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 8355,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 8535,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 8715,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 8902,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 9087,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 9260,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 9436,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 9612,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 9782,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 9947,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 10121,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 10296,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 10472,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 10651,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 10830,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 11009,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 11189,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 11367,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 11544,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 11720,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 11901,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 12078,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 12252,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 12429,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 12605,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 12779,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 12954,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 13127,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 13300,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 13471,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 13642,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 13812,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 13981,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 14156,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 14332,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 14501,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 14678,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 14848,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 14946,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 15169,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 15337,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 15506,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 15672,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 15838,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 16007,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 16176,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 16350,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 16524,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 16707,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 16886,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 17061,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 17236,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 17409,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 17574,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 17742,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 17908,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 18074,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 18246,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 18419,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 18584,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 18765,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 18942,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 19116,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 19296,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 19477,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 19661,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 19842,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 20022,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 20205,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 20386,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 20563,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 20736,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 20911,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 21089,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 21271,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 21456,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 21644,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 21826,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 22006,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 22179,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 22351,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 22522,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 22691,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 22854,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 23024,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 23189,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 23353,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 23517,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 23681,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 23846,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 24012,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 24178,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 24344,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 24509,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 24674,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 24841,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 25007,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 25174,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 25333,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 25505,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 25672,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 25840,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26009,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26176,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26344,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26513,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26677,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26842,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 26941,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 27172,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 27333,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 27430,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 27652,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 27812,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 27909,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 28137,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 28298,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 28464,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 28639,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 28822,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 29007,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 29192,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 29380,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 29565,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 29745,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 29919,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 30087,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 30251,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 30413,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 30580,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 30748,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 30917,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 31087,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 31258,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 31427,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 31598,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 31768,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 31930,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 32100,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 32259,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 32428,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 32591,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 32756,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 32923,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 33091,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 33265,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 33434,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 33611,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 33787,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 33958,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 34130,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 34306,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 34484,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 34653,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 34762,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 34993,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 35161,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 35254,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 35497,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 35608,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 35831,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 35938,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 36177,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 36339,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 36505,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 36671,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 36833,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 36998,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 37165,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 37332,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 37498,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 37665,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 37833,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 37998,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 38165,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 38330,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 38491,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 38652,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 38814,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 38977,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 39144,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 39308,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 39474,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 39638,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 39801,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 39964,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 40129,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 40292,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 40456,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 40623,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 40790,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 40953,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 41115,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 41278,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 41441,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 41603,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 41769,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 41932,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 42098,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 42260,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 42424,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 42586,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 42748,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 42910,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 43073,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 43238,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 43404,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 43572,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 43741,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 43907,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 44078,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 44248,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 44413,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 44576,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 44739,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 44901,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 45068,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 45234,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 45396,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 45560,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 45730,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 45900,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 46071,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 46243,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 46411,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 46578,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 46747,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 46914,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 47078,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 47242,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 47403,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 47567,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 47733,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 47899,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 48069,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 48242,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 48412,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 48586,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 48763,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 48934,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 49107,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 49277,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 49442,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 49610,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 49778,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 49949,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 50119,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 50293,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 50468,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 50642,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 50814,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 50988,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 51161,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 51332,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 51508,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 51685,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 51863,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 52043,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 52221,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 52403,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 52585,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 52764,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 52944,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 53127,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 53311,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 53492,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 53675,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 53858,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 54039,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 54220,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 54399,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 54580,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 54762,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 54940,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 55119,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 55300,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 55479,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 55659,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 55840,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 56019,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 56196,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 56373,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 56546,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 56717,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 56887,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 57056,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 57221,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 57387,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 57556,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 57725,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 57895,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 58062,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 58233,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 58402,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 58568,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 58729,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 58891,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 59058,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 59228,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 59400,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 59570,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 59744,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 59914,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 60083,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 60256,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 60426,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 60589,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 60749,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 60918,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 61089,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 61258,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 61432,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 61605,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 61781,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 61951,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 62120,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 62285,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 62452,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 62616,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 62777,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 62940,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 63108,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 63280,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 63454,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 63628,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 63799,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 63964,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 64134,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 64298,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 64463,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 64623,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 64786,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 64950,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 65117,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 65281,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 65445,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 65611,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 65783,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 65953,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 66116,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 66286,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 66455,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 66622,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 66792,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 66969,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 67137,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 67318,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 67501,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 67679,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 67858,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 68034,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 68204,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 68372,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 68468,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 68700,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 68856,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 68954,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 69165,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 69316,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 69414,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 69622,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 69773,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 69871,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 70089,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 70243,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 70340,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 70560,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 70719,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 70873,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 70968,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 71187,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 71339,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 71443,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 71646,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 71796,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 71940,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 72038,
+                "annotationValue": "U"
+            },
+            {
+                "sampleIndex": 72242,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 72396,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 72500,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 72700,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 72845,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 72943,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 73143,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 73288,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 73385,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 73592,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 73736,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 73833,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 74039,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 74185,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 74281,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 74488,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 74637,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 74733,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 74944,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 75091,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 75188,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 75399,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 75547,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 75645,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 75856,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 76002,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 76101,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 76312,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 76460,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 76609,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 76757,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 76907,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 77059,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 77156,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77375,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 77530,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 77631,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 77845,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 77941,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 78160,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 78310,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 78461,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 78614,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 78772,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 78930,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 79094,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 79259,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 79428,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 79595,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 79764,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 79929,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 80095,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 80261,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 80423,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 80585,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 80748,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 80908,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 81067,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 81228,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 81390,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 81549,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 81711,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 81869,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82026,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82182,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82339,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82494,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82647,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82805,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 82962,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 83120,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 83278,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 83437,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 83595,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 83755,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 83915,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 84080,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 84245,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 84411,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 84571,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 84733,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 84895,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 85053,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 85217,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 85380,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 85540,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 85697,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 85858,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86018,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86179,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86338,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86496,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86653,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86810,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 86970,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 87130,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 87291,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 87451,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 87607,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 87767,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 87927,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 88086,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 88252,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 88416,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 88586,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 88752,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 88923,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 89088,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 89254,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 89422,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 89586,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 89747,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 89910,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 90066,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 90227,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 90384,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 90542,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 90699,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 90858,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91018,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91176,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91337,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91498,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91660,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91822,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 91981,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 92143,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 92307,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 92467,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 92628,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 92787,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 92946,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 93105,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 93262,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 93420,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 93573,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 93730,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 93885,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94040,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94198,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94354,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94516,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94678,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94838,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 94999,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 95155,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 95316,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 95476,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 95633,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 95795,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 95957,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 96118,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 96281,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 96447,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 96613,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 96779,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 96946,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 97119,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 97288,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 97452,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 97617,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 97779,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 97940,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 98099,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 98259,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 98415,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 98575,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 98732,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 98891,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 99048,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 99210,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 99367,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 99529,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 99691,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 99852,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100016,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100180,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100343,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100506,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100668,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100826,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 100987,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 101145,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 101306,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 101467,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 101626,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 101791,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 101950,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 102111,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 102271,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 102431,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 102589,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 102750,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 102911,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 103072,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 103235,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 103399,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 103561,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 103726,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 103889,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 104053,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 104217,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 104381,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 104543,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 104708,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 104870,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 105034,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 105201,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 105363,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 105533,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 105703,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 105876,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 106049,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 106219,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 106380,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 106542,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 106710,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 106877,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 107044,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 107216,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 107388,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 107560,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 107734,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 107907,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 108081,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 108240,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 108410,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 108581,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 108751,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 108918,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 109091,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 109264,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 109435,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 109607,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 109778,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 109946,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 110113,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 110280,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 110447,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 110610,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 110769,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 110938,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 111102,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 111276,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 111447,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 111622,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 111796,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 111971,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 112146,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 112312,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 112480,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 112644,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 112809,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 112975,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 113142,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 113307,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 113470,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 113636,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 113803,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 113965,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 114129,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 114287,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 114443,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 114604,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 114767,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 114930,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 115095,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 115262,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 115430,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 115597,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 115759,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 115919,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 116079,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 116239,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 116395,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 116552,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 116708,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 116866,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 117029,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 117193,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 117359,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 117531,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 117703,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 117879,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 118051,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 118221,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 118387,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 118551,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 118714,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 118877,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 119038,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 119198,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 119358,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 119467,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 119680,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 119778,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 119997,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 120150,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 120302,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 120400,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 120614,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 120772,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 120866,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 121088,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 121244,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 121397,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 121548,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 121702,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 121860,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122017,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122177,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122336,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122496,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122657,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122819,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 122981,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 123140,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 123302,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 123462,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 123622,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 123780,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 123939,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 124096,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 124252,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 124412,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 124576,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 124745,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 124915,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 125088,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 125261,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 125431,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 125602,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 125771,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 125940,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 126110,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 126282,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 126455,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 126623,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 126729,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 126964,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 127129,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 127227,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 127456,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 127617,
+                "annotationValue": "N"
+            },
+            {
+                "sampleIndex": 127724,
+                "annotationValue": "V"
+            },
+            {
+                "sampleIndex": 127932,
+                "annotationValue": "N"
+            }
+        ]
+    }
+}
