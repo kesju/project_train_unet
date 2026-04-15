@@ -13,8 +13,8 @@ mkdir -p "$RESULTS_DIR"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="$RESULTS_DIR/update_records_list_v7_${STAMP}.log"
 
-python -u update_records_list_v7_with_logs.py \
-  --excel "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys/visi_zive_irasai_annot-Darb.xlsx" \
+python -u update_records_list_v7.py \
+  --excel "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys_26_04_14/visi_zive_irasai_annot-Darb.xlsx" \
   --dir "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/0_SELECT_ZIVE_DATA_2023/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys_26_04_14" \
   --fs 200 \
   --cfg-denoising "/home/kestutis/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/CONFIG/denoising_config.yaml" \

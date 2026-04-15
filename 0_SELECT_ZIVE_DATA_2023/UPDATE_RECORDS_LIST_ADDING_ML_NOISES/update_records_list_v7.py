@@ -16,6 +16,7 @@ import argparse
 import json
 import math
 import re
+import time
 from copy import copy as _copy_style
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -704,6 +705,21 @@ def auto_adjust_widths(ws) -> None:
         if col_idx is not None:
             ws.column_dimensions[get_column_letter(col_idx)].width = min(max(max_len + 2, 10), 80)
 
+
+def format_elapsed_hhmm(seconds: float) -> str:
+    total_seconds = max(0, int(round(seconds)))
+    total_minutes, _ = divmod(total_seconds, 60)
+    hours, minutes = divmod(total_minutes, 60)
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def format_elapsed_minutes(seconds: float) -> str:
+    total_seconds = max(0, int(round(seconds)))
+    minutes, seconds = divmod(total_seconds, 60)
+    return f"{minutes:02d}:{seconds:02d}"
+
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--excel", type=Path, required=True, help="Input Excel (.xlsx)")
@@ -836,10 +852,27 @@ def main() -> None:
         return False
 
     json_paths = [p for p in src.rglob("*.json") if "__MACOSX" not in p.parts and p.is_file()]
-    print(f"Source: {src}")
-    print(f"Found JSON files: {len(json_paths)}")
+    records_to_process = []
+    for jp in sorted(json_paths):
+        bn = norm_basename(jp.stem)
+        if not bn:
+            continue
+        if bn.lower() == "manifest":
+            continue
+        records_to_process.append((jp, bn))
 
-    # print(json_paths)
+    print("=" * 90)
+    print("UPDATE RECORDS LIST")
+    print("=" * 90)
+    print(f"Excel input               : {args.excel}")
+    print(f"Input directory           : {src}")
+    print(f"Sampling frequency        : {args.fs} Hz")
+    print(f"Denoising enabled         : {args.denoising}")
+    print(f"Quiet mode                : {args.quiet}")
+    print(f"Output Excel              : {args.out}")
+    print(f"Found JSON files          : {len(json_paths)}")
+    print(f"Records to process        : {len(records_to_process)}")
+
     
         # PREPARE DENOISING PART 
     
@@ -890,16 +923,20 @@ def main() -> None:
         # CYCLE through JSON and data files and update Excel rows 
     
     processed = 0
-    for jp in sorted(json_paths):
-        bn = norm_basename(jp.stem)
-        if not bn:
-            continue
-        if bn.lower() == "manifest":
-            continue
+    total_cycle_start = time.perf_counter()
+
+    for record_nr, (jp, bn) in enumerate(records_to_process, start=1):
+        print("\n" + "-" * 90)
+        elapsed_from_start_s = time.perf_counter() - total_cycle_start
+        elapsed_from_start_min = format_elapsed_minutes(elapsed_from_start_s)
 
         row, _is_new = get_or_create_row(bn)
         data_filename = ws.cell(row=row, column=c_filename).value
-        print(f"\nProcessing: {bn} ({data_filename}) -> row {row} (new: {_is_new})")
+        print(
+            f"{record_nr}/{len(records_to_process)} | {bn} | {data_filename} | row {row} | new: {_is_new} | elapsed: {elapsed_from_start_min}",
+            flush=True,
+        )
+        record_start = time.perf_counter()
 
         data_info = find_data_file_fs(jp)
         if data_info is None:
@@ -1018,6 +1055,12 @@ def main() -> None:
         if row_changed:
             changed_rows.add(row)
 
+        record_elapsed_s = time.perf_counter() - record_start
+        print(
+            f"Done {record_nr}/{len(records_to_process)} | {bn} | record time: {format_elapsed_minutes(record_elapsed_s)}",
+            flush=True,
+        )
+
         processed += 1
 
     for r in changed_rows:
@@ -1076,7 +1119,12 @@ def main() -> None:
     auto_adjust_widths(ws_params)
 
     wb.save(out_path)
-   
+
+    total_cycle_elapsed_s = time.perf_counter() - total_cycle_start
+    print("\n" + "=" * 90)
+    print(f"Total cycle time: {format_elapsed_hhmm(total_cycle_elapsed_s)} (hh:mm)")
+    print("=" * 90)
+
     print(f"Processed JSON files: {processed}")
     print(f"Changed rows: {len(changed_rows)}")
     print(f"Added new rows: {len(new_rows)}")
