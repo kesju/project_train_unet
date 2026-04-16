@@ -6,13 +6,13 @@ export PYTHONUNBUFFERED=1
 # -----------------------------------------------------------------------------
 # Paths
 # -----------------------------------------------------------------------------
-SCRIPT_DIR="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/1_PREPARE_TRAIN_UNET_DATA/EXPLORING_ECG_SCRIPTS&DATA"
+SCRIPT_DIR="$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/1_PREPARE_TRAIN_UNET_DATA/EXPLORING_ECG_SCRIPTS&DATA"
 PY_SCRIPT="$SCRIPT_DIR/test_zive_records_reading.py"
 
-DATA_DIR="/home/kesju/DI/2025_ZIVEO/DUOMENYS_ANOTUOTI/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys_26_04_14"
-EXCLUDE_LIST="/home/kesju/DI/2025_ZIVEO/DUOMENYS_ANOTUOTI/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys_26_04_14/exclude_list.txt"
+DATA_DIR="$HOME/DI/2025_ZIVEO/DUOMENYS_ANOTUOTI/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys_26_04_14"
+EXCLUDE_LIST="$HOME/DI/2025_ZIVEO/DUOMENYS_ANOTUOTI/AtsisiuntimasZiveDuomenu/Atsisiusti_visi_anotuoti_duomenys_26_04_14/exclude_list.txt"
 
-RESULTS_DIR="/home/kesju/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/1_PREPARE_TRAIN_UNET_DATA/EXPLORING_ECG_SCRIPTS&DATA/results"
+RESULTS_DIR="$HOME/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/1_PREPARE_TRAIN_UNET_DATA/EXPLORING_ECG_SCRIPTS&DATA/results"
 mkdir -p "$RESULTS_DIR"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
