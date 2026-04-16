@@ -9,10 +9,13 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 import argparse
-import time
+import time, sys
 import numpy as np
 import pandas as pd
 
+# === Išoriniai moduliai (lygiagretus aplankas) =================================
+PARALLEL_PATH = '~/DI/2025_ZIVEO/PROJECT_TRAIN_UNET/SUPL_FUNCTIONS'
+sys.path.append(str(PARALLEL_PATH))
 
 # naudosime funkcijas iš zive_data_read_utils.py
 from zive_data_read_utils import load_ecg_npy, list_ecg_records, read_json_file
