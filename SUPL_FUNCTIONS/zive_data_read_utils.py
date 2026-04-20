@@ -4,7 +4,7 @@ import os
 import json
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Literal, Optional, Union, Any, Dict
+from typing import List, Literal, Optional, Union, Any, Dict, Tuple, cast
 
 import numpy as np
 import neurokit2 as nk
@@ -264,6 +264,13 @@ def list_ecg_records(
     
 # lowcut_filter
 def lowcut_filter(signal, fs=200, lowcut=0.5, method="butterworth", order=4):
+
+    """
+    signal_filter(signal, sampling_rate=1000, lowcut=None, highcut=None, method='butterworth', order=2, window_size='default', powerline=50, show=False)[source]
+    Filter a signal using different methods such as “butterworth”, “fir”, “savgol” or “powerline” filters.
+    Apply a lowpass (if “highcut” frequency is provided), highpass (if “lowcut” frequency is provided) or bandpass (if both are provided) filter to the signal.
+    """
+
     filtered = nk.signal_filter(
         signal,
         sampling_rate=fs,
@@ -275,7 +282,33 @@ def lowcut_filter(signal, fs=200, lowcut=0.5, method="butterworth", order=4):
     return np.asarray(filtered, dtype=float)
 
 
-# test
+def get_rpeaks(ecg_signal: np.ndarray, fs: int = 200, correct_artifacts: bool = False
+               ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Detect R-peaks with NeuroKit2 and return:
+      - rpeaks_samples: np.ndarray[int] of sample indices
+      - rpeaks_seconds: np.ndarray[float] of times in seconds
+
+    Raises:
+        ValueError: if 'ECG_R_Peaks' is missing or empty.
+    """
+    _, rpeaks_info = nk.ecg_peaks(ecg_signal, sampling_rate=fs, correct_artifacts=correct_artifacts)
+
+    # teach Pylance the right types
+    rpeaks_info = cast(Dict[str, Any], rpeaks_info)
+    rpeaks_samples = np.asarray(
+        cast(list[int] | np.ndarray, rpeaks_info.get("ECG_R_Peaks", [])),
+        dtype=int
+    )
+
+    if rpeaks_samples.size == 0:
+        raise ValueError("No R-peaks found (ECG_R_Peaks is missing or empty).")
+
+    rpeaks_seconds = rpeaks_samples / float(fs)
+    return rpeaks_samples, rpeaks_seconds
+
+
+# testavimui
 
 def main() -> None:
 
