@@ -5,8 +5,8 @@ filter:
   method: butterworth   # "butterworth", "fir", "bessel", "savgol"
   type: highpass   # 'bandpass', 'highpass'
   lowcut: 0.5
-  highcut: 70.
-  order: 5
+  highcut: 40.
+  order: 4
 outliers:
   enabled: True
   ekg_min: -3.0
