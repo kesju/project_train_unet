@@ -282,6 +282,27 @@ def lowcut_filter(signal, fs=200, lowcut=0.5, method="butterworth", order=4):
     return np.asarray(filtered, dtype=float)
 
 
+
+# bandpass_filter
+def bandpass_filter(signal, fs=200, lowcut=0.5, highcut=40., method="butterworth", order=4):
+
+    """
+    signal_filter(signal, sampling_rate=1000, lowcut=None, highcut=None, method='butterworth', order=2, window_size='default', powerline=50, show=False)[source]
+    Filter a signal using different methods such as “butterworth”, “fir”, “savgol” or “powerline” filters.
+    Apply a lowpass (if “highcut” frequency is provided), highpass (if “lowcut” frequency is provided) or bandpass (if both are provided) filter to the signal.
+    """
+
+    filtered = nk.signal_filter(
+        signal,
+        sampling_rate=fs,
+        lowcut=lowcut,
+        highcut=None,
+        method=method,
+        order=order
+    )
+    return np.asarray(filtered, dtype=float)
+
+
 def get_rpeaks(ecg_signal: np.ndarray, fs: int = 200, correct_artifacts: bool = False
                ) -> Tuple[np.ndarray, np.ndarray]:
     """
