@@ -1,0 +1,43 @@
+Aplanke SIMONAS patalpinti Zive duomenys ir skriptai, darbui su jais
+
+Zive duomenys yra aplanke DATA_FOR_TRAINING, jame yra 35 10 min. EKG įrašai, kartu su metaduomenimis.
+Įrašo pvz.:
+    1001_6.npy  - įrašas, 200 Hz, NumPy formatas, float64
+    1001_6.json - įrašo metaduomenys
+
+Pirmi 4 skaičiai (pvz. 1001) identifikuoja pacientą, skaičius po '_" (pvz. 6) identifikuoja to paties paciento įrašą.
+Pvz.  1009_12 ir 1009_13 yra to paties paciento 2 skirtingi įrašai.
+
+
+Įrašai atrinkti gana švarūs, triukšminiai intervalai sužymėti rankomis žiūrint į EKG grafinį vaizdą,
+triukšminių intervalų pradžios ir pabaigos indeksai yra json faile su raktažodžiu "noises_annotated":
+"noises_annotated": [
+        {
+            "startIndex": 120200,
+            "endIndex": 120500
+        }
+    ],    
+
+Su raktažodžiu "rpeaks" json faile patalpinti rpeak indeksai ir atitinkamo pūpsnio žymė: N, V, S, U    
+
+Visas įrašų sąrašas yra faile records_list.txt.
+
+
+Aplanke yra 3 skriptai:
+- test_for_zive_records.ipynb - demonstracinis skriptas, kuris parodo, kaip galima nuskaityti įrašus ir metaduomenis
+
+- zive_data_utils.py - pagalbinės funkcijos įrašų nuskaitymui, filtravimui, rpeaks automatinei paieškai.
+  Įrašų nuskaitymo funkcijos pritaikytos atvejui, kad įrašai gali būti dviejų formatų.  
+
+- zive_metadata_utils.py - pagalbinės funkcijos darbui su metaduomenimis. Visų šių funkcijų nereikia demonstraciniam skriptui, 
+  nes zive_metadata_utils.py pritaikytas darbui sau daugeliu metaduomenų ir dviem galimais json formatais.  
+  Jei norima nusikrauti tik triukšminių intervalų indeksus, verta pasidaryti paprastesnį savo skriptą.
+
+
+Skriptai bandyti Conda aplinkoje:
+
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26,<2.0",
+  "neurokit2>=0.2.8"
+]
